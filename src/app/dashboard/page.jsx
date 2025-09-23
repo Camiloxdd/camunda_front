@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import Navbar from "./components/navbar";
+import Navbar from "../components/navbar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faSync, faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
