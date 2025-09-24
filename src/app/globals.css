@@ -178,6 +178,35 @@
     margin-top: 30px;
 }
 
+.buttonBackDash {
+    padding: 20px;
+}
+
+.buttonBackDash button {
+    display: flex;
+    height: 40px;
+    width: 130px;
+    gap: 5px;
+    text-align: center;
+    align-items: center;
+    background-color: #002855;
+    color: white;
+    cursor: pointer;
+    border-color: transparent;
+    border-radius: 8px;
+    transition: 0.3s all ease;
+}
+
+.buttonBackDash button:hover {
+    transition: 0.3s all ease;
+    transform: scale(1.05);
+}
+
+.buttonBackDash button .iconBack {
+    color: white;
+    margin-left: 10px;
+}
+
 .headerNewformulario {
     background-color: #F2F2F2;
     color: #002855;
@@ -187,6 +216,7 @@
     text-align: center;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin-top: -40px;
 }
 
 .contentNewformulario {
@@ -320,11 +350,11 @@ input[type="time"]:valid {
 
 /*TABLE CONTAINER*/
 .tittleTable {
-  font-weight: bold;
-  color: #002855;
-  margin-bottom: 10px;
-  font-size: 22px;
-  text-align: center;
+    font-weight: bold;
+    color: #002855;
+    margin-bottom: 10px;
+    font-size: 22px;
+    text-align: center;
 }
 
 .btn-agregar {
@@ -346,76 +376,619 @@ input[type="time"]:valid {
 }
 
 .tabla-container {
-  width: 100%;
-  margin: 20px 0;
-  overflow-x: auto;
+    width: 100%;
+    margin: 20px 0;
+    overflow-x: auto;
 }
 
 .tabla {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 14px;
-  background: #fff;
-  border-radius: 10px;
-  overflow: hidden;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
 
 }
 
 .tabla-encabezado-principal th {
-  background: #002855;
-  color: #fff;
-  padding: 12px;
-  text-align: center;
-  font-weight: 600;
-  border-right: 1px solid #e0e0e0;
+    background: #002855;
+    color: #fff;
+    padding: 12px;
+    text-align: center;
+    font-weight: 600;
+    border-right: 1px solid #e0e0e0;
 }
 
 .tabla-encabezado-secundario th {
-  background: #002855;
-  color: #fff;
-  font-size: 13px;
-  padding: 8px;
-  text-align: center;
+    background: #002855;
+    color: #fff;
+    font-size: 13px;
+    padding: 8px;
+    text-align: center;
 }
 
 .tabla tbody tr:nth-child(even) {
-  background: #f9f9f9;
-  
+    background: #f9f9f9;
+
 }
 
 .tabla tbody tr:hover {
-  background: #eef4ff;
-  transition: background 0.2s ease;
+    background: #eef4ff;
+    transition: background 0.2s ease;
 }
 
 .tabla td {
-  padding: 8px;
-  text-align: center;
-  border-bottom: 1px solid #ddd;
-  
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+
 }
 
 .input-texto,
 .input-numero {
-  width: 95%;
-  padding: 6px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 13px;
-  outline: none;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
+    width: 95%;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
 }
 
 .input-texto:focus,
 .input-numero:focus {
-  border: 1px solid #002855;
-  box-shadow: 0 0 4px rgba(31, 60, 136, 0.3);
+    border: 1px solid #002855;
+    box-shadow: 0 0 4px rgba(31, 60, 136, 0.3);
 }
 
 .input-radio {
-  transform: scale(1.2);
-  accent-color: #002855;
-  cursor: pointer;
+    transform: scale(1.2);
+    accent-color: #002855;
+    cursor: pointer;
+}
+
+
+/*REVISION*/
+
+.tittleHeaderRevision {
+    font-weight: bold;
+    color: #002855;
+    margin-top: 20px;
+    text-align: center;
+    font-size: 22px;
+}
+
+.headerObservaciones {
+    background-color: #002855;
+    color: white;
+    font-weight: bold;
+    padding: 8px;
+    width: 100%;
+    text-align: center;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin-top: 30px;
+}
+
+.observacionesInputs input {
+    width: 100%;
+    height: 40px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    padding: 10px;
+    font-size: 16px;
+    background-color: white;
+    color: #6f737a;
+    resize: none;
+    margin-top: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.observacionesInputs input:focus {
+    outline: none;
+    border: 1px solid transparent;
+}
+
+.firmasContainer {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+.firmasContainer .headerInfo {
+    background-color: #002855;
+    color: white;
+    font-weight: bold;
+    padding: 8px;
+    width: 300px;
+    text-align: center;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin-top: 30px;
+}
+
+.firmasContainer .campoInfo .nombre {
+    display: flex;
+    background-color: #ffffff;
+    text-align: center;
+    color: #002855;
+    font-weight: bold;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+}
+
+.firmasContainer .campoInfo .nombre .text {
+    margin-right: auto;
+    margin-left: auto;
+}
+
+
+.firmasContainer .campoInfo .firma {
+    display: flex;
+    background-color: white;
+    text-align: center;
+    color: #002855;
+    font-weight: bold;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.firmasContainer .campoInfo .firma .text {
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    margin-left: auto;
+}
+
+.firmasContainer .campoInfo .firma .inputFirma {
+    margin-left: auto;
+    margin-right: 10px;
+    border-color: transparent;
+    height: 35px;
+    border-radius: 8px;
+}
+
+.firmasContainer .campoInfo .firma .inputFirma:focus {
+    outline: none;
+}
+
+.firmasContainer .campoInfo .nombre input {
+    border-color: transparent;
+    height: 35px;
+    margin-right: 10px;
+    border-radius: 8px;
+}
+
+.firmasContainer .campoInfo .nombre input:focus {
+    outline: none;
+}
+
+
+
+.autorizacionGerenciaGeneral {
+    display: flex;
+    gap: 10px;
+}
+
+.autorizacionGeneral {
+    display: flex;
+    flex-direction: column;
+    width: 320px;
+    text-align: center;
+}
+
+.autorizacionGeneral .headerGeneral {
+    background-color: #002855;
+    color: white;
+    font-weight: bold;
+    padding: 8px;
+    text-align: center;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin-top: 30px;
+}
+
+.autorizacionGeneral .campoGeneral input {
+    margin-right: 32px;
+    width: 100%;
+    height: 40px;
+    text-align: left;
+    border-color: transparent;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.autorizacionGeneral .campoGeneral input:focus {
+    outline: none;
+}
+
+.recepcionCompras {
+    display: flex;
+    gap: 10px;
+}
+
+.recepcionCompras .fecha .headerFecha {
+    background-color: #002855;
+    color: white;
+    font-weight: bold;
+    padding: 8px;
+    text-align: center;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin-top: 30px;
+}
+
+.recepcionCompras .fecha input {
+    width: 150px;
+    height: 40px;
+    border-color: transparent;
+    text-align: center;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.recepcionCompras .fecha input:focus {
+    outline: none;
+}
+
+.recepcionCompras .hora {
+    display: flex;
+    flex-direction: column;
+    width: 150px;
+}
+
+.recepcionCompras .hora .headerHora {
+    background-color: #002855;
+    color: white;
+    font-weight: bold;
+    padding: 8px;
+    width: 150px;
+    text-align: center;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin-top: 30px;
+}
+
+.recepcionCompras .hora input {
+    text-align: center;
+    width: 150px;
+    height: 40px;
+    border-color: transparent;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.recepcionCompras .hora input:focus {
+    outline: none;
+}
+
+.recepcionCompras .consecutivo {
+    display: flex;
+    flex-direction: column;
+    width: 150px;
+}
+
+.recepcionCompras .consecutivo .headerConsecutivo {
+    background-color: #002855;
+    color: white;
+    font-weight: bold;
+    padding: 8px;
+    width: 150px;
+    text-align: center;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin-top: 30px;
+}
+
+.recepcionCompras .consecutivo .campoConsecutivo input {
+    text-align: center;
+    width: 150px;
+    height: 40px;
+    border-color: transparent;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.recepcionCompras .consecutivo .campoConsecutivo input:focus {
+    outline: none;
+}
+
+.recepcionCompras .firma {
+    display: flex;
+    flex-direction: column;
+}
+
+.recepcionCompras .firma .headerFirma {
+    background-color: #002855;
+    color: white;
+    font-weight: bold;
+    padding: 8px;
+    text-align: center;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin-top: 30px;
+}
+
+.recepcionCompras .firma .campoFirma input {
+    text-align: center;
+    width: 150px;
+    height: 40px;
+    border-color: transparent;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.recepcionCompras .firma .campoFirma input:focus {
+    outline: none;
+}
+
+
+
+/* Overlay */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99999;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.overlay-open {
+    opacity: 1;
+}
+
+.overlay-close {
+    opacity: 0;
+}
+
+/* Modal */
+.modal {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    transform: translateY(-30px);
+    opacity: 0;
+    transition: all 0.3s ease-in-out;
+}
+
+.modal-open {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.modal-close {
+    transform: translateY(-30px);
+    opacity: 0;
+}
+
+/* Botón */
+.closeBtn {
+    margin-top: 10px;
+    padding: 6px 12px;
+    background: #444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.closeBtn:hover {
+    background: #222;
+}
+
+
+/*MODAL*/
+.headerModal {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+}
+
+.headerModal .titleModal {
+    font-weight: bold;
+    color: #002855;
+    margin-top: -40px;
+}
+
+.closeModal {
+    margin-left: 500px;
+    background-color: #002855;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 40px;
+    height: 40px;
+    font-weight: bold;
+    transition: transform 0.2s ease;
+}
+
+.closeModal:hover {
+    transform: scale(1.05);
+}
+
+.infos {
+    display: flex;
+    flex-direction: column;
+}
+
+.infos .infoGeneral {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+}
+
+.infos .infoGeneral .fecha {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.infos .infoGeneral .fecha .labelInfo {
+    color: #002855;
+    font-weight: bold;
+}
+
+.infos .infoGeneral .estado {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.infos .infoGeneral .estado .labelInfo {
+    color: #002855;
+    font-weight: bold;
+}
+
+.infos .buttonsModal {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+    justify-items: center;
+    align-items: center;
+    text-align: center;
+}
+
+
+.infos .buttonsModal button {
+    background-color: #002855;
+    font-weight: bold;
+    color: white;
+    width: 200px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+
+/*VISUALIZACION PDF*/
+.containerRevision{
+    display: flex;
+    gap: 20px;
+}
+
+.pdfFrame {
+    height: 750px;
+    width: 900px;
+    margin-left: 30px;
+    margin-top: 0px;
+}
+
+.revisionInfo {
+    display: flex;
+    background-color: #f2f2f2;
+    width: 40%;
+    height: 600px;
+    margin-top: 60px;
+    margin-left: 90px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+}
+
+.revisionInfo .tittleRevision {
+    font-weight: bold;
+    color: #002855;
+    margin-top: 30px;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+    margin-right: 70px;
+}
+
+.inputsContainersRevision {}
+
+.completeInputsRevision {
+    background-color: white;
+    border-radius: 8px;
+    width: 300px;
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 40px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.completeInputsRevision input {
+    width: 100%;
+    height: 50px;
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.inputAndText {
+    margin-top: 15px;
+}
+
+.inputAndText p {
+    font-size: 12px;
+    margin-left: 45px;
+    padding: 5px;
+    color: #002855;
+    font-weight: bold;
+}
+
+.iconCustom {
+    font-size: 200px;
+    color: #002855;
+    margin-top: 175px;
+}
+
+.buttonsDownload{
+    margin-right: 70px;
+}
+
+.spaceButtonsReview {
+    flex-direction: column;
+    align-items: center;
+    display: flex;
+    text-align: center;
+}
+
+.spaceButtonsReview .navegationButton {
+    background-color: #002855;
+    font-weight: bold;
+    color: white;
+    width: 150px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    margin-left: 10px;
+    margin-top: 15px;
+}
+
+.spaceButtonsReview .navegationButton:hover{
+    transform: scale(1.05);
 }

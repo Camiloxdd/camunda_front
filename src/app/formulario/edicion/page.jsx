@@ -75,27 +75,6 @@ export default function NuevoFormulario() {
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 3));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
-  const enviarFormulario = async () => {
-    try {
-      const res = await fetch("http://localhost:4000/formularios", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ form, filas }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert("Formulario guardado ✅ ID: " + data.formularioId);
-        router.push("/");
-      } else {
-        alert("Error al guardar");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Error en la conexión con el servidor");
-    }
-  };
-
-
   return (
     <div>
       <Navbar />
@@ -549,7 +528,7 @@ export default function NuevoFormulario() {
           )}
           <div className="spaceButtons">
             {step === 3 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-            {step === 3 && <button className="navegationButton" onClick={enviarFormulario}>Enviar</button>}
+            {step === 3 && <button className="navegationButton" onClick={() => alert("Formulario enviado ✅")}>Enviar</button>}
           </div>
         </div>
       </div>
