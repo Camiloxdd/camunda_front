@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Navbar from "../../components/navbar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip} from "@fortawesome/free-solid-svg-icons";
+import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip } from "@fortawesome/free-solid-svg-icons";
 
 export default function NuevoFormulario() {
   const [step, setStep] = useState(1);
@@ -17,6 +17,39 @@ export default function NuevoFormulario() {
     tiempoGestion: "",
     anexos: "",
   });
+
+  const [filas, setFilas] = useState([
+    {
+      descripcion: "",
+      cantidad: "",
+      centro: "",
+      cuenta: "",
+      presupuesto: "", // "si" o "no"
+      valor: "",
+      vobo: ""
+    }
+  ]);
+
+  const agregarFila = () => {
+    setFilas([
+      ...filas,
+      {
+        descripcion: "",
+        cantidad: "",
+        centro: "",
+        cuenta: "",
+        presupuesto: "",
+        valor: "",
+        vobo: ""
+      }
+    ]);
+  };
+
+  const manejarCambio = (index, campo, valor) => {
+    const nuevasFilas = [...filas];
+    nuevasFilas[index][campo] = valor;
+    setFilas(nuevasFilas);
+  };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -36,10 +69,10 @@ export default function NuevoFormulario() {
         <div className="contentNewformulario">
           {step == 1 && (
             <div>
-              <h1 className="tittleContent">1. Datos generales del solicitante.</h1>
+              <h1 className="tittleContent">Datos generales del solicitante.</h1>
               <div className="inputsContainers">
                 <div className="completeInputs">
-                  <FontAwesomeIcon icon={faUser} className="icon"/>
+                  <FontAwesomeIcon icon={faUser} className="icon" />
                   <input
                     type="text"
                     name="nombre"
@@ -49,7 +82,7 @@ export default function NuevoFormulario() {
                   />
                 </div>
                 <div className="completeInputs">
-                  <FontAwesomeIcon icon={faCalendar} className="icon"/>
+                  <FontAwesomeIcon icon={faCalendar} className="icon" />
                   <input
                     type="date"
                     name="fechaSolicitud"
@@ -61,7 +94,7 @@ export default function NuevoFormulario() {
               </div>
               <div className="inputsContainers">
                 <div className="completeInputs">
-                  <FontAwesomeIcon icon={faCalendar} className="icon"/>
+                  <FontAwesomeIcon icon={faCalendar} className="icon" />
                   <input
                     type="date"
                     name="fechaEntrega"
@@ -71,7 +104,7 @@ export default function NuevoFormulario() {
                   />
                 </div>
                 <div className="completeInputs">
-                  <FontAwesomeIcon icon={faBalanceScale} className="icon"/>
+                  <FontAwesomeIcon icon={faBalanceScale} className="icon" />
                   <input
                     type="text"
                     name="justificacion"
@@ -83,7 +116,7 @@ export default function NuevoFormulario() {
               </div>
               <div className="inputsContainers">
                 <div className="completeInputs">
-                  <FontAwesomeIcon icon={faClipboard} className="icon"/>
+                  <FontAwesomeIcon icon={faClipboard} className="icon" />
                   <input
                     type="text"
                     name="area"
@@ -93,7 +126,7 @@ export default function NuevoFormulario() {
                   />
                 </div>
                 <div className="completeInputs">
-                  <FontAwesomeIcon icon={faBuilding} className="icon"/>
+                  <FontAwesomeIcon icon={faBuilding} className="icon" />
                   <input
                     type="text"
                     name="sede"
@@ -105,7 +138,7 @@ export default function NuevoFormulario() {
               </div>
               <div className="inputsContainers">
                 <div className="completeInputs">
-                  <FontAwesomeIcon icon={faExclamationTriangle} className="icon"/>
+                  <FontAwesomeIcon icon={faExclamationTriangle} className="icon" />
                   <input
                     type="text"
                     name="urgenciaCompra"
@@ -115,7 +148,7 @@ export default function NuevoFormulario() {
                   />
                 </div>
                 <div className="completeInputs">
-                  <FontAwesomeIcon icon={faClock} className="icon"/>
+                  <FontAwesomeIcon icon={faClock} className="icon" />
                   <input
                     type="time"
                     name="tiempoGestion"
@@ -127,7 +160,7 @@ export default function NuevoFormulario() {
               </div>
               <div className="inputsContainers">
                 <div className="completeInputs">
-                  <FontAwesomeIcon icon={faPaperclip} className="icon"/>
+                  <FontAwesomeIcon icon={faPaperclip} className="icon" />
                   <input
                     type="text"
                     name="anexos"
@@ -137,16 +170,136 @@ export default function NuevoFormulario() {
                   />
                 </div>
               </div>
-              <button onClick={async () => { await startProcess(); next(); }}>
-                <p>Siguiente</p>
-              </button>
+              <div className="spaceButtons">
+                <button onClick={nextStep} className="navegationButton">Siguiente</button>
+              </div>
             </div>
           )}
 
-          {step === 2 && (
+          {step == 2 && (
             <div>
-              <h2>Paso 2: Detalles</h2>
-              <textarea placeholder="Descripción"></textarea>
+              <div className="tableContainer">
+                <h1 className="tittleTable">DESCRIPCION DEL ELEMENTO</h1>
+                <div className="tabla-container">
+                  <table className="tabla">
+                    <thead>
+                      <tr className="tabla-encabezado-principal">
+                        <th>ITEM</th>
+                        <th>DESCRIPCIÓN</th>
+                        <th>CANTIDAD</th>
+                        <th>CENTRO DE COSTO U ORDEN INTERNA</th>
+                        <th>CUENTA CONTABLE O CÓDIGO DE MATERIAL</th>
+                        <th colSpan={3}>¿ESTÁ EN PRESUPUESTO?</th>
+                        <th>VOBO GERENTE DE TECNOLOGÍA</th>
+                      </tr>
+                      <tr className="tabla-encabezado-secundario">
+                        <th colSpan={5}></th>
+                        <th>SI</th>
+                        <th>NO</th>
+                        <th>VALOR (*)</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filas.map((fila, index) => (
+                        <tr key={index}>
+                          <td>{index + 1}</td>
+                          <td>
+                            <input
+                              className="input-texto"
+                              type="text"
+                              value={fila.descripcion}
+                              onChange={(e) =>
+                                manejarCambio(index, "descripcion", e.target.value)
+                              }
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="input-numero"
+                              type="number"
+                              min="0"
+                              value={fila.cantidad}
+                              onChange={(e) =>
+                                manejarCambio(index, "cantidad", e.target.value)
+                              }
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="input-texto"
+                              type="text"
+                              value={fila.centro}
+                              onChange={(e) =>
+                                manejarCambio(index, "centro", e.target.value)
+                              }
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="input-texto"
+                              type="text"
+                              value={fila.cuenta}
+                              onChange={(e) =>
+                                manejarCambio(index, "cuenta", e.target.value)
+                              }
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="input-radio"
+                              type="radio"
+                              name={`presupuesto-${index}`}
+                              checked={fila.presupuesto === "si"}
+                              onChange={() => manejarCambio(index, "presupuesto", "si")}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="input-radio"
+                              type="radio"
+                              name={`presupuesto-${index}`}
+                              checked={fila.presupuesto === "no"}
+                              onChange={() => manejarCambio(index, "presupuesto", "no")}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="input-numero"
+                              type="number"
+                              min="0"
+                              value={fila.valor}
+                              onChange={(e) => manejarCambio(index, "valor", e.target.value)}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              className="input-texto"
+                              type="text"
+                              value={fila.vobo}
+                              onChange={(e) =>
+                                manejarCambio(index, "vobo", e.target.value)
+                              }
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div className="spaceButtons">
+                <button className="btn-agregar" onClick={agregarFila}>
+                  <p>Agregar fila</p>
+                </button>
+                <p className="separator">|</p>
+                <button onClick={prevStep} className="navegationButton">
+                  <p>Volver</p>
+                </button>
+                <button onClick={nextStep} className="navegationButton">
+                  <p>Siguiente</p>
+                </button>
+              </div>
             </div>
           )}
 
@@ -158,8 +311,6 @@ export default function NuevoFormulario() {
           )}
 
           <div style={{ marginTop: "20px" }}>
-            {step > 1 && <button onClick={prevStep}>Anterior</button>}
-            {step < 3 && <button onClick={nextStep}>Siguiente</button>}
             {step === 3 && <button onClick={() => alert("Formulario enviado ✅")}>Enviar</button>}
           </div>
         </div>

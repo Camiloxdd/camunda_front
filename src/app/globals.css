@@ -183,7 +183,8 @@
     color: #002855;
     font-weight: bold;
     padding: 20px;
-    width: 800px;
+    width: 100%;
+    text-align: center;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
@@ -192,7 +193,7 @@
     margin-top: 15px;
     background-color: #F2F2F2;
     padding: 20px;
-    width: 800px;
+    width: 100%;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
@@ -216,7 +217,7 @@
     font-weight: bold;
     color: #002855;
     margin-top: 20px;
-    text-align: left;
+    text-align: center;
     font-size: 22px;
 }
 
@@ -248,8 +249,9 @@
     background-color: transparent;
 }
 
-.inputsContainers input:active{
-    border-color: transparent;
+.inputsContainers input:focus {
+    outline: none;
+    border: 1px solid transparent;
 }
 
 .completeInputs {
@@ -263,7 +265,7 @@
 
 .icon {
     color: #002855;
-    margin-left: 20px;
+    margin-left: 10px;
 }
 
 input[type="date"]::-webkit-datetime-edit-year-field,
@@ -281,4 +283,139 @@ input[type="time"]::-webkit-datetime-edit-text {
 input[type="date"]:valid,
 input[type="time"]:valid {
     color: #6f737a;
+}
+
+.spaceButtons {
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    text-align: center;
+}
+
+.spaceButtons .separator {
+    margin-top: 10px;
+    margin-left: 10px;
+    color: #555555;
+    font-weight: bold;
+}
+
+.spaceButtons .navegationButton {
+    background-color: #002855;
+    font-weight: bold;
+    color: white;
+    width: 150px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    margin-left: 10px;
+    margin-top: 15px;
+}
+
+.navegationButton:hover {
+    transform: scale(1.05);
+}
+
+
+/*TABLE CONTAINER*/
+.tittleTable {
+  font-weight: bold;
+  color: #002855;
+  margin-bottom: 10px;
+  font-size: 22px;
+  text-align: center;
+}
+
+.btn-agregar {
+    background-color: #002855;
+    font-weight: bold;
+    color: white;
+    width: 150px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    margin-left: 10px;
+    margin-top: 15px;
+}
+
+.btn-agregar:hover {
+    transform: scale(1.05);
+}
+
+.tabla-container {
+  width: 100%;
+  margin: 20px 0;
+  overflow-x: auto;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 14px;
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+
+}
+
+.tabla-encabezado-principal th {
+  background: #002855;
+  color: #fff;
+  padding: 12px;
+  text-align: center;
+  font-weight: 600;
+  border-right: 1px solid #e0e0e0;
+}
+
+.tabla-encabezado-secundario th {
+  background: #002855;
+  color: #fff;
+  font-size: 13px;
+  padding: 8px;
+  text-align: center;
+}
+
+.tabla tbody tr:nth-child(even) {
+  background: #f9f9f9;
+  
+}
+
+.tabla tbody tr:hover {
+  background: #eef4ff;
+  transition: background 0.2s ease;
+}
+
+.tabla td {
+  padding: 8px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  
+}
+
+.input-texto,
+.input-numero {
+  width: 95%;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-texto:focus,
+.input-numero:focus {
+  border: 1px solid #002855;
+  box-shadow: 0 0 4px rgba(31, 60, 136, 0.3);
+}
+
+.input-radio {
+  transform: scale(1.2);
+  accent-color: #002855;
+  cursor: pointer;
 }
