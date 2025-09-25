@@ -4,8 +4,157 @@ import Navbar from "../../components/navbar";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import next from "next";
 
 export default function NuevoFormulario() {
+  const [taskId, setTaskId] = useState(""); // Guarda aquí el taskId de Camunda
+
+  async function completarPrimerPaso() {
+    try {
+      const tareasRes = await fetch("http://localhost:4000/api/tasks/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+
+      const tareasData = await tareasRes.json();
+      console.log("Tareas recibidas desde Camunda:", tareasData);
+
+      const tareas = tareasData.items || [];
+
+      // Filtrar todos los que coincidan por nombre
+      const coincidencias = tareas.filter(
+        t => t.name === "Primer paso\nWizzard" && t.state === "CREATED"
+      );
+      const primerPaso = coincidencias.at(-1); // Última coincidencia
+
+      if (!primerPaso) {
+        console.error("No hay tareas activas para form_firstStep");
+        return;
+      }
+
+      const userTaskKey = primerPaso.userTaskKey;
+
+      const completeRes = await fetch(`http://localhost:4000/api/tasks/${userTaskKey}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          variables: {
+            ejemploVar: "hola"
+          }
+        }),
+      });
+
+      if (!completeRes.ok) throw new Error("No se pudo completar la tarea");
+
+      console.log("Tarea completada correctamente");
+
+      nextStep();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+
+  async function completarSegundoPaso() {
+    try {
+      const tareasRes = await fetch("http://localhost:4000/api/tasks/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+
+      const tareasData = await tareasRes.json();
+      console.log("Tareas recibidas desde Camunda:", tareasData);
+
+      const tareas = tareasData.items || [];
+
+      // Filtrar todos los que coincidan por nombre y estén en estado 'CREATED'
+      const coincidencias = tareas.filter(
+        t => t.name === "Segundo paso\nWizzard" && t.state === "CREATED"
+      );
+      const segundoPaso = coincidencias.at(-1); // Última coincidencia
+
+      if (!segundoPaso) {
+        console.error("No hay tareas en estado 'CREATED' para form_secondStep");
+        return;
+      }
+
+      const userTaskKey = segundoPaso.userTaskKey;
+
+      const completeRes = await fetch(
+        `http://localhost:4000/api/tasks/${userTaskKey}/complete`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            variables: {
+              ejemploVar: "hola"
+            }
+          }),
+        }
+      );
+
+      if (!completeRes.ok) throw new Error("No se pudo completar la tarea");
+
+      console.log("Segundo paso completado correctamente");
+
+      nextStep();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function completarTerceraUserTaskYServiceTask(datos) {
+    try {
+      // 1️⃣ Buscar todas las tareas
+      const resTareas = await fetch("http://localhost:4000/api/tasks/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+      const tareasData = await resTareas.json();
+      const tareas = tareasData.items || [];
+
+      // 2️⃣ Completar la 3ª User Task del wizard
+      const userTask3 = tareas.find(
+        t => t.name === "Tercer paso\nWizzard" && t.state === "CREATED"
+      );
+      if (!userTask3) throw new Error("No hay User Task del tercer paso disponibles");
+
+      await fetch(`http://localhost:4000/api/tasks/${userTask3.userTaskKey}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ variables: datos }),
+      });
+      console.log("Tercer paso completado correctamente");
+
+      // 3️⃣ Completar la Service Task saveData
+      const serviceTask = tareas.find(
+        t => t.type === "saveData" && t.state === "CREATED"
+      );
+      if (!serviceTask) throw new Error("No hay Service Task 'saveData' disponibles");
+
+      await fetch(`http://localhost:4000/api/tasks/${serviceTask.userTaskKey}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ variables: datos }),
+      });
+      console.log("Service Task completada correctamente");
+
+      // 4️⃣ Guardar también en tu DB desde tu backend
+      await fetch("/api/guardar-en-db", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datos)
+      });
+      enviarFormulario();
+      router.push('/');
+    } catch (err) {
+      console.error("Error completando tareas:", err);
+    }
+  }
+
   const router = useRouter();
 
   const [step, setStep] = useState(1);
@@ -215,7 +364,18 @@ export default function NuevoFormulario() {
                 </div>
               </div>
               <div className="spaceButtons">
-                <button onClick={nextStep} className="navegationButton">Siguiente</button>
+                <button
+                  onClick={async () => {
+                    try {
+                      await completarPrimerPaso();
+                    } catch (err) {
+                      console.error("Error al completar el paso:", err);
+                    }
+                  }}
+                  className="navegationButton"
+                >
+                  Siguiente
+                </button>
               </div>
             </div>
           )}
@@ -340,9 +500,19 @@ export default function NuevoFormulario() {
                 <button onClick={prevStep} className="navegationButton">
                   <p>Volver</p>
                 </button>
-                <button onClick={nextStep} className="navegationButton">
-                  <p>Siguiente</p>
+                <button
+                  onClick={async () => {
+                    try {
+                      await completarSegundoPaso();
+                    } catch (err) {
+                      console.error("Error al completar el paso:", err);
+                    }
+                  }}
+                  className="navegationButton"
+                >
+                  Siguiente
                 </button>
+
               </div>
             </div>
           )}
@@ -549,7 +719,13 @@ export default function NuevoFormulario() {
           )}
           <div className="spaceButtons">
             {step === 3 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-            {step === 3 && <button className="navegationButton" onClick={enviarFormulario}>Enviar</button>}
+            {step === 3 && <button
+              onClick={() => completarTerceraUserTaskYServiceTask({ form, filas })}
+              className="navegationButton"
+            >
+              Enviar
+            </button>
+            }
           </div>
         </div>
       </div>

@@ -65,6 +65,12 @@ export default function OptionsModal({ isOpen, onClose, selectedId }) {
                                         Descargar PDF
                                         <FontAwesomeIcon icon={faFileExcel} style={{ marginLeft: '8px' }} />
                                     </button>
+                                    <button className="buttonDelete" onClick={() => {
+                                        router.push(`/formulario/revision/${selectedId}`);
+                                        onClose();
+                                    }}>
+                                        Revisar formulario
+                                    </button>
                                 </div>
                             </div>
                         </div>

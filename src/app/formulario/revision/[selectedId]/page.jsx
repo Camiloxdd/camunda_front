@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, use } from "react";
 import Navbar from "@/app/components/navbar";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faCalendar, faClipboard, faBuilding, faFileExcel, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
-export default function PdfViewer() {
+export default function PdfViewer({ params }) {
+    const { selectedId } = use(params);
     const router = useRouter();
-
     const [form, setForm] = useState({
         nombre: "",
         fechaSolicitud: "",
@@ -33,10 +35,73 @@ export default function PdfViewer() {
         horaCompras: "",
         consecutivoCompras: "",
         firmaCompras: "",
+        estado: "",
     });
+
+    useEffect(() => {
+        async function fetchData() {
+            const res = await fetch(`http://localhost:4000/formularios/${selectedId}`);
+            const data = await res.json();
+            setForm(data.formulario);
+        }
+        if (selectedId) fetchData();
+    }, [selectedId]);
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    function formatDate(date) {
+        if (!date) return "";
+        if (typeof date === "string" && date.length === 10) return date;
+        const d = new Date(date);
+        if (isNaN(d)) return "";
+        return d.toISOString().slice(0, 10);
+    }
+
+    useEffect(() => {
+        async function cargarDatos() {
+            try {
+                const res = await fetch(`http://localhost:4000/formularios/${selectedId}`);
+                if (!res.ok) throw new Error("Error al cargar los datos");
+                const data = await res.json();
+
+                setForm({
+                    ...data.formulario,
+                    fechaSolicitud: formatDate(data.formulario.fechaSolicitud),
+                    fechaEntrega: formatDate(data.formulario.fechaEntrega),
+                    fechaCompras: formatDate(data.formulario.fechaCompras),
+                });
+                setFilas(data.filas || []);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        if (selectedId) {
+            cargarDatos();
+        }
+    }, [selectedId]);
+
+    const actualizarEstado = async (nuevoEstado) => {
+        try {
+            await fetch(`http://localhost:4000/formularios/${selectedId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ form: { ...form, estado: nuevoEstado }, filas: [] }),
+            });
+            setForm((prev) => ({ ...prev, estado: nuevoEstado }));
+        } catch (err) {
+            alert("Error actualizando estado");
+        }
+    };
+
+    const exportToExcel = () => {
+        const ws = XLSX.utils.json_to_sheet([form]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Formulario");
+        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        saveAs(new Blob([wbout], { type: "application/octet-stream" }), "formulario.xlsx");
     };
 
     return (
@@ -50,7 +115,7 @@ export default function PdfViewer() {
             </div>
             <div className="containerRevision">
                 <iframe
-                    src="https://seaep.es/wp-content/uploads/2019/06/Pr%C3%A1ctica-sobre-el-Test-de-Retenci%C3%B3n-Visual-de-Benton-TRVB-G%C3%B3mez-Rodr%C3%ADguez-y-Vald%C3%A9s-2012.pdf"
+                    src="/pdf/formulario.pdf"
                     className="pdfFrame"
                 />
                 <div className="revisionInfo">
@@ -132,9 +197,34 @@ export default function PdfViewer() {
                     <div className="buttonsDownload">
                         <FontAwesomeIcon icon={faFileExcel} className="iconCustom" />
                         <div className="spaceButtonsReview">
-                            <button className="navegationButton">Aprobado</button>
-                            <button className="navegationButton">No Aprobado</button>
-                            <button className="navegationButton">Por revisar</button>
+                            <button className="navegationButton" onClick={() => actualizarEstado("Aprobado")}>Aprobado</button>
+                            <button className="navegationButton" onClick={() => actualizarEstado("No aprobado")}>No Aprobado</button>
+                            <button className="navegationButton" onClick={() => actualizarEstado("Por revisar")}>Por revisar</button>
+                            {(form.estado === "Aprobado") && (
+                                <>
+                                    <button
+                                        onClick={async () => {
+                                            const res = await fetch(`http://localhost:4000/formularios/${selectedId}/excel`);
+                                            const blob = await res.blob();
+                                            const url = window.URL.createObjectURL(blob);
+                                            const a = document.createElement("a");
+                                            a.href = url;
+                                            a.download = `formulario_${selectedId}.xlsx`;
+                                            a.click();
+                                            window.URL.revokeObjectURL(url);
+                                        }}
+                                        className="navegationButton"
+                                    >
+                                        Descargar Excel
+                                    </button>
+                                    <button
+                                        onClick={() => window.open(`/pdf/formulario.pdf`, "_blank")}
+                                        className="navegationButton"
+                                    >
+                                        Descargar PDF
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

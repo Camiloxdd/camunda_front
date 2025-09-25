@@ -83,10 +83,9 @@ export default function NuevoFormulario({ params }) {
 
     const nextStep = () => setStep((prev) => Math.min(prev + 1, 3));
     const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
-    // 🔹 Guardar cambios en la base de datos
     const guardarFormulario = async () => {
         try {
-            const res = await fetch(`/api/formularios/${id}`, {
+            const res = await fetch(`http://localhost:4000/formularios/${selectedId}`, { 
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -100,6 +99,41 @@ export default function NuevoFormulario({ params }) {
             alert("Error al guardar los datos ❌");
         }
     };
+
+
+
+    function formatDate(date) {
+        if (!date) return "";
+        if (typeof date === "string" && date.length === 10) return date;
+        const d = new Date(date);
+        if (isNaN(d)) return "";
+        return d.toISOString().slice(0, 10);
+    }
+
+    useEffect(() => {
+        async function cargarDatos() {
+            try {
+                const res = await fetch(`http://localhost:4000/formularios/${selectedId}`);
+                if (!res.ok) throw new Error("Error al cargar los datos");
+                const data = await res.json();
+
+                setForm({
+                    ...data.formulario,
+                    fechaSolicitud: formatDate(data.formulario.fechaSolicitud),
+                    fechaEntrega: formatDate(data.formulario.fechaEntrega),
+                    fechaCompras: formatDate(data.formulario.fechaCompras),
+                });
+                setFilas(data.filas || []);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        if (selectedId) {
+            cargarDatos();
+        }
+    }, [selectedId]);
+
 
     return (
         <div>
@@ -554,7 +588,7 @@ export default function NuevoFormulario({ params }) {
                     )}
                     <div className="spaceButtons">
                         {step === 3 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-                        {step === 3 && <button className="navegationButton" onClick={guardarFormulario}>Guardar</button>}
+                        {step === 3 && <button className="navegationButton" onClick={async () => {await guardarFormulario(); router.push('/')}}>Guardar</button>}
                     </div>
                 </div>
             </div>

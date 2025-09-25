@@ -31,9 +31,29 @@ export default function Dashboard() {
     return (
         <div style={{}}>
             <Navbar />
-            <OptionsModal isOpen={isOpen} onClose={() => setIsOpen(false)} selectedId={selectedId}/>
+            <OptionsModal isOpen={isOpen} onClose={() => setIsOpen(false)} selectedId={selectedId} />
             <div className="space-buttons">
-                <button onClick={() => router.push('/formulario/nuevo/')}>
+                <button
+                    onClick={async () => {
+                        // Inicia el proceso en Camunda 8 SaaS
+                        const res = await fetch("http://localhost:4000/api/process/start", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                variables: {
+                                    // Puedes enviar datos iniciales aquí si quieres
+                                    creador: "usuario@correo.com"
+                                }
+                            })
+                        });
+                        const data = await res.json();
+                        // Opcional: puedes guardar el processInstanceKey en localStorage o pasarlo por query param
+                        // localStorage.setItem("processInstanceKey", data.instanceId);
+
+                        // Ahora navega al formulario nuevo
+                        router.push('/formulario/nuevo/');
+                    }}
+                >
                     <FontAwesomeIcon icon={faPlus} /> Nuevo
                 </button>
                 <button onClick={fetchFormularios}>
