@@ -3,58 +3,13 @@ import { useState } from "react";
 import Navbar from "../../components/navbar";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import emailjs from "emailjs-com"
 import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import next from "next";
+import Swal from "sweetalert2";
 
 export default function NuevoFormulario() {
-  const [taskId, setTaskId] = useState(""); // Guarda aquí el taskId de Camunda
-
-  async function completarPrimerPaso() {
-    try {
-      const tareasRes = await fetch("http://localhost:4000/api/tasks/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
-      });
-
-      const tareasData = await tareasRes.json();
-      console.log("Tareas recibidas desde Camunda:", tareasData);
-
-      const tareas = tareasData.items || [];
-
-      // Filtrar todos los que coincidan por nombre
-      const coincidencias = tareas.filter(
-        t => t.name === "Primer paso\nWizzard" && t.state === "CREATED"
-      );
-      const primerPaso = coincidencias.at(-1); // Última coincidencia
-
-      if (!primerPaso) {
-        console.error("No hay tareas activas para form_firstStep");
-        return;
-      }
-
-      const userTaskKey = primerPaso.userTaskKey;
-
-      const completeRes = await fetch(`http://localhost:4000/api/tasks/${userTaskKey}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          variables: {
-            ejemploVar: "hola"
-          }
-        }),
-      });
-
-      if (!completeRes.ok) throw new Error("No se pudo completar la tarea");
-
-      console.log("Tarea completada correctamente");
-
-      nextStep();
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
+  const [taskId, setTaskId] = useState("");
 
   async function completarSegundoPaso() {
     try {
@@ -69,11 +24,10 @@ export default function NuevoFormulario() {
 
       const tareas = tareasData.items || [];
 
-      // Filtrar todos los que coincidan por nombre y estén en estado 'CREATED'
       const coincidencias = tareas.filter(
         t => t.name === "Segundo paso\nWizzard" && t.state === "CREATED"
       );
-      const segundoPaso = coincidencias.at(-1); // Última coincidencia
+      const segundoPaso = coincidencias.at(-1);
 
       if (!segundoPaso) {
         console.error("No hay tareas en estado 'CREATED' para form_secondStep");
@@ -89,7 +43,7 @@ export default function NuevoFormulario() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             variables: {
-              ejemploVar: "hola"
+              ejemploVar: "paso al segundo paso"
             }
           }),
         }
@@ -116,7 +70,6 @@ export default function NuevoFormulario() {
       const tareasData = await resTareas.json();
       const tareas = tareasData.items || [];
 
-      // 2️⃣ Completar la 3ª User Task del wizard
       const userTask3 = tareas.find(
         t => t.name === "Tercer paso\nWizzard" && t.state === "CREATED"
       );
@@ -129,25 +82,6 @@ export default function NuevoFormulario() {
       });
       console.log("Tercer paso completado correctamente");
 
-      // 3️⃣ Completar la Service Task saveData
-      const serviceTask = tareas.find(
-        t => t.type === "saveData" && t.state === "CREATED"
-      );
-      if (!serviceTask) throw new Error("No hay Service Task 'saveData' disponibles");
-
-      await fetch(`http://localhost:4000/api/tasks/${serviceTask.userTaskKey}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variables: datos }),
-      });
-      console.log("Service Task completada correctamente");
-
-      // 4️⃣ Guardar también en tu DB desde tu backend
-      await fetch("/api/guardar-en-db", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos)
-      });
       enviarFormulario();
       router.push('/');
     } catch (err) {
@@ -226,21 +160,49 @@ export default function NuevoFormulario() {
 
   const enviarFormulario = async () => {
     try {
+
       const res = await fetch("http://localhost:4000/formularios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ form, filas }),
       });
       const data = await res.json();
-      if (data.success) {
-        alert("Formulario guardado ✅ ID: " + data.formularioId);
-        router.push("/");
-      } else {
-        alert("Error al guardar");
+
+      if (!data.success) {
+        Swal.fire({
+          icon: "error",
+          title: "error",
+          text: "Error al guardar",
+        })
+        return;
       }
+
+      Swal.fire({
+        icon: "success",
+        title: "Formulario guardado",
+        text: `✅ ID: ${data.formularioId}`,
+        confirmButtonColor: "#3085d6",
+      });
+
+      await emailjs.send(
+        "service_k9jsfri",
+        "template_9yq44n9",
+        {
+          to_email: "juancamiloblloroa@gmail.com",
+          name: form.nombre,
+          formularioId: data.formularioId,
+          message: "Se ha creado un nuevo formulario en el sistema."
+        },
+        "_ga863Tjy13VI-b4G"
+      );
+
+      console.log("Correo enviado a juancamiloblloroa@gmail.com");
+
+      router.push("/");
+
     } catch (error) {
       console.error(error);
-      alert("Error en la conexión con el servidor");
+      alert("Error en la conexión con el servidor o al enviar correo");
     }
   };
 
@@ -395,6 +357,7 @@ export default function NuevoFormulario() {
                         <th>CUENTA CONTABLE O CÓDIGO DE MATERIAL</th>
                         <th colSpan={3}>¿ESTÁ EN PRESUPUESTO?</th>
                         <th>VOBO GERENTE DE TECNOLOGÍA</th>
+                        <th></th>
                       </tr>
                       <tr className="tabla-encabezado-secundario">
                         <th colSpan={5}></th>
@@ -501,13 +464,7 @@ export default function NuevoFormulario() {
                   <p>Volver</p>
                 </button>
                 <button
-                  onClick={async () => {
-                    try {
-                      await completarSegundoPaso();
-                    } catch (err) {
-                      console.error("Error al completar el paso:", err);
-                    }
-                  }}
+                  onClick={nextStep}
                   className="navegationButton"
                 >
                   Siguiente

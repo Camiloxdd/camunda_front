@@ -16,19 +16,17 @@ export default function OptionsModal({ isOpen, onClose, selectedId }) {
             });
             alert("Formulario eliminado ✅");
             onClose();
-            router.refresh(); // recarga la lista
+            router.refresh(); 
         } catch (err) {
             console.error(err);
             alert("Error eliminando");
         }
     };
 
-    // ...existing code...
     const handleEdit = () => {
         onClose();
-        router.push(`/formulario/edicion/${selectedId}`); // 👈 cambia 'formularios' por 'formulario'
+        router.push(`/formulario/edicion/${selectedId}`); 
     };
-    // ...existing code...
 
     return createPortal(
         <AnimatePresence>

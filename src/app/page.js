@@ -5,6 +5,7 @@ import OptionsModal from "./components/optionsModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faSync, faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
+import { iniciarProceso } from "./services/camunda";
 
 export default function Dashboard() {
     const [selectedId, setSelectedId] = useState(null);
@@ -34,25 +35,11 @@ export default function Dashboard() {
             <OptionsModal isOpen={isOpen} onClose={() => setIsOpen(false)} selectedId={selectedId} />
             <div className="space-buttons">
                 <button
-                    onClick={async () => {
-                        // Inicia el proceso en Camunda 8 SaaS
-                        const res = await fetch("http://localhost:4000/api/process/start", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                variables: {
-                                    // Puedes enviar datos iniciales aquí si quieres
-                                    creador: "usuario@correo.com"
-                                }
-                            })
-                        });
-                        const data = await res.json();
-                        // Opcional: puedes guardar el processInstanceKey en localStorage o pasarlo por query param
-                        // localStorage.setItem("processInstanceKey", data.instanceId);
-
-                        // Ahora navega al formulario nuevo
-                        router.push('/formulario/nuevo/');
-                    }}
+                    onClick={() =>
+                        iniciarProceso({
+                            bienvenida: "Inicio del proceso de compras",
+                        })
+                    }
                 >
                     <FontAwesomeIcon icon={faPlus} /> Nuevo
                 </button>

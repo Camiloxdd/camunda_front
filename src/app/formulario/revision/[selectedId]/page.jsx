@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useRef } from "react";
 import Navbar from "@/app/components/navbar";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -10,6 +10,32 @@ import { saveAs } from "file-saver";
 
 export default function PdfViewer({ params }) {
     const { selectedId } = use(params);
+
+    const started = useRef(false);
+
+    useEffect(() => {
+        if (!selectedId || started.current) return;
+        started.current = true;
+
+        const iniciarRevision = async () => {
+            try {
+                await fetch("http://localhost:4000/api/process/start-revision", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        businessKey: selectedId,
+                        variables: { formularioId: { value: selectedId, type: "String" } }
+                    }),
+                });
+                console.log("Proceso de revisión iniciado");
+            } catch (err) {
+                alert("Error iniciando proceso de revisión en Camunda");
+                console.error(err);
+            }
+        };
+        iniciarRevision();
+    }, [selectedId]);
+
     const router = useRouter();
     const [form, setForm] = useState({
         nombre: "",
@@ -104,6 +130,109 @@ export default function PdfViewer({ params }) {
         saveAs(new Blob([wbout], { type: "application/octet-stream" }), "formulario.xlsx");
     };
 
+    const completarListaFormularios = async () => {
+        try {
+            const tareasRes = await fetch("http://localhost:4000/api/tasks/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({})
+            });
+            const tareasData = await tareasRes.json();
+            const tareas = tareasData.items || [];
+            const tareaLista = tareas.find(
+                t => t.name === "Lista de formularios" && t.state === "CREATED"
+            );
+            if (tareaLista) {
+                await fetch(`http://localhost:4000/api/tasks/${tareaLista.userTaskKey}/complete`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ variables: {} }),
+                });
+                alert("User task 'Lista de formularios' completada ✅");
+            } else {
+                alert("No hay user task 'Lista de formularios' activa");
+            }
+        } catch (err) {
+            console.error("Error completando 'Lista de formularios':", err);
+            alert("Error completando 'Lista de formularios'");
+        }
+    };
+
+
+    async function completarRevisionCamunda(estado) {
+        try {
+            const tareasRes = await fetch("http://localhost:4000/api/tasks/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({})
+            });
+            const tareasData = await tareasRes.json();
+            const tareas = tareasData.items || [];
+
+            const tareaRevision = tareas.find(
+                t => t.name === "Cambiar el estado del formulario" && t.state === "CREATED"
+            );
+            if (!tareaRevision) {
+                alert("No hay tarea de revisión activa en Camunda");
+                return;
+            }
+
+            // 2. Completa la tarea usando el endpoint correcto y payload adecuado
+            await fetch(`http://localhost:4000/api/user-tasks/${tareaRevision.userTaskKey}/completion`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    variables: {
+                        estado // "Aprobado", "No aprobado" o "Por revisar"
+                    },
+                    action: "COMPLETED"
+                }),
+            });
+
+            // 3. Actualiza el estado en tu backend
+            await actualizarEstado(estado);
+
+            alert(`Estado actualizado a "${estado}" y tarea completada en Camunda`);
+        } catch (err) {
+            alert("Error completando tarea en Camunda");
+            console.error(err);
+        }
+    }
+
+    const completarDescargarExcel = async () => {
+        try {
+            const tareasRes = await fetch("http://localhost:4000/api/tasks/search", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({})
+            });
+
+            const tareasData = await tareasRes.json();
+            const tareas = tareasData.items || [];
+
+            // 🔍 Buscar la tarea "Descargar Excel"
+            const tareaExcel = tareas.find(
+                t => t.name === "Descargar Excel" && t.state === "CREATED"
+            );
+
+            if (tareaExcel) {
+                await fetch(`http://localhost:4000/api/tasks/${tareaExcel.userTaskKey}/complete`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ variables: {} }),
+                });
+                alert("User task 'Descargar Excel' completada ✅");
+            } else {
+                alert("No hay user task 'Descargar Excel' activa");
+            }
+        } catch (err) {
+            console.error("Error completando 'Descargar Excel':", err);
+            alert("Error completando 'Descargar Excel'");
+        }
+    };
+
+
+
     return (
         <div>
             <Navbar />
@@ -195,36 +324,20 @@ export default function PdfViewer({ params }) {
                         </div>
                     </div>
                     <div className="buttonsDownload">
-                        <FontAwesomeIcon icon={faFileExcel} className="iconCustom" />
+                        <FontAwesomeIcon
+                            icon={faFileExcel}
+                            className="iconCustom"
+                        />
                         <div className="spaceButtonsReview">
-                            <button className="navegationButton" onClick={() => actualizarEstado("Aprobado")}>Aprobado</button>
-                            <button className="navegationButton" onClick={() => actualizarEstado("No aprobado")}>No Aprobado</button>
-                            <button className="navegationButton" onClick={() => actualizarEstado("Por revisar")}>Por revisar</button>
-                            {(form.estado === "Aprobado") && (
-                                <>
-                                    <button
-                                        onClick={async () => {
-                                            const res = await fetch(`http://localhost:4000/formularios/${selectedId}/excel`);
-                                            const blob = await res.blob();
-                                            const url = window.URL.createObjectURL(blob);
-                                            const a = document.createElement("a");
-                                            a.href = url;
-                                            a.download = `formulario_${selectedId}.xlsx`;
-                                            a.click();
-                                            window.URL.revokeObjectURL(url);
-                                        }}
-                                        className="navegationButton"
-                                    >
-                                        Descargar Excel
-                                    </button>
-                                    <button
-                                        onClick={() => window.open(`/pdf/formulario.pdf`, "_blank")}
-                                        className="navegationButton"
-                                    >
-                                        Descargar PDF
-                                    </button>
-                                </>
-                            )}
+                            <button className="navegationButton" onClick={() => completarListaFormularios("Aprobado")}>Aprobado</button>
+                            <button className="navegationButton" onClick={() => completarRevisionCamunda("No aprobado")}>No Aprobado</button>
+                            <button className="navegationButton" onClick={() => completarRevisionCamunda("Por revisar")}>Por revisar</button>
+                            <button
+                                onClick={completarDescargarExcel}
+                                className="navegationButton"
+                            >
+                                Descargar Excel
+                            </button>
                         </div>
                     </div>
                 </div>
