@@ -13,6 +13,21 @@ export default function Dashboard() {
     const [formularios, setFormularios] = useState([]); // acá guardamos lo que viene de la BD
     const router = useRouter();
 
+
+    //CAMUNDA
+    const handelClick = async () => {
+        try{
+            await iniciarProceso ({
+                bienvenida: "Inicio del proceso de compras",
+            });
+
+            router.push("/formulario/nuevo/")
+        } catch (error) {
+            console.error("Error al iniciar el proceso:", error)
+        }
+    }
+
+
     // Función para traer datos de la BD
     const fetchFormularios = async () => {
         try {
@@ -34,13 +49,7 @@ export default function Dashboard() {
             <Navbar />
             <OptionsModal isOpen={isOpen} onClose={() => setIsOpen(false)} selectedId={selectedId} />
             <div className="space-buttons">
-                <button
-                    onClick={() =>
-                        iniciarProceso({
-                            bienvenida: "Inicio del proceso de compras",
-                        })
-                    }
-                >
+                <button onClick={handelClick}>
                     <FontAwesomeIcon icon={faPlus} /> Nuevo
                 </button>
                 <button onClick={fetchFormularios}>

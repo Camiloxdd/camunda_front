@@ -5,57 +5,76 @@ import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import emailjs from "emailjs-com"
 import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
-import next from "next";
 import Swal from "sweetalert2";
+import { endFirstStepStartTwoStep, endTwoStepStartThreeStep, startThreeStep} from "@/app/services/camunda";
 
 export default function NuevoFormulario() {
-  const [taskId, setTaskId] = useState("");
+  const router = useRouter();
 
-  async function completarSegundoPaso() {
+  function calcularRango(monto) {
+    return monto > 16235000;
+  }
+
+  const handleClickOne = async () => {
     try {
-      const tareasRes = await fetch("http://localhost:4000/api/tasks/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
+      await endFirstStepStartTwoStep({
+        bienvenida: "Inicio del segundo proceso"
       });
 
-      const tareasData = await tareasRes.json();
-      console.log("Tareas recibidas desde Camunda:", tareasData);
+      nextStep();
+    } catch (error) {
+      console.error("Error al iniciar el proceso: ", error)
+    }
+  }
 
-      const tareas = tareasData.items || [];
+  const handleClickTwo = async () => {
+    try {
+      const monto = Number(filas[0].valor);
+      const esMayor = calcularRango(monto);
 
-      const coincidencias = tareas.filter(
-        t => t.name === "Segundo paso\nWizzard" && t.state === "CREATED"
-      );
-      const segundoPaso = coincidencias.at(-1);
+      const siExiste = filas.some(f => f.siExiste);
+      const purchaseTecnology = filas.some(f => f.purchaseTecnology)
+      const sstAprobacion = filas.some(f => f.sstAprobacion)
+      const vobo = filas.some(f => f.vobo)
+      const purchaseAprobated = filas.some(f => f.purchaseAprobated)
 
-      if (!segundoPaso) {
-        console.error("No hay tareas en estado 'CREATED' para form_secondStep");
-        return;
-      }
-
-      const userTaskKey = segundoPaso.userTaskKey;
-
-      const completeRes = await fetch(
-        `http://localhost:4000/api/tasks/${userTaskKey}/complete`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            variables: {
-              ejemploVar: "paso al segundo paso"
-            }
-          }),
-        }
-      );
-
-      if (!completeRes.ok) throw new Error("No se pudo completar la tarea");
-
-      console.log("Segundo paso completado correctamente");
+      await endTwoStepStartThreeStep({
+        siExiste,
+        purchaseTecnology,
+        sstAprobacion,
+        vobo,
+        purchaseAprobated,
+        esMayor,
+      })
 
       nextStep();
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("Error al iniciar el proceso: ", error)
+    }
+  }
+
+  const handleClickThree = async () => {
+    try {
+      const monto = Number(filas[0].valor);
+      const esMayor = calcularRango(monto);
+
+      const siExiste = filas.some(f => f.siExiste);
+      const purchaseTecnology = filas.some(f => f.purchaseTecnology)
+      const sstAprobacion = filas.some(f => f.sstAprobacion)
+      const vobo = filas.some(f => f.vobo)
+      const purchaseAprobated = filas.some(f => f.purchaseAprobated)
+
+      await startThreeStep({
+        siExiste,
+        purchaseTecnology,
+        sstAprobacion,
+        vobo,
+        purchaseAprobated,
+        esMayor,
+      })
+    }
+    catch (error) {
+      console.error("Error al iniciar el proceso: ", error)
     }
   }
 
@@ -88,8 +107,6 @@ export default function NuevoFormulario() {
       console.error("Error completando tareas:", err);
     }
   }
-
-  const router = useRouter();
 
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
@@ -124,9 +141,12 @@ export default function NuevoFormulario() {
       cantidad: "",
       centro: "",
       cuenta: "",
-      presupuesto: "",
+      purchaseAprobated: false,
       valor: "",
-      vobo: ""
+      vobo: false,
+      siExiste: false,
+      purchaseTecnology: false,
+      sstAprobacion: false,
     }
   ]);
 
@@ -138,9 +158,12 @@ export default function NuevoFormulario() {
         cantidad: "",
         centro: "",
         cuenta: "",
-        presupuesto: "",
+        purchaseAprobated: false,
         valor: "",
-        vobo: ""
+        vobo: false,
+        siExiste: false,
+        purchaseTecnology: false,
+        sstAprobacion: false,
       }
     ]);
   };
@@ -327,13 +350,7 @@ export default function NuevoFormulario() {
               </div>
               <div className="spaceButtons">
                 <button
-                  onClick={async () => {
-                    try {
-                      await completarPrimerPaso();
-                    } catch (err) {
-                      console.error("Error al completar el paso:", err);
-                    }
-                  }}
+                  onClick={handleClickOne}
                   className="navegationButton"
                 >
                   Siguiente
@@ -355,18 +372,17 @@ export default function NuevoFormulario() {
                         <th>CANTIDAD</th>
                         <th>CENTRO DE COSTO U ORDEN INTERNA</th>
                         <th>CUENTA CONTABLE O CÓDIGO DE MATERIAL</th>
-                        <th colSpan={3}>¿ESTÁ EN PRESUPUESTO?</th>
-                        <th>VOBO GERENTE DE TECNOLOGÍA</th>
-                        <th></th>
-                      </tr>
-                      <tr className="tabla-encabezado-secundario">
-                        <th colSpan={5}></th>
-                        <th>SI</th>
-                        <th>NO</th>
+                        <th>¿EXISTEN ERGONOMICOS?</th>
+                        <th>¿COMPRA TECNOLOGICA?</th>
+                        <th colSpan={2}>¿ESTÁ EN PRESUPUESTO?</th>
                         <th>VALOR (*)</th>
-                        <th></th>
+                        <th>VOBO GERENTE DE TECNOLOGÍA</th>
+                        {filas.some(f => f.siExiste) && (
+                          <th colSpan={2}>¿REQUIERE APROBACION DE SST?</th>
+                        )}
                       </tr>
                     </thead>
+
                     <tbody>
                       {filas.map((fila, index) => (
                         <tr key={index}>
@@ -376,9 +392,7 @@ export default function NuevoFormulario() {
                               className="input-texto"
                               type="text"
                               value={fila.descripcion}
-                              onChange={(e) =>
-                                manejarCambio(index, "descripcion", e.target.value)
-                              }
+                              onChange={(e) => manejarCambio(index, "descripcion", e.target.value)}
                             />
                           </td>
                           <td>
@@ -387,9 +401,7 @@ export default function NuevoFormulario() {
                               type="number"
                               min="0"
                               value={fila.cantidad}
-                              onChange={(e) =>
-                                manejarCambio(index, "cantidad", e.target.value)
-                              }
+                              onChange={(e) => manejarCambio(index, "cantidad", e.target.value)}
                             />
                           </td>
                           <td>
@@ -397,9 +409,7 @@ export default function NuevoFormulario() {
                               className="input-texto"
                               type="text"
                               value={fila.centro}
-                              onChange={(e) =>
-                                manejarCambio(index, "centro", e.target.value)
-                              }
+                              onChange={(e) => manejarCambio(index, "centro", e.target.value)}
                             />
                           </td>
                           <td>
@@ -407,27 +417,33 @@ export default function NuevoFormulario() {
                               className="input-texto"
                               type="text"
                               value={fila.cuenta}
+                              onChange={(e) => manejarCambio(index, "cuenta", e.target.value)}
+                            />
+                          </td>
+                          <td className="text-center">
+                            <input
+                              type="checkbox"
+                              checked={fila.siExiste || false}
                               onChange={(e) =>
-                                manejarCambio(index, "cuenta", e.target.value)
+                                manejarCambio(index, "siExiste", e.target.checked)
                               }
                             />
                           </td>
-                          <td>
+                          <td className="text-center">
                             <input
-                              className="input-radio"
-                              type="radio"
-                              name={`presupuesto-${index}`}
-                              checked={fila.presupuesto === "si"}
-                              onChange={() => manejarCambio(index, "presupuesto", "si")}
+                              type="checkbox"
+                              checked={fila.purchaseTecnology || false}
+                              onChange={(e) =>
+                                manejarCambio(index, "purchaseTecnology", e.target.checked)
+                              }
                             />
                           </td>
-                          <td>
+                          <td colSpan={2}>
                             <input
-                              className="input-radio"
-                              type="radio"
-                              name={`presupuesto-${index}`}
-                              checked={fila.presupuesto === "no"}
-                              onChange={() => manejarCambio(index, "presupuesto", "no")}
+                              className="input-texto"
+                              type="checkbox"
+                              checked={fila.purchaseAprobated || false}
+                              onChange={(e) => manejarCambio(index, "purchaseAprobated", e.target.checked)}
                             />
                           </td>
                           <td>
@@ -442,13 +458,22 @@ export default function NuevoFormulario() {
                           <td>
                             <input
                               className="input-texto"
-                              type="text"
-                              value={fila.vobo}
-                              onChange={(e) =>
-                                manejarCambio(index, "vobo", e.target.value)
-                              }
+                              type="checkbox"
+                              checked={fila.vobo || false}
+                              onChange={(e) => manejarCambio(index, "vobo", e.target.checked)}
                             />
                           </td>
+                          {fila.siExiste && (
+                            <td className="text-center" colSpan={2}>
+                              <input
+                                type="checkbox"
+                                checked={fila.sstAprobacion || false}
+                                onChange={(e) =>
+                                  manejarCambio(index, "sstAprobacion", e.target.checked)
+                                }
+                              />
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
@@ -464,12 +489,11 @@ export default function NuevoFormulario() {
                   <p>Volver</p>
                 </button>
                 <button
-                  onClick={nextStep}
+                  onClick={handleClickTwo}
                   className="navegationButton"
                 >
                   Siguiente
                 </button>
-
               </div>
             </div>
           )}
@@ -510,7 +534,7 @@ export default function NuevoFormulario() {
                   <div className="firmasContainer">
                     <div className="campoInfo">
                       <div className="headerInfo">
-                        <p>SOLICITANTE</p>
+                        <p>DIRECTOR/ LIDER DE AREA</p>
                       </div>
                       <div className="nombre">
                         <div className="text">
@@ -538,7 +562,7 @@ export default function NuevoFormulario() {
                     </div>
                     <div className="campoInfo">
                       <div className="headerInfo">
-                        <p>DIRECTOR ADMINISTRATIVO</p>
+                        <p>GERENTE DE AREA</p>
                       </div>
                       <div className="nombre">
                         <div className="text">
@@ -566,7 +590,7 @@ export default function NuevoFormulario() {
                     </div>
                     <div className="campoInfo">
                       <div className="headerInfo">
-                        <p>GERENTE DE AREA</p>
+                        <p>GERENTE ADMINISTRATIVO</p>
                       </div>
                       <div className="nombre">
                         <div className="text">
@@ -677,7 +701,7 @@ export default function NuevoFormulario() {
           <div className="spaceButtons">
             {step === 3 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
             {step === 3 && <button
-              onClick={() => completarTerceraUserTaskYServiceTask({ form, filas })}
+              onClick={handleClickThree}
               className="navegationButton"
             >
               Enviar
