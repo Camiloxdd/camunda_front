@@ -10,7 +10,7 @@ import { iniciarProceso } from "./services/camunda";
 export default function Dashboard() {
     const [selectedId, setSelectedId] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
-    const [formularios, setFormularios] = useState([]); // acá guardamos lo que viene de la BD
+    const [formularios, setFormularios] = useState([]); 
     const router = useRouter();
 
 
@@ -49,7 +49,7 @@ export default function Dashboard() {
             <Navbar />
             <OptionsModal isOpen={isOpen} onClose={() => setIsOpen(false)} selectedId={selectedId} />
             <div className="space-buttons">
-                <button onClick={handelClick}>
+                <button onClick={router.push("/formulario/nuevo/")}>
                     <FontAwesomeIcon icon={faPlus} /> Nuevo
                 </button>
                 <button onClick={fetchFormularios}>

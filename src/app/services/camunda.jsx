@@ -294,7 +294,7 @@ export async function startThreeStep(variables) {
 
                 if (!completeSST1.ok) throw new Error("No se pudo completar la tarea de SST");
 
-                console.log("✅ Tarea de SST completada");
+                console.log("✅ Tarea de autorizacion UNO completada");
             }
             else {
                 console.warn("⚠ No se encontró la tarea Activity_SST, aunque se pidió SST");
@@ -303,7 +303,7 @@ export async function startThreeStep(variables) {
             console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
             await delay(10000);
 
-            //SIGUIENTE ACTIVIDAD
+            //SEGUNDO APROBAR
             console.log("🔍 aprobando actividades de mas de 1 salario minimo, buscando tarea...");
 
             const tareasResSST2 = await fetch(`${API_BASE}/tasks/search`, {
@@ -329,6 +329,12 @@ export async function startThreeStep(variables) {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             variables: {
+                                siExiste: variables.siExiste,
+                                purchaseTecnology: variables.purchaseTecnology,
+                                sstAprobacion: variables.sstAprobacion,
+                                vobo: variables.vobo,
+                                purchaseAprobated: variables.purchaseAprobated,
+                                esMayor: variables.esMayor,
                             }
                         })
                     }
@@ -336,7 +342,7 @@ export async function startThreeStep(variables) {
 
                 if (!completeSST2.ok) throw new Error("No se pudo completar la tarea de SST");
 
-                console.log("✅ Tarea de SST completada");
+                console.log("✅ Tarea de Autorizacion Dos completada");
             }
             else {
                 console.warn("⚠ No se encontró la tarea Activity_SST, aunque se pidió SST");
@@ -345,7 +351,7 @@ export async function startThreeStep(variables) {
             console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
             await delay(10000);
 
-            //SIGUIENTE ACTIVIDAD
+            //TERCERA ACTIVIDAD
             console.log("🔍 aprobando actividades de mas de 1 salario minimo, buscando tarea...");
 
             const tareasResSST3 = await fetch(`${API_BASE}/tasks/search`, {
@@ -371,6 +377,12 @@ export async function startThreeStep(variables) {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             variables: {
+                                siExiste: variables.siExiste,
+                                purchaseTecnology: variables.purchaseTecnology,
+                                sstAprobacion: variables.sstAprobacion,
+                                vobo: variables.vobo,
+                                purchaseAprobated: variables.purchaseAprobated,
+                                esMayor: variables.esMayor,
                             }
                         })
                     }
@@ -378,14 +390,17 @@ export async function startThreeStep(variables) {
 
                 if (!completeSST3.ok) throw new Error("No se pudo completar la tarea de SST");
 
-                console.log("✅ Tarea de SST completada");
+                console.log("✅ Tarea de Autorizacion Tres completada");
             }
             else {
                 console.warn("⚠ No se encontró la tarea Activity_SST, aunque se pidió SST");
             }
 
-            //SIGUIENTE ACTIVIDAD
-            console.log("🔍 aprobando actividades de mas de 1 salario minimo, buscando tarea...");
+            console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
+            await delay(10000);
+
+            //CUARTA ACTIVIDAD
+            console.log("🔍 Buscando tarea 4 (Activity_1sfvf4m)...");
 
             const tareasResSST4 = await fetch(`${API_BASE}/tasks/search`, {
                 method: "POST",
@@ -396,12 +411,18 @@ export async function startThreeStep(variables) {
             const tareasDataSST4 = await tareasResSST4.json();
             const tareasSST4 = tareasDataSST4.items || [];
 
-            const coincidenciaSST4 = tareasSST4.filter(
-                t => t.elementId === "Activity_1sfvf4m" && t.state === "CREATED"
-            ).at(-1);
+            console.log("Tareas encontradas para SST4:", tareasSST4.map(t => ({
+                id: t.elementId,
+                state: t.state,
+                key: t.userTaskKey
+            })));
+
+            // Buscar la primera tarea con el elementId correspondiente (sin filtrar por state)
+            const coincidenciaSST4 = tareasSST4.find(t => t.elementId === "Activity_1sfvf4m");
 
             if (coincidenciaSST4) {
                 const userTaskKeySST4 = coincidenciaSST4.userTaskKey;
+                console.log("✅ Encontrada tarea 4 con userTaskKey:", userTaskKeySST4);
 
                 const completeSST4 = await fetch(
                     `${API_BASE}/tasks/${userTaskKeySST4}/complete`,
@@ -410,18 +431,23 @@ export async function startThreeStep(variables) {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             variables: {
+                                siExiste: variables.siExiste,
+                                purchaseTecnology: variables.purchaseTecnology,
+                                sstAprobacion: variables.sstAprobacion,
+                                vobo: variables.vobo,
+                                purchaseAprobated: variables.purchaseAprobated,
+                                esMayor: variables.esMayor,
                             }
                         })
                     }
                 );
 
-                if (!completeSST4.ok) throw new Error("No se pudo completar la tarea de SST");
+                if (!completeSST4.ok) throw new Error("No se pudo completar la tarea 4");
+                console.log("✅ Tarea de Autorización Cuatro completada");
+            } else {
+                console.warn("⚠ No se encontró la tarea 4 (Activity_1sfvf4m) en Camunda");
+            }
 
-                console.log("✅ Tarea de SST completada");
-            }
-            else {
-                console.warn("⚠ No se encontró la tarea Activity_SST, aunque se pidió SST");
-            }
         } else {
             console.log("🔍 aprobando actividades de mas de 1 salario minimo, buscando tarea...");
 
@@ -448,6 +474,12 @@ export async function startThreeStep(variables) {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             variables: {
+                                siExiste: variables.siExiste,
+                                purchaseTecnology: variables.purchaseTecnology,
+                                sstAprobacion: variables.sstAprobacion,
+                                vobo: variables.vobo,
+                                purchaseAprobated: variables.purchaseAprobated,
+                                esMayor: variables.esMayor,
                             }
                         })
                     }
@@ -490,6 +522,12 @@ export async function startThreeStep(variables) {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             variables: {
+                                siExiste: variables.siExiste,
+                                purchaseTecnology: variables.purchaseTecnology,
+                                sstAprobacion: variables.sstAprobacion,
+                                vobo: variables.vobo,
+                                purchaseAprobated: variables.purchaseAprobated,
+                                esMayor: variables.esMayor,
                             }
                         })
                     }

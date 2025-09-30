@@ -1,15 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../../components/navbar";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import emailjs from "emailjs-com"
 import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
-import { endFirstStepStartTwoStep, endTwoStepStartThreeStep, startThreeStep} from "@/app/services/camunda";
+import { endFirstStepStartTwoStep, endTwoStepStartThreeStep, startThreeStep } from "@/app/services/camunda";
 
 export default function NuevoFormulario() {
   const router = useRouter();
+  const [fecha, setFecha] = useState("");
+  const [hora, setHora] = useState("");
 
   function calcularRango(monto) {
     return monto > 16235000;
@@ -75,36 +77,6 @@ export default function NuevoFormulario() {
     }
     catch (error) {
       console.error("Error al iniciar el proceso: ", error)
-    }
-  }
-
-  async function completarTerceraUserTaskYServiceTask(datos) {
-    try {
-      // 1️⃣ Buscar todas las tareas
-      const resTareas = await fetch("http://localhost:4000/api/tasks/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
-      });
-      const tareasData = await resTareas.json();
-      const tareas = tareasData.items || [];
-
-      const userTask3 = tareas.find(
-        t => t.name === "Tercer paso\nWizzard" && t.state === "CREATED"
-      );
-      if (!userTask3) throw new Error("No hay User Task del tercer paso disponibles");
-
-      await fetch(`http://localhost:4000/api/tasks/${userTask3.userTaskKey}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variables: datos }),
-      });
-      console.log("Tercer paso completado correctamente");
-
-      enviarFormulario();
-      router.push('/');
-    } catch (err) {
-      console.error("Error completando tareas:", err);
     }
   }
 
@@ -229,6 +201,11 @@ export default function NuevoFormulario() {
     }
   };
 
+  useEffect(() => {
+    const now = new Date();
+    const fechaHoy = now.toISOString().split("T")[0]; // yyyy-mm-dd
+    setForm(prev => ({ ...prev, fechaSolicitud: fechaHoy }));
+  }, []); // <--- vacío
 
   return (
     <div>
@@ -246,7 +223,7 @@ export default function NuevoFormulario() {
         </div>
         <div className="contentNewformulario">
           {step == 1 && (
-            <div>
+            <div className=" ">
               <h1 className="tittleContent">Datos generales del solicitante.</h1>
               <div className="inputsContainers">
                 <div className="completeInputs">
@@ -259,16 +236,16 @@ export default function NuevoFormulario() {
                     onChange={handleChange}
                   />
                 </div>
-                <div className="completeInputs">
-                  <FontAwesomeIcon icon={faCalendar} className="icon" />
-                  <input
-                    type="date"
-                    name="fechaSolicitud"
-                    placeholder="Fecha de la Solicitud"
-                    value={form.fechaSolicitud}
-                    onChange={handleChange}
-                  />
-                </div>
+            <div className="completeInputs">
+              <FontAwesomeIcon icon={faCalendar} className="icon" />
+              <input
+                type="date"
+                name="fechaSolicitud"
+                placeholder="Fecha de la Solicitud"
+                value={form.fechaSolicitud}
+                onChange={handleChange}
+              />
+            </div>
               </div>
               <div className="inputsContainers">
                 <div className="completeInputs">
@@ -328,7 +305,7 @@ export default function NuevoFormulario() {
                 <div className="completeInputs">
                   <FontAwesomeIcon icon={faClock} className="icon" />
                   <input
-                    type="time"
+                    type="text"
                     name="tiempoGestion"
                     placeholder="Tiempo aproximado de gestion."
                     value={form.tiempoGestion}
@@ -350,7 +327,7 @@ export default function NuevoFormulario() {
               </div>
               <div className="spaceButtons">
                 <button
-                  onClick={handleClickOne}
+                  onClick={nextStep}
                   className="navegationButton"
                 >
                   Siguiente
@@ -489,7 +466,7 @@ export default function NuevoFormulario() {
                   <p>Volver</p>
                 </button>
                 <button
-                  onClick={handleClickTwo}
+                  onClick={nextStep}
                   className="navegationButton"
                 >
                   Siguiente
