@@ -9,6 +9,7 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
 export default function PdfViewer({ params }) {
+
     const { selectedId } = use(params);
 
     const started = useRef(false);
@@ -63,6 +64,37 @@ export default function PdfViewer({ params }) {
         firmaCompras: "",
         estado: "",
     });
+    const [filas, setFilas] = useState([
+        {
+            descripcion: "",
+            cantidad: "",
+            centro: "",
+            cuenta: "",
+            purchaseAprobated: false,
+            valor: "",
+            vobo: false,
+            siExiste: false,
+            purchaseTecnology: false,
+            sstAprobacion: false,
+        }
+    ]);
+    const agregarFila = () => {
+        setFilas([
+            ...filas,
+            {
+                descripcion: "",
+                cantidad: "",
+                centro: "",
+                cuenta: "",
+                purchaseAprobated: false,
+                valor: "",
+                vobo: false,
+                siExiste: false,
+                purchaseTecnology: false,
+                sstAprobacion: false,
+            }
+        ]);
+    };
 
     useEffect(() => {
         async function fetchData() {
@@ -231,7 +263,19 @@ export default function PdfViewer({ params }) {
         }
     };
 
+    const [isAprobado, setIsAprobado] = useState(null);
 
+    const handleAprobacion = async (estado) => {
+        if (estado === "Aprobado") {
+            setIsAprobado(true);
+        } else if (estado === "No aprobado") {
+            setIsAprobado(false);
+        } else {
+            setIsAprobado(null);
+        }
+
+        await completarRevisionCamunda(estado);
+    };
 
     return (
         <div>
@@ -248,9 +292,10 @@ export default function PdfViewer({ params }) {
                     className="pdfFrame"
                 />
                 <div className="revisionInfo">
-
-                    <div className="spaceInputsss">
+                    <div className="headerTittleRevision">
                         <h1 className="tittleRevision">Información de la revisión</h1>
+                    </div>
+                    <div className="spaceInputsss">
                         <div className="inputsContainersRevision">
                             <div className="inputAndText">
                                 <p>Nombre del solicitante</p>
@@ -262,6 +307,7 @@ export default function PdfViewer({ params }) {
                                         placeholder="Nombre del Solicitante"
                                         value={form.nombre}
                                         onChange={handleChange}
+                                        readOnly
                                     />
                                 </div>
                             </div>
@@ -275,11 +321,10 @@ export default function PdfViewer({ params }) {
                                         placeholder="Fecha de la Solicitud"
                                         value={form.fechaSolicitud}
                                         onChange={handleChange}
+                                        readOnly
                                     />
                                 </div>
                             </div>
-                        </div>
-                        <div className="inputsContainersRevision">
                             <div className="inputAndText">
                                 <p>Fecha requerida de entrega</p>
                                 <div className="completeInputsRevision">
@@ -290,11 +335,10 @@ export default function PdfViewer({ params }) {
                                         placeholder="Fecha requerido de entrega"
                                         value={form.fechaEntrega}
                                         onChange={handleChange}
+                                        readOnly
                                     />
                                 </div>
                             </div>
-                        </div>
-                        <div className="inputsContainersRevision">
                             <div className="inputAndText">
                                 <p>Area del solicitante</p>
                                 <div className="completeInputsRevision">
@@ -305,6 +349,7 @@ export default function PdfViewer({ params }) {
                                         placeholder="Area del solicitante"
                                         value={form.area}
                                         onChange={handleChange}
+                                        readOnly
                                     />
                                 </div>
                             </div>
@@ -318,26 +363,30 @@ export default function PdfViewer({ params }) {
                                         placeholder="Sede"
                                         value={form.sede}
                                         onChange={handleChange}
+                                        readOnly
                                     />
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="buttonsDownload">
-                        <FontAwesomeIcon
-                            icon={faFileExcel}
-                            className="iconCustom"
-                        />
-                        <div className="spaceButtonsReview">
-                            <button className="navegationButton" onClick={() => completarListaFormularios("Aprobado")}>Aprobado</button>
-                            <button className="navegationButton" onClick={() => completarRevisionCamunda("No aprobado")}>No Aprobado</button>
-                            <button className="navegationButton" onClick={() => completarRevisionCamunda("Por revisar")}>Por revisar</button>
-                            <button
-                                onClick={completarDescargarExcel}
-                                className="navegationButton"
-                            >
-                                Descargar Excel
-                            </button>
+                        <div className="buttonsDownload">
+                            <FontAwesomeIcon
+                                icon={faFileExcel}
+                                className="iconCustom"
+                            />
+                            <div className="spaceButtonsReview">
+                                <button className="navegationButton" onClick={() => handleAprobacion("Aprobado")}>Aprobado</button>
+                                <button className="navegationButton" onClick={() => handleAprobacion("No aprobado")}>No Aprobado</button>
+                                <button className="navegationButton" onClick={() => handleAprobacion("Por revisar")}>Por revisar</button>
+                                {isAprobado === true && (
+                                    <>
+                                        <button
+                                            className="navegationButton"
+                                        >
+                                            Descargar Excel
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

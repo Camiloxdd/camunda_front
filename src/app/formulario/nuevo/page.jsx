@@ -10,11 +10,19 @@ import { endFirstStepStartTwoStep, endTwoStepStartThreeStep, startThreeStep } fr
 
 export default function NuevoFormulario() {
   const router = useRouter();
-  const [fecha, setFecha] = useState("");
-  const [hora, setHora] = useState("");
 
   function calcularRango(monto) {
-    return monto > 16235000;
+    return monto > 1423000;
+  }
+
+  function rangoInputs(monto) {
+    if (monto > 1423000) {
+      return { esMayor: true, inputs: 4 }; 
+    } else if (monto === 1423000) {
+      return { esMayor: false, inputs: 2 }; 
+    } else {
+      return { esMayor: false, inputs: 0 }; 
+    }
   }
 
   const handleClickOne = async () => {
@@ -153,6 +161,10 @@ export default function NuevoFormulario() {
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 3));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
+  const monto = Number(filas[0]?.valor || 0); 
+  const rango = rangoInputs(monto);
+
+
   const enviarFormulario = async () => {
     try {
 
@@ -236,16 +248,16 @@ export default function NuevoFormulario() {
                     onChange={handleChange}
                   />
                 </div>
-            <div className="completeInputs">
-              <FontAwesomeIcon icon={faCalendar} className="icon" />
-              <input
-                type="date"
-                name="fechaSolicitud"
-                placeholder="Fecha de la Solicitud"
-                value={form.fechaSolicitud}
-                onChange={handleChange}
-              />
-            </div>
+                <div className="completeInputs">
+                  <FontAwesomeIcon icon={faCalendar} className="icon" />
+                  <input
+                    type="date"
+                    name="fechaSolicitud"
+                    placeholder="Fecha de la Solicitud"
+                    value={form.fechaSolicitud}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
               <div className="inputsContainers">
                 <div className="completeInputs">
@@ -417,10 +429,11 @@ export default function NuevoFormulario() {
                           </td>
                           <td colSpan={2}>
                             <input
-                              className="input-texto"
                               type="checkbox"
                               checked={fila.purchaseAprobated || false}
-                              onChange={(e) => manejarCambio(index, "purchaseAprobated", e.target.checked)}
+                              onChange={(e) =>
+                                manejarCambio(index, "purchaseAprobated", e.target.checked)
+                              }
                             />
                           </td>
                           <td>
@@ -428,8 +441,10 @@ export default function NuevoFormulario() {
                               className="input-numero"
                               type="number"
                               min="0"
-                              value={fila.valor}
-                              onChange={(e) => manejarCambio(index, "valor", e.target.value)}
+                              value={fila.valor || ""}
+                              onChange={(e) =>
+                                manejarCambio(index, "valor", e.target.value)
+                              }
                             />
                           </td>
                           <td>
@@ -459,7 +474,7 @@ export default function NuevoFormulario() {
               </div>
               <div className="spaceButtons">
                 <button className="btn-agregar" onClick={agregarFila}>
-                  <p>Agregar fila</p>
+                  <p>+</p>
                 </button>
                 <p className="separator">|</p>
                 <button onClick={prevStep} className="navegationButton">
@@ -479,34 +494,6 @@ export default function NuevoFormulario() {
             <div>
               <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
               <div>
-                <div>
-                  <div className="headerObservaciones">
-                    <p>OBSERVACIONES</p>
-                  </div>
-                  <div className="observacionesInputs">
-                    <input
-                      type="text"
-                      name="observacionesOne"
-                      placeholder="Escribe..."
-                      value={form.observacionesOne}
-                      onChange={handleChange}
-                    />
-                    <input
-                      type="text"
-                      name="observacionesTwo"
-                      placeholder="Escribe..."
-                      value={form.observacionesTwo}
-                      onChange={handleChange}
-                    />
-                    <input
-                      type="text"
-                      name="observacionesThree"
-                      placeholder="Escribe..."
-                      value={form.observacionesThree}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
                 <div>
                   <div className="firmasContainer">
                     <div className="campoInfo">
@@ -565,112 +552,74 @@ export default function NuevoFormulario() {
                           className="inputFirma" />
                       </div>
                     </div>
-                    <div className="campoInfo">
-                      <div className="headerInfo">
-                        <p>GERENTE ADMINISTRATIVO</p>
-                      </div>
-                      <div className="nombre">
-                        <div className="text">
-                          <p>NOMBRE:</p>
+                    {rango.inputs === 4 && (
+                      <div className="campoInfo">
+                        <div className="headerInfo">
+                          <p>GERENTE ADMINISTRATIVO</p>
                         </div>
+                        <div className="nombre">
+                          <div className="text">
+                            <p>NOMBRE:</p>
+                          </div>
+                          <input
+                            type="text"
+                            name="nombreGerente"
+                            placeholder="Escribe..."
+                            value={form.nombreGerente}
+                            onChange={handleChange}
+                          />
+                        </div>
+                        <div className="firma">
+                          <div className="text">
+                            <p>FIRMA:</p>
+                          </div>
+                          <input
+                            type="text"
+                            name="firmaGerente"
+                            placeholder="Escribe..."
+                            value={form.firmaGerente}
+                            onChange={handleChange}
+                            className="inputFirma" />
+                        </div>
+                      </div>)}
+                  </div>
+                </div>
+                {rango.inputs === 4 && (
+                  <div className="autorizacionGerenciaGeneral">
+                    <div className="autorizacionGeneral">
+                      <div className="headerGeneral">
+                        <p>GERENCIA GENERAL</p>
+                      </div>
+                      <div className="campoGeneral">
                         <input
                           type="text"
-                          name="nombreGerente"
+                          name="autorizacionGerencia"
+                          className="inputGerenciaGeneral"
                           placeholder="Escribe..."
-                          value={form.nombreGerente}
+                          value={form.autorizacionGerencia}
                           onChange={handleChange}
                         />
                       </div>
+                    </div>
+                    <div className="recepcionCompras">
                       <div className="firma">
-                        <div className="text">
-                          <p>FIRMA:</p>
+                        <div className="headerFirma">
+                          <p>FIRMA SERVICIOS ADMIN</p>
                         </div>
-                        <input
-                          type="text"
-                          name="firmaGerente"
-                          placeholder="Escribe..."
-                          value={form.firmaGerente}
-                          onChange={handleChange}
-                          className="inputFirma" />
+                        <div className="campoFirma">
+                          <input
+                            type="text"
+                            name="firmaCompras"
+                            placeholder="Escribe..."
+                            value={form.firmaCompras}
+                            onChange={handleChange}
+                            className="inputFirma"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                <div className="autorizacionGerenciaGeneral">
-                  <div className="autorizacionGeneral">
-                    <div className="headerGeneral">
-                      <p>AUTORIZACION GERENCIA GENERAL</p>
-                    </div>
-                    <div className="campoGeneral">
-                      <input
-                        type="text"
-                        name="autorizacionGerencia"
-                        placeholder="Escribe..."
-                        value={form.autorizacionGerencia}
-                        onChange={handleChange}
-                      />
-                    </div>
-                  </div>
-                  <div className="recepcionCompras">
-                    <div className="fecha">
-                      <div className="headerFecha">
-                        <p>FECHA</p>
-                      </div>
-                      <div className="campoFecha">
-                        <input
-                          type="date"
-                          name="fechaCompras"
-                          placeholder="Escribe..."
-                          value={form.fechaCompras}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="hora">
-                      <div className="headerHora">
-                        <p>HORA</p>
-                      </div>
-                      <div className="campoHora">
-                        <input
-                          type="time"
-                          name="horaCompras"
-                          placeholder="Escribe..."
-                          value={form.horaCompras}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="consecutivo">
-                      <div className="headerConsecutivo">
-                        <p>CONSECUTIVO</p>
-                      </div>
-                      <div className="campoConsecutivo">
-                        <input
-                          type="text"
-                          name="consecutivoCompras"
-                          placeholder="Escribe..."
-                          value={form.consecutivoCompras}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="firma">
-                      <div className="headerFirma">
-                        <p>FIRMA</p>
-                      </div>
-                      <div className="campoFirma">
-                        <input
-                          type="text"
-                          name="firmaCompras"
-                          placeholder="Escribe..."
-                          value={form.firmaCompras}
-                          onChange={handleChange}
-                          className="inputFirma"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 

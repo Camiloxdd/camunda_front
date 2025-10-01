@@ -113,7 +113,7 @@ export async function endTwoStepStartThreeStep(variables) {
         console.log("✅ Primera tarea completada (Activity_0ezzzly)");
 
         console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-        await delay(10000);
+        await delay(5000);
 
         // 🔹 4. VOLVER a consultar todas las tareas (porque recién se creó la segunda)
         tareasRes = await fetch(`${API_BASE}/tasks/search`, {
@@ -162,7 +162,7 @@ export async function endTwoStepStartThreeStep(variables) {
         console.log("✅ Segunda tarea completada (Activity_checkbox)");
 
         console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-        await delay(10000);
+        await delay(5000);
 
         if (variables.sstAprobacion) {
             console.log("🔍 Se requiere aprobación SST, buscando tarea...");
@@ -206,7 +206,7 @@ export async function endTwoStepStartThreeStep(variables) {
         }
 
         console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-        await delay(10000);
+        await delay(5000);
 
         if (variables.vobo) {
             console.log("🔍 Se requiere aprobación Gerencia Tecnologia y Proyectos, buscando tarea...");
@@ -301,7 +301,7 @@ export async function startThreeStep(variables) {
             }
 
             console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-            await delay(10000);
+            await delay(5000);
 
             //SEGUNDO APROBAR
             console.log("🔍 aprobando actividades de mas de 1 salario minimo, buscando tarea...");
@@ -349,7 +349,7 @@ export async function startThreeStep(variables) {
             }
 
             console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-            await delay(10000);
+            await delay(5000);
 
             //TERCERA ACTIVIDAD
             console.log("🔍 aprobando actividades de mas de 1 salario minimo, buscando tarea...");
@@ -397,7 +397,7 @@ export async function startThreeStep(variables) {
             }
 
             console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-            await delay(10000);
+            await delay(5000);
 
             //CUARTA ACTIVIDAD
             console.log("🔍 Buscando tarea 4 (Activity_1sfvf4m)...");
@@ -411,14 +411,10 @@ export async function startThreeStep(variables) {
             const tareasDataSST4 = await tareasResSST4.json();
             const tareasSST4 = tareasDataSST4.items || [];
 
-            console.log("Tareas encontradas para SST4:", tareasSST4.map(t => ({
-                id: t.elementId,
-                state: t.state,
-                key: t.userTaskKey
-            })));
-
             // Buscar la primera tarea con el elementId correspondiente (sin filtrar por state)
-            const coincidenciaSST4 = tareasSST4.find(t => t.elementId === "Activity_1sfvf4m");
+            const coincidenciaSST4 = tareasSST4.filter(
+                t => t.elementId === "Activity_1sfvf4m" && t.state === "CREATED"
+            ).at(-1);
 
             if (coincidenciaSST4) {
                 const userTaskKeySST4 = coincidenciaSST4.userTaskKey;

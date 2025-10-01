@@ -139,6 +139,7 @@
 .body .table-container .container-formulario {
     background-color: #F2F2F2;
     height: 60px;
+    margin-top: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -149,11 +150,13 @@
 .body .table-container .container-formulario .tittle-formulario {
     font-weight: bold;
     color: #002855;
+    margin-right: auto;
+    margin-left: 27px;
 }
 
 .body .table-container .container-formulario .options-formulario {
-    margin-left: 1000px;
-    background-color: #002855;
+    margin-left: auto;
+    background-color: #1D5DA8;
     border-color: transparent;
     color: white;
     font-size: 22px;
@@ -162,6 +165,7 @@
     border-radius: 8px;
     cursor: pointer;
     transition: 0.3s all ease;
+    margin-right: 27px;
 }
 
 .body .table-container .container-formulario .options-formulario:hover {
@@ -223,9 +227,15 @@
     margin-top: 15px;
     background-color: #F2F2F2;
     padding: 20px;
-    width: 1500px;
+    width: 100%;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.tableContainer{
+    justify-content: center;
+    text-align: center;
+    align-items: center;
 }
 
 .tittleNewformulario {
@@ -376,13 +386,13 @@ input[type="time"]:valid {
 }
 
 .tabla-container {
-    width: 95%;
+    width: 1700px;
     margin: 20px 0;
     overflow-x: auto;
 }
 
 .tabla {
-    width: 100%;
+    width: 1700px;
     border-collapse: separate;
     border-spacing: 0;
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -390,7 +400,6 @@ input[type="time"]:valid {
     background: #fff;
     border-radius: 10px;
     overflow: hidden;
-
 }
 
 .tabla-encabezado-principal th {
@@ -574,11 +583,13 @@ input[type="time"]:valid {
     outline: none;
 }
 
-
+.inputGerenciaGeneral{}
 
 .autorizacionGerenciaGeneral {
     display: flex;
     gap: 10px;
+    text-align: center;
+    justify-content: center;
 }
 
 .autorizacionGeneral {
@@ -599,6 +610,7 @@ input[type="time"]:valid {
     margin-top: 30px;
 }
 
+
 .autorizacionGeneral .campoGeneral input {
     margin-right: 32px;
     width: 100%;
@@ -616,6 +628,7 @@ input[type="time"]:valid {
 .recepcionCompras {
     display: flex;
     gap: 10px;
+
 }
 
 .recepcionCompras .fecha .headerFecha {
@@ -910,6 +923,7 @@ input[type="time"]:valid {
     margin-left: 90px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     border-radius: 8px;
+    flex-direction: column;
 }
 
 .revisionInfo .tittleRevision {
@@ -920,10 +934,16 @@ input[type="time"]:valid {
     justify-content: center;
     align-items: center;
     font-size: 40px;
-    margin-right: 70px;
+
 }
 
-.inputsContainersRevision {}
+.spaceInputsss{
+    display: flex;
+}
+
+.inputsContainersRevision{
+    margin-top: 15px;
+}
 
 .completeInputsRevision {
     background-color: white;
@@ -946,6 +966,10 @@ input[type="time"]:valid {
     border-color: transparent;
 }
 
+.completeInputsRevision input:focus{
+    outline: none;
+}
+
 .inputAndText {
     margin-top: 15px;
 }
@@ -961,11 +985,16 @@ input[type="time"]:valid {
 .iconCustom {
     font-size: 200px;
     color: #002855;
-    margin-top: 120px;
+    padding: 30px;
 }
 
 .buttonsDownload{
-    margin-right: 70px;
+
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    margin-left: auto;
+    margin-right: 30px;
 }
 
 .spaceButtonsReview {

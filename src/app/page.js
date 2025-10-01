@@ -6,18 +6,19 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faSync, faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
 import { iniciarProceso } from "./services/camunda";
+import { handleClientScriptLoad } from "next/script";
 
 export default function Dashboard() {
     const [selectedId, setSelectedId] = useState(null);
     const [isOpen, setIsOpen] = useState(false);
-    const [formularios, setFormularios] = useState([]); 
+    const [formularios, setFormularios] = useState([]);
     const router = useRouter();
 
 
     //CAMUNDA
     const handelClick = async () => {
-        try{
-            await iniciarProceso ({
+        try {
+            await iniciarProceso({
                 bienvenida: "Inicio del proceso de compras",
             });
 
@@ -49,8 +50,8 @@ export default function Dashboard() {
             <Navbar />
             <OptionsModal isOpen={isOpen} onClose={() => setIsOpen(false)} selectedId={selectedId} />
             <div className="space-buttons">
-                <button onClick={router.push("/formulario/nuevo/")}>
-                    <FontAwesomeIcon icon={faPlus} /> Nuevo
+                <button onClick={() => router.push("/formulario/nuevo/")}>
+                    <FontAwesomeIcon icon={faPlus} /> Nueva Requisición
                 </button>
                 <button onClick={fetchFormularios}>
                     <FontAwesomeIcon icon={faSync} /> Actualizar
