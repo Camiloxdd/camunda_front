@@ -17,11 +17,11 @@ export default function NuevoFormulario() {
 
   function rangoInputs(monto) {
     if (monto > 1423000) {
-      return { esMayor: true, inputs: 4 }; 
+      return { esMayor: true, inputs: 4 };
     } else if (monto === 1423000) {
-      return { esMayor: false, inputs: 2 }; 
+      return { esMayor: false, inputs: 2 };
     } else {
-      return { esMayor: false, inputs: 0 }; 
+      return { esMayor: false, inputs: 0 };
     }
   }
 
@@ -48,6 +48,9 @@ export default function NuevoFormulario() {
       const vobo = filas.some(f => f.vobo)
       const purchaseAprobated = filas.some(f => f.purchaseAprobated)
 
+      const purchaseAprobatedTecnology = purchaseTecnology && purchaseAprobated;
+      const purchaseAprobatedErgonomic = siExiste && purchaseAprobated;
+
       await endTwoStepStartThreeStep({
         siExiste,
         purchaseTecnology,
@@ -55,6 +58,9 @@ export default function NuevoFormulario() {
         vobo,
         purchaseAprobated,
         esMayor,
+        purchaseAprobatedTecnology,
+        purchaseAprobatedErgonomic,
+        filas,
       })
 
       nextStep();
@@ -73,6 +79,8 @@ export default function NuevoFormulario() {
       const sstAprobacion = filas.some(f => f.sstAprobacion)
       const vobo = filas.some(f => f.vobo)
       const purchaseAprobated = filas.some(f => f.purchaseAprobated)
+      const purchaseAprobatedTecnology = purchaseTecnology && purchaseAprobated;
+      const purchaseAprobatedErgonomic = siExiste && purchaseAprobated;
 
       await startThreeStep({
         siExiste,
@@ -80,7 +88,9 @@ export default function NuevoFormulario() {
         sstAprobacion,
         vobo,
         purchaseAprobated,
-        esMayor,
+        purchaseAprobatedTecnology,
+        purchaseAprobatedErgonomic,
+        filas,
       })
     }
     catch (error) {
@@ -161,7 +171,7 @@ export default function NuevoFormulario() {
   const nextStep = () => setStep((prev) => Math.min(prev + 1, 3));
   const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
 
-  const monto = Number(filas[0]?.valor || 0); 
+  const monto = Number(filas[0]?.valor || 0);
   const rango = rangoInputs(monto);
 
 
@@ -339,7 +349,7 @@ export default function NuevoFormulario() {
               </div>
               <div className="spaceButtons">
                 <button
-                  onClick={nextStep}
+                  onClick={handleClickOne}
                   className="navegationButton"
                 >
                   Siguiente
@@ -481,7 +491,7 @@ export default function NuevoFormulario() {
                   <p>Volver</p>
                 </button>
                 <button
-                  onClick={nextStep}
+                  onClick={handleClickTwo}
                   className="navegationButton"
                 >
                   Siguiente

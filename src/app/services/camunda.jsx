@@ -36,7 +36,7 @@ export async function endFirstStepStartTwoStep(variables) {
         const tareas = tareasData.items || [];
 
         const coincidencias = tareas.filter(
-            t => t.elementId === "Activity_1bncyzk" && t.state === "CREATED"
+            t => t.elementId === "Activity_0s4zd0u" && t.state === "CREATED"
         );
         const primerPaso = coincidencias.at(-1);
 
@@ -84,7 +84,7 @@ export async function endTwoStepStartThreeStep(variables) {
 
         // 🔹 2. Buscar la PRIMERA tarea (Activity_0ezzzly)
         const coincidenciaUno = tareas.filter(
-            t => t.elementId === "Activity_0ezzzly" && t.state === "CREATED"
+            t => t.elementId === "Activity_0re7x0w" && t.state === "CREATED"
         ).at(-1);
 
         if (!coincidenciaUno) {
@@ -102,7 +102,15 @@ export async function endTwoStepStartThreeStep(variables) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     variables: {
-                        mensaje: "Primera parte del segundo paso completada"
+                        siExiste: variables.siExiste,
+                        purchaseTecnology: variables.purchaseTecnology,
+                        sstAprobacion: variables.sstAprobacion,
+                        vobo: variables.vobo,
+                        purchaseAprobated: variables.purchaseAprobated,
+                        esMayor: variables.esMayor,
+                        purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
+                        purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
+                        filas: variables.filas,
                     }
                 }),
             }
@@ -114,140 +122,6 @@ export async function endTwoStepStartThreeStep(variables) {
 
         console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
         await delay(5000);
-
-        // 🔹 4. VOLVER a consultar todas las tareas (porque recién se creó la segunda)
-        tareasRes = await fetch(`${API_BASE}/tasks/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({})
-        });
-
-        tareasData = await tareasRes.json();
-        console.log("Tareas después de completar la primera:", tareasData);
-
-        tareas = tareasData.items || [];
-
-        // 🔹 5. Buscar la SEGUNDA tarea (Activity_1t3886i)
-        const coincidenciaDos = tareas.filter(
-            t => t.elementId === "Activity_1t3886i" && t.state === "CREATED"
-        ).at(-1);
-
-        if (!coincidenciaDos) {
-            console.error("No hay tareas en Activity_checkbox");
-            return;
-        }
-
-        const userTaskKeyDos = coincidenciaDos.userTaskKey;
-
-        const completeDos = await fetch(
-            `${API_BASE}/tasks/${userTaskKeyDos}/complete`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    variables: {
-                        siExiste: variables.siExiste,
-                        purchaseTecnology: variables.purchaseTecnology,
-                        sstAprobacion: variables.sstAprobacion,
-                        vobo: variables.vobo,
-                        purchaseAprobated: variables.purchaseAprobated,
-                        esMayor: variables.esMayor,
-                    }
-                })
-            }
-        );
-
-        if (!completeDos.ok) throw new Error("No se pudo completar la segunda tarea con el checkbox");
-
-        console.log("✅ Segunda tarea completada (Activity_checkbox)");
-
-        console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-        await delay(5000);
-
-        if (variables.sstAprobacion) {
-            console.log("🔍 Se requiere aprobación SST, buscando tarea...");
-
-            const tareasResSST = await fetch(`${API_BASE}/tasks/search`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            });
-
-            const tareasDataSST = await tareasResSST.json();
-            const tareasSST = tareasDataSST.items || [];
-
-            const coincidenciaSST = tareasSST.filter(
-                t => t.elementId === "Activity_0floi22" && t.state === "CREATED"
-            ).at(-1);
-
-            if (coincidenciaSST) {
-                const userTaskKeySST = coincidenciaSST.userTaskKey;
-
-                const completeSST = await fetch(
-                    `${API_BASE}/tasks/${userTaskKeySST}/complete`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            variables: {
-                            }
-                        })
-                    }
-                );
-
-                if (!completeSST.ok) throw new Error("No se pudo completar la tarea de SST");
-
-                console.log("✅ Tarea de SST completada");
-            } else {
-                console.warn("⚠ No se encontró la tarea Activity_SST, aunque se pidió SST");
-            }
-        } else {
-            console.log("⏩ No se requiere aprobación de SST");
-        }
-
-        console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-        await delay(5000);
-
-        if (variables.vobo) {
-            console.log("🔍 Se requiere aprobación Gerencia Tecnologia y Proyectos, buscando tarea...");
-
-            const tareasResSST = await fetch(`${API_BASE}/tasks/search`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            });
-
-            const tareasDataSST = await tareasResSST.json();
-            const tareasSST = tareasDataSST.items || [];
-
-            const coincidenciaSST = tareasSST.filter(
-                t => t.elementId === "Activity_1y8l4of" && t.state === "CREATED"
-            ).at(-1);
-
-            if (coincidenciaSST) {
-                const userTaskKeySST = coincidenciaSST.userTaskKey;
-
-                const completeSST = await fetch(
-                    `${API_BASE}/tasks/${userTaskKeySST}/complete`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            variables: {
-                            }
-                        })
-                    }
-                );
-
-                if (!completeSST.ok) throw new Error("No se pudo completar la tarea de Gerencia Tecnologia y Proyectos");
-
-                console.log("✅ Tarea de Gerencia Tecnologia y Proyectos completada");
-            } else {
-                console.warn("⚠ No se encontró la tarea Gerencia Tecnologia y Proyectos, aunque se pidió Gerencia Tecnologia y Proyectos");
-            }
-        } else {
-            console.log("⏩ No se requiere aprobación de Gerencia Tecnologia y Proyectos");
-        }
     } catch (err) {
         console.error("❌ Error en endTwoStepStartThreeStep:", err);
     }

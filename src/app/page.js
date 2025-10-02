@@ -16,7 +16,7 @@ export default function Dashboard() {
 
 
     //CAMUNDA
-    const handelClick = async () => {
+    const handleClick = async () => {
         try {
             await iniciarProceso({
                 bienvenida: "Inicio del proceso de compras",
@@ -50,7 +50,7 @@ export default function Dashboard() {
             <Navbar />
             <OptionsModal isOpen={isOpen} onClose={() => setIsOpen(false)} selectedId={selectedId} />
             <div className="space-buttons">
-                <button onClick={() => router.push("/formulario/nuevo/")}>
+                <button onClick={handleClick}/*onClick={() => router.push("/formulario/nuevo/")}*/>
                     <FontAwesomeIcon icon={faPlus} /> Nueva Requisición
                 </button>
                 <button onClick={fetchFormularios}>
