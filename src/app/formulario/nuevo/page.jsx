@@ -4,9 +4,11 @@ import Navbar from "../../components/navbar";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import emailjs from "emailjs-com"
-import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft, faPlus } from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
-import { endFirstStepStartTwoStep, endTwoStepStartThreeStep, startThreeStep } from "@/app/services/camunda";
+import { endFirstStepStartTwoStep, EndFourStep, endTwoStepStartThreeStep, startThreeStep } from "@/app/services/camunda";
+import { motion, AnimatePresence } from "framer-motion";
+
 
 export default function NuevoFormulario() {
   const router = useRouter();
@@ -92,8 +94,39 @@ export default function NuevoFormulario() {
         purchaseAprobatedErgonomic,
         filas,
       })
+
+      nextStep();
+    } catch (error) {
+      console.error("Error al iniciar el proceso: ", error)
     }
-    catch (error) {
+  }
+
+  const handleClickFour = async () => {
+    try {
+      const monto = Number(filas[0].valor);
+      const esMayor = calcularRango(monto);
+
+      const siExiste = filas.some(f => f.siExiste);
+      const purchaseTecnology = filas.some(f => f.purchaseTecnology)
+      const sstAprobacion = filas.some(f => f.sstAprobacion)
+      const vobo = filas.some(f => f.vobo)
+      const purchaseAprobated = filas.some(f => f.purchaseAprobated)
+      const purchaseAprobatedTecnology = purchaseTecnology && purchaseAprobated;
+      const purchaseAprobatedErgonomic = siExiste && purchaseAprobated;
+
+      await EndFourStep({
+        siExiste,
+        purchaseTecnology,
+        sstAprobacion,
+        vobo,
+        purchaseAprobated,
+        purchaseAprobatedTecnology,
+        purchaseAprobatedErgonomic,
+        filas,
+      })
+
+      router.push("/");
+    } catch (error) {
       console.error("Error al iniciar el proceso: ", error)
     }
   }
@@ -127,6 +160,7 @@ export default function NuevoFormulario() {
 
   const [filas, setFilas] = useState([
     {
+      productoOServicio: "",
       descripcion: "",
       cantidad: "",
       centro: "",
@@ -144,6 +178,7 @@ export default function NuevoFormulario() {
     setFilas([
       ...filas,
       {
+        productoOServicio: "",
         descripcion: "",
         cantidad: "",
         centro: "",
@@ -168,8 +203,30 @@ export default function NuevoFormulario() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, 3));
-  const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
+  const nextStep = () => {
+    setStep((prev) => {
+      if (prev === 3) {
+        // desde step 3, si inputs === 4 mostramos step 4, sino saltamos al 5
+        return rango.inputs === 4 ? 4 : 5;
+      } else {
+        return prev + 1; // otros steps normales
+      }
+    });
+  };
+
+  const prevStep = () => {
+    setStep((prev) => {
+      if (prev === 5) {
+        // Step 5: si step 4 no aplica, saltamos al 3
+        return rango.inputs === 4 ? 4 : 3;
+      }
+      if (prev === 4) {
+        // Step 4: siempre vuelve al 3
+        return 3;
+      }
+      return Math.max(prev - 1, 1); // otros steps normales
+    });
+  };
 
   const monto = Number(filas[0]?.valor || 0);
   const rango = rangoInputs(monto);
@@ -245,106 +302,134 @@ export default function NuevoFormulario() {
         </div>
         <div className="contentNewformulario">
           {step == 1 && (
-            <div className=" ">
+            <div className="gugutata">
               <h1 className="tittleContent">Datos generales del solicitante.</h1>
               <div className="inputsContainers">
-                <div className="completeInputs">
-                  <FontAwesomeIcon icon={faUser} className="icon" />
-                  <input
-                    type="text"
-                    name="nombre"
-                    placeholder="Nombre del Solicitante"
-                    value={form.nombre}
-                    onChange={handleChange}
-                  />
+                <div className="campoAdicional">
+                  <label>Nombre del solicitante</label>
+                  <div className="completeInputs">
+                    <FontAwesomeIcon icon={faUser} className="icon" />
+                    <input
+                      type="text"
+                      name="nombre"
+                      placeholder=" "
+                      value={form.nombre}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
-                <div className="completeInputs">
-                  <FontAwesomeIcon icon={faCalendar} className="icon" />
-                  <input
-                    type="date"
-                    name="fechaSolicitud"
-                    placeholder="Fecha de la Solicitud"
-                    value={form.fechaSolicitud}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-              <div className="inputsContainers">
-                <div className="completeInputs">
-                  <FontAwesomeIcon icon={faCalendar} className="icon" />
-                  <input
-                    type="date"
-                    name="fechaEntrega"
-                    placeholder="Fecha requerido de entrega"
-                    value={form.fechaEntrega}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="completeInputs">
-                  <FontAwesomeIcon icon={faBalanceScale} className="icon" />
-                  <input
-                    type="text"
-                    name="justificacion"
-                    placeholder="Justificacion"
-                    value={form.justificacion}
-                    onChange={handleChange}
-                  />
+                <div className="campoAdicional">
+                  <label>Fecha de solicitud</label>
+                  <div className="completeInputs">
+                    <FontAwesomeIcon icon={faCalendar} className="icon" />
+                    <input
+                      type="date"
+                      name="fechaSolicitud"
+                      placeholder=" "
+                      value={form.fechaSolicitud}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="inputsContainers">
-                <div className="completeInputs">
-                  <FontAwesomeIcon icon={faClipboard} className="icon" />
-                  <input
-                    type="text"
-                    name="area"
-                    placeholder="Area del solicitante"
-                    value={form.area}
-                    onChange={handleChange}
-                  />
+                <div className="campoAdicional">
+                  <label>Fecha requerido de entrega</label>
+                  <div className="completeInputs">
+                    <FontAwesomeIcon icon={faCalendar} className="icon" />
+                    <input
+                      type="date"
+                      name="fechaEntrega"
+                      placeholder=" "
+                      value={form.fechaEntrega}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
-                <div className="completeInputs">
-                  <FontAwesomeIcon icon={faBuilding} className="icon" />
-                  <input
-                    type="text"
-                    name="sede"
-                    placeholder="Sede"
-                    value={form.sede}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-              <div className="inputsContainers">
-                <div className="completeInputs">
-                  <FontAwesomeIcon icon={faExclamationTriangle} className="icon" />
-                  <input
-                    type="text"
-                    name="urgenciaCompra"
-                    placeholder="Urgencia de la compra"
-                    value={form.urgenciaCompra}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="completeInputs">
-                  <FontAwesomeIcon icon={faClock} className="icon" />
-                  <input
-                    type="text"
-                    name="tiempoGestion"
-                    placeholder="Tiempo aproximado de gestion."
-                    value={form.tiempoGestion}
-                    onChange={handleChange}
-                  />
+                <div className="campoAdicional">
+                  <label>Justificacion de la compra</label>
+                  <div className="completeInputs">
+                    <FontAwesomeIcon icon={faBalanceScale} className="icon" />
+                    <input
+                      type="text"
+                      name="justificacion"
+                      placeholder=" "
+                      value={form.justificacion}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="inputsContainers">
-                <div className="completeInputs">
-                  <FontAwesomeIcon icon={faPaperclip} className="icon" />
-                  <input
-                    type="text"
-                    name="anexos"
-                    placeholder="Anexos"
-                    value={form.anexos}
-                    onChange={handleChange}
-                  />
+                <div className="campoAdicional">
+                  <label>Area del solicitante</label>
+                  <div className="completeInputs">
+                    <FontAwesomeIcon icon={faClipboard} className="icon" />
+                    <input
+                      type="text"
+                      name="area"
+                      placeholder=" "
+                      value={form.area}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+                <div className="campoAdicional">
+                  <label>Sede del solicitante</label>
+                  <div className="completeInputs">
+
+                    <FontAwesomeIcon icon={faBuilding} className="icon" />
+                    <input
+                      type="text"
+                      name="sede"
+                      placeholder=" "
+                      value={form.sede}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="inputsContainers">
+                <div className="campoAdicional">
+                  <label>Urgencia de la compra</label>
+                  <div className="completeInputs">
+                    <FontAwesomeIcon icon={faExclamationTriangle} className="icon" />
+                    <input
+                      type="text"
+                      name="urgenciaCompra"
+                      placeholder=" "
+                      value={form.urgenciaCompra}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+                <div className="campoAdicional">
+                  <label>Tiempo aproximado de gestion</label>
+                  <div className="completeInputs">
+                    <FontAwesomeIcon icon={faClock} className="icon" />
+                    <input
+                      type="text"
+                      name="tiempoGestion"
+                      placeholder=" "
+                      value={form.tiempoGestion}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="inputsContainers">
+                <div className="campoAdicional">
+                  <label>Anexos</label>
+                  <div className="completeInputs">
+                    <FontAwesomeIcon icon={faPaperclip} className="icon" />
+                    <input
+                      type="text"
+                      name="anexos"
+                      placeholder=" "
+                      value={form.anexos}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="spaceButtons">
@@ -367,7 +452,7 @@ export default function NuevoFormulario() {
                     <thead>
                       <tr className="tabla-encabezado-principal">
                         <th>ITEM</th>
-                        <th>DESCRIPCIÓN</th>
+                        <th>PRODUCTO / SERVICIO</th>
                         <th>CANTIDAD</th>
                         <th>CENTRO DE COSTO U ORDEN INTERNA</th>
                         <th>CUENTA CONTABLE O CÓDIGO DE MATERIAL</th>
@@ -375,10 +460,8 @@ export default function NuevoFormulario() {
                         <th>¿COMPRA TECNOLOGICA?</th>
                         <th colSpan={2}>¿ESTÁ EN PRESUPUESTO?</th>
                         <th>VALOR (*)</th>
-                        <th>VOBO GERENTE DE TECNOLOGÍA</th>
-                        {filas.some(f => f.siExiste) && (
-                          <th colSpan={2}>¿REQUIERE APROBACION DE SST?</th>
-                        )}
+                        <th>DESCRIPCION</th>
+                        <th>ANEXOS</th>
                       </tr>
                     </thead>
 
@@ -390,8 +473,8 @@ export default function NuevoFormulario() {
                             <input
                               className="input-texto"
                               type="text"
-                              value={fila.descripcion}
-                              onChange={(e) => manejarCambio(index, "descripcion", e.target.value)}
+                              value={fila.productoOServicio}
+                              onChange={(e) => manejarCambio(index, "productoOServicio", e.target.value)}
                             />
                           </td>
                           <td>
@@ -460,22 +543,41 @@ export default function NuevoFormulario() {
                           <td>
                             <input
                               className="input-texto"
-                              type="checkbox"
-                              checked={fila.vobo || false}
-                              onChange={(e) => manejarCambio(index, "vobo", e.target.checked)}
+                              type="text"
+                              value={fila.descripcion}
+                              onChange={(e) => manejarCambio(index, "descripcion", e.target.value)}
                             />
                           </td>
-                          {fila.siExiste && (
-                            <td className="text-center" colSpan={2}>
-                              <input
-                                type="checkbox"
-                                checked={fila.sstAprobacion || false}
-                                onChange={(e) =>
-                                  manejarCambio(index, "sstAprobacion", e.target.checked)
+                          <td>
+                            <div
+                              style={{
+                                width: "60px",
+                                height: "60px",
+                                border: "2px dashed #aaa",
+                                display: "flex",
+                                alignItems: "center",
+                                marginLeft: "6px",
+                                justifyContent: "center",
+                                cursor: "pointer"
+                              }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                const file = e.dataTransfer.files[0];
+                                if (file && file.type.startsWith("image/")) {
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => manejarCambio(index, "imagen", event.target.result);
+                                  reader.readAsDataURL(file);
                                 }
-                              />
-                            </td>
-                          )}
+                              }}
+                              onDragOver={(e) => e.preventDefault()}
+                            >
+                              {fila.imagen ? (
+                                <img src={fila.imagen} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                              ) : (
+                                <p>Suelta aquí</p>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -484,7 +586,7 @@ export default function NuevoFormulario() {
               </div>
               <div className="spaceButtons">
                 <button className="btn-agregar" onClick={agregarFila}>
-                  <p>+</p>
+                  <FontAwesomeIcon icon={faPlus} className="iconPlus" />
                 </button>
                 <p className="separator">|</p>
                 <button onClick={prevStep} className="navegationButton">
@@ -496,6 +598,17 @@ export default function NuevoFormulario() {
                 >
                   Siguiente
                 </button>
+                <div className="headerPrecio">
+                  <div className="textPrecio">
+                    Total:
+                  </div>
+                  <div className="TotalPrecio">
+                    <p>${filas.reduce(
+                      (acum, fila) => acum + (Number(fila.valor) || 0),
+                      0
+                    )}</p>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -503,141 +616,225 @@ export default function NuevoFormulario() {
           {step === 3 && (
             <div>
               <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
-              <div>
-                <div>
-                  <div className="firmasContainer">
-                    <div className="campoInfo">
-                      <div className="headerInfo">
-                        <p>DIRECTOR/ LIDER DE AREA</p>
-                      </div>
-                      <div className="nombre">
-                        <div className="text">
-                          <p>NOMBRE:</p>
-                        </div>
-                        <input
-                          type="text"
-                          name="nombreSolicitante"
-                          placeholder="Escribe..."
-                          value={form.nombreSolicitante}
-                          onChange={handleChange}
-                        />
-                      </div>
-                      <div className="firma">
-                        <div className="text">
-                          <p>FIRMA:</p>
-                        </div>
-                        <input type="text"
-                          name="firmaSolicitante"
-                          placeholder="Escribe..."
-                          value={form.firmaSolicitante}
-                          onChange={handleChange}
-                          className="inputFirma" />
-                      </div>
+              <div className="containerStepFour">
+                <div className="campoInfo">
+                  <div className="headerInfo">
+                    <p>DIRECTOR/ LIDER DE AREA</p>
+                  </div>
+                  <div className="camposTextuales">
+                    <label>Nombre</label>
+                    <div className="text">
+                      <input
+                        type="text"
+                        name="nombreSolicitante"
+                        placeholder=""
+                        value={form.nombreSolicitante}
+                        onChange={handleChange}
+                      />
                     </div>
-                    <div className="campoInfo">
-                      <div className="headerInfo">
-                        <p>GERENTE DE AREA</p>
-                      </div>
-                      <div className="nombre">
-                        <div className="text">
-                          <p>NOMBRE:</p>
-                        </div>
-                        <input
-                          type="text"
-                          name="nombreAdministrativo"
-                          placeholder="Escribe..."
-                          value={form.nombreAdministrativo}
-                          onChange={handleChange} />
-                      </div>
-                      <div className="firma">
-                        <div className="text">
-                          <p>FIRMA:</p>
-                        </div>
-                        <input
-                          type="text"
-                          name="firmaAdministrativo"
-                          placeholder="Escribe..."
-                          value={form.firmaAdministrativo}
-                          onChange={handleChange}
-                          className="inputFirma" />
-                      </div>
+                  </div>
+                  <div className="camposTextuales">
+                    <label>Firma</label>
+                    <div className="text">
+                      <input type="text"
+                        name="firmaSolicitante"
+                        placeholder=""
+                        value={form.firmaSolicitante}
+                        onChange={handleChange}
+                        className="inputFirma" />
                     </div>
-                    {rango.inputs === 4 && (
-                      <div className="campoInfo">
-                        <div className="headerInfo">
-                          <p>GERENTE ADMINISTRATIVO</p>
-                        </div>
-                        <div className="nombre">
-                          <div className="text">
-                            <p>NOMBRE:</p>
-                          </div>
-                          <input
-                            type="text"
-                            name="nombreGerente"
-                            placeholder="Escribe..."
-                            value={form.nombreGerente}
-                            onChange={handleChange}
-                          />
-                        </div>
-                        <div className="firma">
-                          <div className="text">
-                            <p>FIRMA:</p>
-                          </div>
-                          <input
-                            type="text"
-                            name="firmaGerente"
-                            placeholder="Escribe..."
-                            value={form.firmaGerente}
-                            onChange={handleChange}
-                            className="inputFirma" />
-                        </div>
-                      </div>)}
                   </div>
                 </div>
-                {rango.inputs === 4 && (
-                  <div className="autorizacionGerenciaGeneral">
-                    <div className="autorizacionGeneral">
-                      <div className="headerGeneral">
-                        <p>GERENCIA GENERAL</p>
-                      </div>
-                      <div className="campoGeneral">
-                        <input
-                          type="text"
-                          name="autorizacionGerencia"
-                          className="inputGerenciaGeneral"
-                          placeholder="Escribe..."
-                          value={form.autorizacionGerencia}
-                          onChange={handleChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="recepcionCompras">
-                      <div className="firma">
-                        <div className="headerFirma">
-                          <p>FIRMA SERVICIOS ADMIN</p>
-                        </div>
-                        <div className="campoFirma">
-                          <input
-                            type="text"
-                            name="firmaCompras"
-                            placeholder="Escribe..."
-                            value={form.firmaCompras}
-                            onChange={handleChange}
-                            className="inputFirma"
-                          />
-                        </div>
-                      </div>
+                <div className="campoInfo">
+                  <div className="headerInfo">
+                    <p>GERENTE DE AREA</p>
+                  </div>
+                  <div className="camposTextuales">
+                    <label>Nombre</label>
+                    <div className="text">
+                      <input
+                        type="text"
+                        name="nombreAdministrativo"
+                        placeholder=""
+                        value={form.nombreAdministrativo}
+                        onChange={handleChange} />
                     </div>
                   </div>
-                )}
+                  <div className="camposTextuales">
+                    <label>Firma</label>
+                    <div className="text">
+                      <input
+                        type="text"
+                        name="firmaAdministrativo"
+                        placeholder=""
+                        value={form.firmaAdministrativo}
+                        onChange={handleChange}
+                        className="inputFirma" />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-
           )}
           <div className="spaceButtons">
             {step === 3 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
             {step === 3 && <button
-              onClick={handleClickThree}
+              onClick={nextStep}
+              className="navegationButton"
+            >
+              Siguiente
+            </button>
+            }
+          </div>
+
+          {step === 4 && (
+            <div>
+              <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
+              <div className="containerStepFour">
+                <div className="campoInfo">
+                  <div className="headerInfo">
+                    <p>GERENCIA GENERAL</p>
+                  </div>
+                  <div className="camposTextuales">
+                    <label>Nombre</label>
+                    <div className="text">
+                      <input
+                        type="text"
+                        name="autorizacionGerencia"
+                        className="inputGerenciaGeneral"
+                        placeholder=""
+                        value={form.autorizacionGerencia}
+                        onChange={handleChange} />
+                    </div>
+                  </div>
+                </div>
+                <div className="campoInfo">
+                  <div className="headerInfo">
+                    <p>GERENTE ADMINISTRATIVO</p>
+                  </div>
+                  <div className="camposTextuales">
+                    <label>Nombre</label>
+                    <div className="text">
+                      <input
+                        type="text"
+                        name="nombreGerente"
+                        placeholder=""
+                        value={form.nombreGerente}
+                        onChange={handleChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="camposTextuales">
+                    <label>Firma</label>
+                    <div className="text">
+                      <input
+                        type="text"
+                        name="firmaGerente"
+                        placeholder=""
+                        value={form.firmaGerente}
+                        onChange={handleChange}
+                        className="inputFirma" />
+                    </div>
+                  </div>
+                </div>
+                <div className="campoInfo">
+                  <div className="headerInfo">
+                    <p>FIRMA SERVICIO ADMIN</p>
+                  </div>
+                  <div className="camposTextuales">
+                    <label>Nombre</label>
+                    <div className="text">
+                      <input
+                        type="text"
+                        name="firmaCompras"
+                        placeholder=""
+                        value={form.firmaCompras}
+                        onChange={handleChange}
+                        className="inputFirma" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="spaceButtons">
+            {step === 4 && (
+              <button className="navegationButton" onClick={prevStep}>
+                Volver
+              </button>
+            )}
+            {step === 4 && (
+              <button className="navegationButton" onClick={handleClickThree}>
+                Siguiente
+              </button>
+            )}
+          </div>
+
+
+          {step === 5 && (
+            <div>
+              <p className="tittleHeaderRevision">Revisión de productos</p>
+              <div className="containerStepFour">
+                {/* Productos ergonómicos */}
+                {filas.some(f => f.siExiste) && (
+                  <div className="campoInfo">
+                    <div className="headerInfo">
+                      <p>Se requiere aprobación de Dirección SST</p>
+                    </div>
+                    {filas
+                      .filter(f => f.siExiste)
+                      .map((fila, index) => (
+                        <div key={index} className="camposTextualesUltimoStep">
+                          <input
+                            type="checkbox"
+                            id={`sstAprobacion-${index}`}
+                            checked={fila.sstAprobacion || false}
+                            onChange={(e) =>
+                              manejarCambio(filas.indexOf(fila), "sstAprobacion", e.target.checked)
+                            }
+                          />
+                          <label htmlFor={`sstAprobacion-${index}`}>
+                            <div></div>
+                          </label>
+                        </div>
+                      ))}
+                  </div>
+
+                )}
+                {/* Productos tecnológicos */}
+                {filas.some(f => f.purchaseTecnology) && (
+                  <div className="campoInfo">
+                    <div className="headerInfo">
+                      <p>
+                        Aprobación del Gerente de Tecnológia y proyectos
+                      </p>
+                    </div>
+                    {filas
+                      .filter(f => f.purchaseTecnology)
+                      .map((fila, index) => (
+                        <div key={index} className="camposTextualesUltimoStep">
+                          <input
+                            type="checkbox"
+                            id={`vobo-${index}`}
+                            checked={fila.vobo || false}
+                            onChange={(e) =>
+                              manejarCambio(filas.indexOf(fila), "vobo", e.target.checked)
+                            }
+                          />
+                          <label htmlFor={`vobo-${index}`}>
+                            <div></div>
+                          </label>
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="spaceButtons">
+            {step === 5 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
+            {step === 5 && <button
+              onClick={handleClickFour}
               className="navegationButton"
             >
               Enviar

@@ -70,7 +70,7 @@ export async function endFirstStepStartTwoStep(variables) {
 
 export async function endTwoStepStartThreeStep(variables) {
     try {
-        // 🔹 1. Consultar todas las tareas disponibles
+        // 1️⃣ Buscar la tarea "Activity_0re7x0w"
         let tareasRes = await fetch(`${API_BASE}/tasks/search`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -78,50 +78,71 @@ export async function endTwoStepStartThreeStep(variables) {
         });
 
         let tareasData = await tareasRes.json();
-        console.log("Tareas recibidas desde Camunda:", tareasData);
-
         let tareas = tareasData.items || [];
 
-        // 🔹 2. Buscar la PRIMERA tarea (Activity_0ezzzly)
-        const coincidenciaUno = tareas.filter(
-            t => t.elementId === "Activity_0re7x0w" && t.state === "CREATED"
-        ).at(-1);
+        const coincidenciaUno = tareas
+            .filter(t => t.elementId === "Activity_0re7x0w" && t.state === "CREATED")
+            .at(-1);
 
         if (!coincidenciaUno) {
-            console.error("No hay tareas en Activity_0ezzzly");
+            console.error("⚠️ No hay tareas en Activity_0re7x0w");
             return;
         }
 
         const userTaskKeyUno = coincidenciaUno.userTaskKey;
+        const processInstanceKey = coincidenciaUno.processInstanceKey;
 
-        // 🔹 3. Completar la primera tarea
-        const completeUno = await fetch(
-            `${API_BASE}/tasks/${userTaskKeyUno}/complete`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    variables: {
-                        siExiste: variables.siExiste,
-                        purchaseTecnology: variables.purchaseTecnology,
-                        sstAprobacion: variables.sstAprobacion,
-                        vobo: variables.vobo,
-                        purchaseAprobated: variables.purchaseAprobated,
-                        esMayor: variables.esMayor,
-                        purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
-                        purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
-                        filas: variables.filas,
-                    }
-                }),
-            }
+        // 2️⃣ Completar primera tarea
+        const completeUno = await fetch(`${API_BASE}/tasks/${userTaskKeyUno}/complete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ variables })
+        });
+
+        if (!completeUno.ok) throw new Error("No se pudo completar la primera tarea");
+
+        console.log("✅ Primera tarea completada (Activity_0re7x0w)");
+
+        // 3️⃣ Esperar un momento a que se generen las del multi-instance
+        await delay(5000);
+
+        //MULTI-INSTANCIA
+        let tareasResTwo = await fetch(`${API_BASE}/tasks/search`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
+
+        let tareasDataTwo = await tareasResTwo.json();
+        console.log("Tareas recibidas tras multi-instance:", tareasDataTwo);
+
+        // 🔹 Filtrar solo las del multi-instance con el mismo processInstanceKey
+        const coincidenciasMulti = tareasDataTwo.items
+            .filter(t =>
+                t.elementId === "Activity_0170y1s" &&
+                t.state === "CREATED" &&
+                t.processInstanceKey === processInstanceKey
+            );
+
+        if (coincidenciasMulti.length === 0) {
+            console.error("⚠️ No hay tareas activas en el multi-instance");
+            return;
+        }
+
+        console.log("✅ Tareas multi-instance encontradas:", coincidenciasMulti.map(t => t.userTaskKey));
+
+        // 5️⃣ Completar todas las tareas encontradas
+        await Promise.all(
+            coincidenciasMulti.map(tareaTwo =>
+                fetch(`${API_BASE}/tasks/${tareaTwo.userTaskKey}/complete`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ variables })
+                })
+            )
         );
 
-        if (!completeUno.ok) throw new Error("No se pudo completar la primera tarea del segundo paso");
-
-        console.log("✅ Primera tarea completada (Activity_0ezzzly)");
-
-        console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-        await delay(5000);
+        console.log("✅ Todas las tareas del multi-instance completadas");
     } catch (err) {
         console.error("❌ Error en endTwoStepStartThreeStep:", err);
     }
@@ -129,291 +150,262 @@ export async function endTwoStepStartThreeStep(variables) {
 
 export async function startThreeStep(variables) {
     try {
-        if (variables.esMayor) {
-            console.log("🔍 aprobando actividades de mas de 1 salario minimo, buscando tarea...");
 
-            const tareasResSST1 = await fetch(`${API_BASE}/tasks/search`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            });
+        // ============ DIRECTOR ============
+        let tareasResDirector = await fetch(`${API_BASE}/tasks/search`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
 
-            const tareasDataSST1 = await tareasResSST1.json();
-            const tareasSST1 = tareasDataSST1.items || [];
+        let tareasDataDirector = await tareasResDirector.json();
+        console.log("📌 Tareas recibidas (Director):", tareasDataDirector);
 
-            const coincidenciaSST1 = tareasSST1.filter(
-                t => t.elementId === "Activity_03una7u" && t.state === "CREATED"
-            ).at(-1);
+        // 🔹 Filtrar por elementId y estado, sin quemar el processInstanceKey
+        const coincidenciasDirector = tareasDataDirector.items
+            .filter(t =>
+                t.elementId === "Activity_1q9ps8g" && // ID real del userTask Director
+                t.state === "CREATED"
+            );
 
-            if (coincidenciaSST1) {
-                const userTaskKeySST1 = coincidenciaSST1.userTaskKey;
-
-                const completeSST1 = await fetch(
-                    `${API_BASE}/tasks/${userTaskKeySST1}/complete`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            variables: {
-                                siExiste: variables.siExiste,
-                                purchaseTecnology: variables.purchaseTecnology,
-                                sstAprobacion: variables.sstAprobacion,
-                                vobo: variables.vobo,
-                                purchaseAprobated: variables.purchaseAprobated,
-                                esMayor: variables.esMayor,
-                            }
-                        })
-                    }
-                );
-
-                if (!completeSST1.ok) throw new Error("No se pudo completar la tarea de SST");
-
-                console.log("✅ Tarea de autorizacion UNO completada");
-            }
-            else {
-                console.warn("⚠ No se encontró la tarea Activity_SST, aunque se pidió SST");
-            }
-
-            console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-            await delay(5000);
-
-            //SEGUNDO APROBAR
-            console.log("🔍 aprobando actividades de mas de 1 salario minimo, buscando tarea...");
-
-            const tareasResSST2 = await fetch(`${API_BASE}/tasks/search`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            });
-
-            const tareasDataSST2 = await tareasResSST2.json();
-            const tareasSST2 = tareasDataSST2.items || [];
-
-            const coincidenciaSST2 = tareasSST2.filter(
-                t => t.elementId === "Activity_05m9ppf" && t.state === "CREATED"
-            ).at(-1);
-
-            if (coincidenciaSST2) {
-                const userTaskKeySST2 = coincidenciaSST2.userTaskKey;
-
-                const completeSST2 = await fetch(
-                    `${API_BASE}/tasks/${userTaskKeySST2}/complete`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            variables: {
-                                siExiste: variables.siExiste,
-                                purchaseTecnology: variables.purchaseTecnology,
-                                sstAprobacion: variables.sstAprobacion,
-                                vobo: variables.vobo,
-                                purchaseAprobated: variables.purchaseAprobated,
-                                esMayor: variables.esMayor,
-                            }
-                        })
-                    }
-                );
-
-                if (!completeSST2.ok) throw new Error("No se pudo completar la tarea de SST");
-
-                console.log("✅ Tarea de Autorizacion Dos completada");
-            }
-            else {
-                console.warn("⚠ No se encontró la tarea Activity_SST, aunque se pidió SST");
-            }
-
-            console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-            await delay(5000);
-
-            //TERCERA ACTIVIDAD
-            console.log("🔍 aprobando actividades de mas de 1 salario minimo, buscando tarea...");
-
-            const tareasResSST3 = await fetch(`${API_BASE}/tasks/search`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            });
-
-            const tareasDataSST3 = await tareasResSST3.json();
-            const tareasSST3 = tareasDataSST3.items || [];
-
-            const coincidenciaSST3 = tareasSST3.filter(
-                t => t.elementId === "Activity_0u3zvk2" && t.state === "CREATED"
-            ).at(-1);
-
-            if (coincidenciaSST3) {
-                const userTaskKeySST3 = coincidenciaSST3.userTaskKey;
-
-                const completeSST3 = await fetch(
-                    `${API_BASE}/tasks/${userTaskKeySST3}/complete`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            variables: {
-                                siExiste: variables.siExiste,
-                                purchaseTecnology: variables.purchaseTecnology,
-                                sstAprobacion: variables.sstAprobacion,
-                                vobo: variables.vobo,
-                                purchaseAprobated: variables.purchaseAprobated,
-                                esMayor: variables.esMayor,
-                            }
-                        })
-                    }
-                );
-
-                if (!completeSST3.ok) throw new Error("No se pudo completar la tarea de SST");
-
-                console.log("✅ Tarea de Autorizacion Tres completada");
-            }
-            else {
-                console.warn("⚠ No se encontró la tarea Activity_SST, aunque se pidió SST");
-            }
-
-            console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-            await delay(5000);
-
-            //CUARTA ACTIVIDAD
-            console.log("🔍 Buscando tarea 4 (Activity_1sfvf4m)...");
-
-            const tareasResSST4 = await fetch(`${API_BASE}/tasks/search`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            });
-
-            const tareasDataSST4 = await tareasResSST4.json();
-            const tareasSST4 = tareasDataSST4.items || [];
-
-            // Buscar la primera tarea con el elementId correspondiente (sin filtrar por state)
-            const coincidenciaSST4 = tareasSST4.filter(
-                t => t.elementId === "Activity_1sfvf4m" && t.state === "CREATED"
-            ).at(-1);
-
-            if (coincidenciaSST4) {
-                const userTaskKeySST4 = coincidenciaSST4.userTaskKey;
-                console.log("✅ Encontrada tarea 4 con userTaskKey:", userTaskKeySST4);
-
-                const completeSST4 = await fetch(
-                    `${API_BASE}/tasks/${userTaskKeySST4}/complete`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            variables: {
-                                siExiste: variables.siExiste,
-                                purchaseTecnology: variables.purchaseTecnology,
-                                sstAprobacion: variables.sstAprobacion,
-                                vobo: variables.vobo,
-                                purchaseAprobated: variables.purchaseAprobated,
-                                esMayor: variables.esMayor,
-                            }
-                        })
-                    }
-                );
-
-                if (!completeSST4.ok) throw new Error("No se pudo completar la tarea 4");
-                console.log("✅ Tarea de Autorización Cuatro completada");
-            } else {
-                console.warn("⚠ No se encontró la tarea 4 (Activity_1sfvf4m) en Camunda");
-            }
-
-        } else {
-            console.log("🔍 aprobando actividades de mas de 1 salario minimo, buscando tarea...");
-
-            const tareasResSST = await fetch(`${API_BASE}/tasks/search`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            });
-
-            const tareasDataSST = await tareasResSST.json();
-            const tareasSST = tareasDataSST.items || [];
-
-            const coincidenciaSST = tareasSST.filter(
-                t => t.elementId === "Activity_03una7u" && t.state === "CREATED"
-            ).at(-1);
-
-            if (coincidenciaSST) {
-                const userTaskKeySST = coincidenciaSST.userTaskKey;
-
-                const completeSST = await fetch(
-                    `${API_BASE}/tasks/${userTaskKeySST}/complete`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            variables: {
-                                siExiste: variables.siExiste,
-                                purchaseTecnology: variables.purchaseTecnology,
-                                sstAprobacion: variables.sstAprobacion,
-                                vobo: variables.vobo,
-                                purchaseAprobated: variables.purchaseAprobated,
-                                esMayor: variables.esMayor,
-                            }
-                        })
-                    }
-                );
-
-                if (!completeSST.ok) throw new Error("No se pudo completar la tarea de SST");
-
-                console.log("✅ Tarea de SST completada");
-            }
-            else {
-                console.warn("⚠ No se encontró la tarea Activity_SST, aunque se pidió SST");
-            }
-
-            console.log("⏳ Esperando 10 segundos antes de buscar y completar la segunda tarea...");
-            await delay(10000);
-
-            //SIGUIENTE ACTIVIDAD
-            console.log("🔍 aprobando actividades de mas de 1 salario minimo, buscando tarea...");
-
-            const tareasResSST2 = await fetch(`${API_BASE}/tasks/search`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            });
-
-            const tareasDataSST2 = await tareasResSST2.json();
-            const tareasSST2 = tareasDataSST2.items || [];
-
-            const coincidenciaSST2 = tareasSST2.filter(
-                t => t.elementId === "Activity_05m9ppf" && t.state === "CREATED"
-            ).at(-1);
-
-            if (coincidenciaSST2) {
-                const userTaskKeySST2 = coincidenciaSST2.userTaskKey;
-
-                const completeSST2 = await fetch(
-                    `${API_BASE}/tasks/${userTaskKeySST2}/complete`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            variables: {
-                                siExiste: variables.siExiste,
-                                purchaseTecnology: variables.purchaseTecnology,
-                                sstAprobacion: variables.sstAprobacion,
-                                vobo: variables.vobo,
-                                purchaseAprobated: variables.purchaseAprobated,
-                                esMayor: variables.esMayor,
-                            }
-                        })
-                    }
-                );
-
-                if (!completeSST2.ok) throw new Error("No se pudo completar la tarea de SST");
-
-                console.log("✅ Tarea de SST completada");
-            }
-            else {
-                console.warn("⚠ No se encontró la tarea Activity_SST, aunque se pidió SST");
-            }
+        if (coincidenciasDirector.length === 0) {
+            console.error("⚠️ No hay tareas activas del Director");
+            return;
         }
+
+        console.log("✅ Tareas de Director encontradas:", coincidenciasDirector.map(t => ({
+            userTaskKey: t.userTaskKey,
+            processInstanceKey: t.processInstanceKey
+        })));
+
+        await Promise.all(
+            coincidenciasDirector.map(tareaDir =>
+                fetch(`${API_BASE}/tasks/${tareaDir.userTaskKey}/complete`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        variables: {
+                            ...variables,
+                            aprobado: true,
+                            processInstanceKey: tareaDir.processInstanceKey
+                        }
+                    })
+                })
+            )
+        );
+
+        console.log("🎉 Todas las tareas de Director fueron completadas");
+
+        await delay(5000);
+
+        // ============ GERENTE DE ÁREA ============
+        let tareasResGerenteArea = await fetch(`${API_BASE}/tasks/search`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
+
+        let tareasDataGerenteArea = await tareasResGerenteArea.json();
+        console.log("📌 Tareas recibidas (GerenteArea):", tareasDataGerenteArea);
+
+        const coincidenciasGerenteArea = tareasDataGerenteArea.items
+            .filter(t =>
+                t.elementId === "Activity_0c2xslp" && // ID real del userTask Gerente
+                t.state === "CREATED"
+            );
+
+        if (coincidenciasGerenteArea.length === 0) {
+            console.error("⚠️ No hay tareas activas del GerenteArea");
+            return;
+        }
+
+        console.log("✅ Tareas de GerenteArea encontradas:", coincidenciasGerenteArea.map(t => ({
+            userTaskKey: t.userTaskKey,
+            processInstanceKey: t.processInstanceKey
+        })));
+
+        await Promise.all(
+            coincidenciasGerenteArea.map(tareaGerenteArea =>
+                fetch(`${API_BASE}/tasks/${tareaGerenteArea.userTaskKey}/complete`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        variables: {
+                            ...variables,
+                            aprobado: true,
+                            processInstanceKey: tareaGerenteArea.processInstanceKey
+                        }
+                    })
+                })
+            )
+        );
+
+        console.log("🎉 Todas las tareas de GerenteArea fueron completadas");
+
+        await delay(3000);
+
+        const aprobacionesIds = [
+            "Activity_1gfg2b4",
+            "Activity_03zql95"
+        ];
+
+        const tareasCompletadas = new Set();
+        let pendientes = new Set(aprobacionesIds);
+
+        while (pendientes.size > 0) {
+            console.log("\n🔄 Buscando nuevas tareas de aprobación...");
+
+            let tareasRes = await fetch(`${API_BASE}/tasks/search`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({})
+            });
+
+            let tareasData = await tareasRes.json();
+            let tareas = tareasData.items || [];
+
+            const coincidencias = tareas.filter(t =>
+                aprobacionesIds.includes(t.elementId) &&
+                t.state === "CREATED" &&
+                !tareasCompletadas.has(t.userTaskKey)
+            );
+
+            if (coincidencias.length === 0) {
+                console.log("⏳ No hay nuevas tareas todavía, esperando...");
+                await new Promise(resolve => setTimeout(resolve, 2000)); // espera 2s y vuelve a revisar
+                continue;
+            }
+
+            console.log("✅ Nuevas tareas encontradas:",
+                coincidencias.map(t => ({
+                    userTaskKey: t.userTaskKey,
+                    elementId: t.elementId,
+                    processInstanceKey: t.processInstanceKey
+                }))
+            );
+
+            await Promise.all(
+                coincidencias.map(async tarea => {
+                    try {
+                        let res = await fetch(`${API_BASE}/tasks/${tarea.userTaskKey}/complete`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                variables: {
+                                    ...variables,
+                                    aprobado: true,
+                                    processInstanceKey: tarea.processInstanceKey
+                                }
+                            })
+                        });
+
+                        if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+
+                        console.log(`🎯 Tarea ${tarea.elementId} completada`);
+                        tareasCompletadas.add(tarea.userTaskKey);
+                        pendientes.delete(tarea.elementId); // 👈 eliminar de las pendientes
+                    } catch (err) {
+                        console.error(`❌ Error al completar ${tarea.elementId}:`, err.message);
+                    }
+                })
+            );
+        }
+
     } catch (err) {
-        console.error("asd:", err)
+        console.error("❌ Error en startThreeStep:", err);
     }
 }
 
+export async function EndFourStep(variables) {
+  try {
+    const aprobacionesIds = ["Activity_1mpfix0", "Activity_05mekco"];
+
+    const tareasCompletadas = new Set();
+    let pendientes = new Set();
+
+    while (true) {
+      console.log("\n🔄 Buscando nuevas tareas de aprobación...");
+
+      let tareasRes = await fetch(`${API_BASE}/tasks/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+
+      let tareasData = await tareasRes.json();
+      let tareas = tareasData.items || [];
+
+      // Filtrar solo las que son de aprobación y están en CREATED
+      const coincidencias = tareas.filter(
+        t =>
+          aprobacionesIds.includes(t.elementId) &&
+          t.state === "CREATED" &&
+          !tareasCompletadas.has(t.userTaskKey)
+      );
+
+      // Agregar esas tareas al set de pendientes
+      coincidencias.forEach(t => pendientes.add(t.elementId));
+
+      if (pendientes.size === 0) {
+        console.log("⏳ No hay tareas de aprobación, saliendo...");
+        break; // si no hay ninguna, no tiene sentido esperar
+      }
+
+      if (coincidencias.length === 0) {
+        console.log("⏳ No hay nuevas tareas todavía, esperando...");
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        continue;
+      }
+
+      console.log(
+        "✅ Nuevas tareas encontradas:",
+        coincidencias.map(t => ({
+          userTaskKey: t.userTaskKey,
+          elementId: t.elementId,
+          processInstanceKey: t.processInstanceKey
+        }))
+      );
+
+      await Promise.all(
+        coincidencias.map(async tarea => {
+          try {
+            let res = await fetch(
+              `${API_BASE}/tasks/${tarea.userTaskKey}/complete`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  variables: {
+                    ...variables,
+                    aprobado: true,
+                    processInstanceKey: tarea.processInstanceKey
+                  }
+                })
+              }
+            );
+
+            if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
+
+            console.log(`🎯 Tarea ${tarea.elementId} completada`);
+            tareasCompletadas.add(tarea.userTaskKey);
+            pendientes.delete(tarea.elementId); // quitar de pendientes
+          } catch (err) {
+            console.error(
+              `❌ Error al completar ${tarea.elementId}:`,
+              err.message
+            );
+          }
+        })
+      );
+
+      // 👌 Si ya no queda nada pendiente, salir
+      if (pendientes.size === 0) {
+        console.log("🏁 Todas las aprobaciones finalizadas.");
+        break;
+      }
+    }
+  } catch (err) {
+    console.error("❌ Error en EndFourStep:", err);
+  }
+}
 

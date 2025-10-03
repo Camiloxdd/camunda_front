@@ -232,7 +232,7 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.tableContainer{
+.tableContainer {
     justify-content: center;
     text-align: center;
     align-items: center;
@@ -261,6 +261,10 @@
     font-size: 22px;
 }
 
+.gugutata {
+    width: 700px;
+}
+
 .inputsContainers {
     display: flex;
     margin-top: 20px;
@@ -279,14 +283,13 @@
 }
 
 .inputsContainers input {
-    height: 50px;
-    color: #6f737a;
-    width: 300px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    padding: 5px 10px;
-    font-size: 16px;
-    background-color: transparent;
+    width: 250px;
+    height: 44px;
+    border-radius: .5rem;
+    padding: 0 1rem;
+    border: 2px solid transparent;
+    font-size: 1rem;
+    transition: border-color .3s cubic-bezier(.25, .01, .25, 1) 0s, color .3s cubic-bezier(.25, .01, .25, 1) 0s, background .2s cubic-bezier(.25, .01, .25, 1) 0s;
 }
 
 .inputsContainers input:focus {
@@ -294,18 +297,31 @@
     border: 1px solid transparent;
 }
 
+.inputsContainers label {
+    display: block;
+    margin-bottom: .3rem;
+    font-size: .9rem;
+    font-weight: bold;
+    color: #05060f99;
+    transition: color .3s cubic-bezier(.25, .01, .25, 1) 0s;
+}
+
 .completeInputs {
     background-color: white;
     border-radius: 8px;
+}
+
+.campoAdicional {
     justify-content: center;
-    display: flex;
-    text-align: center;
+    display: grid;
+    text-align: left;
     align-items: center;
 }
 
 .icon {
     color: #1D5DA8;
-    margin-left: 10px;
+    margin-left: 15px;
+    font-size: 15px;
 }
 
 input[type="date"]::-webkit-datetime-edit-year-field,
@@ -325,11 +341,48 @@ input[type="time"]:valid {
     color: #6f737a;
 }
 
+.headerPrecio {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.headerPrecio .textPrecio {
+    background-color: #1D5DA8;
+    color: white;
+    font-weight: bold;
+    width: 100px;
+    padding: 10px;
+    height: 40px;
+    border-width: 2px;
+    border-style: solid;
+    border-color: #1D5DA8;
+    border-radius: 8px 0px 0px 8px;
+}
+
+.headerPrecio .TotalPrecio {
+    text-align: center;
+    justify-content: center;
+    display: flex;
+    width: 140px;
+    padding: 10px;
+    height: 40px;
+    border-radius: 0px 8px 8px 0px;
+    border-color: #1D5DA8;
+    border-width: 2px;
+    border-style: solid;
+}
+
+
 .spaceButtons {
     justify-content: center;
     align-items: center;
     display: flex;
     text-align: center;
+    gap: 10px;
 }
 
 .spaceButtons .separator {
@@ -368,17 +421,24 @@ input[type="time"]:valid {
 }
 
 .btn-agregar {
-    background-color: #1D5DA8;
+    background-color: white;
     font-weight: bold;
+    border-width: 2px;
+    border-style: solid;
+    border-color: #1D5DA8;
+    border-radius: 5px 0px 0px 5px;
     color: white;
-    width: 150px;
+    width: 40px;
     height: 40px;
-    border: none;
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.2s ease;
-    margin-left: 10px;
     margin-top: 15px;
+}
+
+.btn-agregar .iconPlus {
+    color: #1D5DA8;
+    font-weight: bold;
 }
 
 .btn-agregar:hover {
@@ -583,7 +643,83 @@ input[type="time"]:valid {
     outline: none;
 }
 
-.inputGerenciaGeneral{}
+/* Ocultar el checkbox original */
+.camposTextualesUltimoStep input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Label que envuelve el "custom check" */
+.camposTextualesUltimoStep label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    position: relative;
+    font-size: 1rem;
+    user-select: none;
+}
+
+/* El div dentro del label será el círculo */
+.camposTextualesUltimoStep label>div {
+    --clr: #1D5DA8;
+    height: 1.3em;
+    width: 1.3em;
+    background-color: #ccc;
+    border-radius: 50%;
+    position: relative;
+    transition: 300ms;
+}
+
+/* Cuando el checkbox está checked, se pinta */
+.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div {
+    background-color: var(--clr);
+    border-radius: .5rem;
+    animation: pulse 500ms ease-in-out;
+}
+
+/* El ✔️ */
+.camposTextualesUltimoStep label>div::after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+/* Mostrar el ✔️ cuando está marcado */
+.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div::after {
+    display: block;
+    left: 0.45em;
+    top: 0.25em;
+    width: 0.25em;
+    height: 0.5em;
+    border: solid #E0E0E2;
+    border-width: 0 0.15em 0.15em 0;
+    transform: rotate(45deg);
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 #1D5DA890;
+        rotate: 20deg;
+    }
+
+    50% {
+        rotate: -20deg;
+    }
+
+    75% {
+        box-shadow: 0 0 0 10px #1D5DA860;
+    }
+
+    100% {
+        box-shadow: 0 0 0 13px #1D5DA830;
+        rotate: 0;
+    }
+}
+
 
 .autorizacionGerenciaGeneral {
     display: flex;
@@ -902,7 +1038,7 @@ input[type="time"]:valid {
 
 
 /*VISUALIZACION PDF*/
-.containerRevision{
+.containerRevision {
     display: flex;
     gap: 20px;
 }
@@ -937,11 +1073,11 @@ input[type="time"]:valid {
 
 }
 
-.spaceInputsss{
+.spaceInputsss {
     display: flex;
 }
 
-.inputsContainersRevision{
+.inputsContainersRevision {
     margin-top: 15px;
 }
 
@@ -966,7 +1102,7 @@ input[type="time"]:valid {
     border-color: transparent;
 }
 
-.completeInputsRevision input:focus{
+.completeInputsRevision input:focus {
     outline: none;
 }
 
@@ -988,7 +1124,7 @@ input[type="time"]:valid {
     padding: 30px;
 }
 
-.buttonsDownload{
+.buttonsDownload {
 
     justify-content: center;
     align-items: center;
@@ -1018,7 +1154,189 @@ input[type="time"]:valid {
     margin-top: 15px;
 }
 
-.spaceButtonsReview .navegationButton:hover{
+.spaceButtonsReview .navegationButton:hover {
     transform: scale(1.05);
 }
 
+.containerStepFour {
+    display: flex;
+    justify-content: center;
+    gap: 50px;
+    margin-top: 15px;
+}
+
+.containerStepFour .headerInfo {
+    color: #1D5DA8;
+    font-weight: bold;
+    text-align: center;
+}
+
+.containerStepFour .campoInfo {
+    display: flex;
+    background-color: white;
+    width: 260px;
+    margin-top: 15px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    align-items: center;
+}
+
+.containerStepFour .camposTextuales {
+    align-items: center;
+    justify-content: center;
+    margin-left: 15px;
+    margin-top: 15px;
+}
+
+.containerStepFour .camposTextualesUltimoStep {
+    align-items: center;
+    justify-content: center;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.containerStepFour .camposTextualesUltimoStep input {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.containerStepFour .camposTextuales label {
+    display: block;
+    margin-bottom: .3rem;
+    font-size: .9rem;
+    font-weight: bold;
+    margin-right: auto;
+    color: #05060f99;
+    transition: color .3s cubic-bezier(.25, .01, .25, 1) 0s;
+}
+
+.containerStepFour .camposTextuales .text input {
+    max-width: 190px;
+    height: 44px;
+    background-color: #05060f0a;
+    border-radius: .5rem;
+    padding: 0 1rem;
+    border: 2px solid transparent;
+    font-size: 1rem;
+    transition: border-color .3s cubic-bezier(.25, .01, .25, 1) 0s, color .3s cubic-bezier(.25, .01, .25, 1) 0s, background .2s cubic-bezier(.25, .01, .25, 1) 0s;
+}
+
+.containerStepFour .camposTextuales .text input:hover {
+    outline: none;
+    border-color: #1D5DA8;
+}
+
+.loading-cambios {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.loading-cambios .LogoCambios {
+    width: 70px;
+    height: 70px;
+    animation: spinVaried 2s linear infinite;
+}
+
+.loading-cambios .textLoading {
+    font-size: 14px;
+    color: #032c59;
+}
+
+.loading-container-wizzard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: rgba(255, 255, 255, 0.8);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+}
+
+.spinner-wizzard {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid #3498db;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+
+.loading-container-wizzard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.circular-loader {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.logo-loader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70px; /* tamaño del logo */
+  height: 70px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%; /* por si quieres que quede redondo */
+}
+
+.progress-ring {
+  transform: rotate(-90deg); /* para que empiece arriba */
+}
+
+.progress-ring__background {
+  stroke: #e6e6e6;
+}
+
+.progress-ring__circle {
+  stroke-linecap: round;
+}
+.loading-text {
+  margin-top: 15px;
+  font-size: 16px;
+  font-weight: bold;
+  color: #032c59;
+}
+
+@keyframes spinVaried {
+    0% {
+        transform: rotate(0deg);
+        animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+        /* rápido */
+    }
+
+    40% {
+        transform: rotate(200deg);
+        animation-timing-function: ease-out;
+        /* desacelera */
+    }
+
+    70% {
+        transform: rotate(270deg);
+        animation-timing-function: ease-in;
+        /* lento */
+    }
+
+    100% {
+        transform: rotate(360deg);
+        animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+        /* vuelve a rápido */
+    }
+}

@@ -3,13 +3,15 @@ import { useState, useEffect, use } from "react";
 import Navbar from "../../../components/navbar";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft, faPlus } from "@fortawesome/free-solid-svg-icons";
 
 export default function NuevoFormulario({ params }) {
     const { selectedId } = use(params);
     const router = useRouter();
 
     const [step, setStep] = useState(1);
+    const [loading, setLoading] = useState(true);
+    const [progress, setProgress] = useState(0); // ⬅️ progreso del loader
     const [form, setForm] = useState({
         nombre: "",
         fechaSolicitud: "",
@@ -41,13 +43,37 @@ export default function NuevoFormulario({ params }) {
     useEffect(() => {
         async function cargarDatos() {
             try {
+                setLoading(true);
+                setProgress(0);
+
+                // Simulamos progreso
+                const interval = setInterval(() => {
+                    setProgress((prev) => {
+                        if (prev >= 100) {
+                            clearInterval(interval);
+                            return 100;
+                        }
+                        return prev + 5;
+                    });
+                }, 100); // cada 100ms suma 5 → 2 segundos
+
                 const res = await fetch(`http://localhost:4000/formularios/${selectedId}`);
                 if (!res.ok) throw new Error("Error al cargar los datos");
                 const data = await res.json();
-                setForm(data.formulario);
+
+                setForm({
+                    ...data.formulario,
+                    fechaSolicitud: formatDate(data.formulario.fechaSolicitud),
+                    fechaEntrega: formatDate(data.formulario.fechaEntrega),
+                    fechaCompras: formatDate(data.formulario.fechaCompras),
+                });
                 setFilas(data.filas || []);
+
+                // mínimo 2 segundos de loader
+                setTimeout(() => setLoading(false), 2000);
             } catch (error) {
                 console.error(error);
+                setLoading(false);
             }
         }
 
@@ -55,6 +81,7 @@ export default function NuevoFormulario({ params }) {
             cargarDatos();
         }
     }, [selectedId]);
+
 
     const agregarFila = () => {
         setFilas([
@@ -85,7 +112,7 @@ export default function NuevoFormulario({ params }) {
     const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
     const guardarFormulario = async () => {
         try {
-            const res = await fetch(`http://localhost:4000/formularios/${selectedId}`, { 
+            const res = await fetch(`http://localhost:4000/formularios/${selectedId}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -134,6 +161,44 @@ export default function NuevoFormulario({ params }) {
         }
     }, [selectedId]);
 
+    if (loading) {
+        const radius = 60;
+        const circumference = 2 * Math.PI * radius;
+
+        return (
+            <div className="loading-container-wizzard">
+                <div className="circular-loader">
+                    <img src="/coopidrogas_logo_mini.png" alt="Logo" className="logo-loader" />
+                    <svg className="progress-ring" width="140" height="140">
+                        <circle
+                            className="progress-ring__background"
+                            stroke="#e6e6e6"
+                            strokeWidth="8"
+                            fill="transparent"
+                            r={radius}
+                            cx="70"
+                            cy="70"
+                        />
+                        <circle
+                            className="progress-ring__circle"
+                            stroke="#009688"
+                            strokeWidth="8"
+                            fill="transparent"
+                            r={radius}
+                            cx="70"
+                            cy="70"
+                            style={{
+                                strokeDasharray: circumference,
+                                strokeDashoffset: circumference - (progress / 100) * circumference,
+                                transition: "stroke-dashoffset 0.3s ease"
+                            }}
+                        />
+                    </svg>
+                </div>
+                <p className="loading-text">Cargando formulario... {progress}%</p>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -373,7 +438,7 @@ export default function NuevoFormulario({ params }) {
                             </div>
                             <div className="spaceButtons">
                                 <button className="btn-agregar" onClick={agregarFila}>
-                                    <p>Agregar fila</p>
+                                    <FontAwesomeIcon icon={faPlus} className="iconPlus" />
                                 </button>
                                 <p className="separator">|</p>
                                 <button onClick={prevStep} className="navegationButton">
@@ -588,7 +653,7 @@ export default function NuevoFormulario({ params }) {
                     )}
                     <div className="spaceButtons">
                         {step === 3 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-                        {step === 3 && <button className="navegationButton" onClick={async () => {await guardarFormulario(); router.push('/')}}>Guardar</button>}
+                        {step === 3 && <button className="navegationButton" onClick={async () => { await guardarFormulario(); router.push('/') }}>Guardar</button>}
                     </div>
                 </div>
             </div>
