@@ -1,16 +1,34 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import Navbar from "../../components/navbar";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import emailjs from "emailjs-com"
-import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft, faPlus, faX } from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
 import { endFirstStepStartTwoStep, EndFourStep, endTwoStepStartThreeStep, startThreeStep } from "@/app/services/camunda";
-import { motion, AnimatePresence } from "framer-motion";
+import gsap from "gsap";
 
 
 export default function NuevoFormulario() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState(null);
+
+  const contentRef = useRef(null);
+
+  const openModal = (id) => {
+    setSelectedId(id);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setCerrando(true);
+    setTimeout(() => {
+      setMostrarModal(false);
+      setCerrando(false);
+    }, 300); // duración igual al animation-duration
+  };
+
   const router = useRouter();
 
   function calcularRango(monto) {
@@ -124,8 +142,7 @@ export default function NuevoFormulario() {
         purchaseAprobatedErgonomic,
         filas,
       })
-
-      router.push("/");
+      enviarFormulario();
     } catch (error) {
       console.error("Error al iniciar el proceso: ", error)
     }
@@ -142,9 +159,6 @@ export default function NuevoFormulario() {
     urgenciaCompra: "",
     tiempoGestion: "",
     anexos: "",
-    observacionesOne: "",
-    observacionesTwo: "",
-    observacionesThree: "",
     nombreSolicitante: "",
     firmaSolicitante: "",
     nombreAdministrativo: "",
@@ -152,11 +166,9 @@ export default function NuevoFormulario() {
     nombreGerente: "",
     firmaGerente: "",
     autorizacionGerencia: "",
-    fechaCompras: "",
-    horaCompras: "",
-    consecutivoCompras: "",
     firmaCompras: "",
   });
+  console.log(form);
 
   const [filas, setFilas] = useState([
     {
@@ -171,7 +183,9 @@ export default function NuevoFormulario() {
       siExiste: false,
       purchaseTecnology: false,
       sstAprobacion: false,
+      aprobatedStatus: false,
     }
+
   ]);
 
   const agregarFila = () => {
@@ -189,8 +203,10 @@ export default function NuevoFormulario() {
         siExiste: false,
         purchaseTecnology: false,
         sstAprobacion: false,
+        aprobatedStatus: false,
       }
     ]);
+    console.log(filas);
   };
 
   const manejarCambio = (index, campo, valor) => {
@@ -282,9 +298,41 @@ export default function NuevoFormulario() {
 
   useEffect(() => {
     const now = new Date();
-    const fechaHoy = now.toISOString().split("T")[0]; // yyyy-mm-dd
+    const fechaHoy = now.toISOString().split("T")[0];
     setForm(prev => ({ ...prev, fechaSolicitud: fechaHoy }));
-  }, []); // <--- vacío
+  }, []);
+
+  const [items, setItems] = useState([]);
+  const [mostrarModal, setMostrarModal] = useState(false);
+
+  useEffect(() => {
+    if (mostrarModal) {
+      setItems(filas);
+    }
+  }, [mostrarModal, filas]);
+
+  const toggleAprobacion = (index) => {
+    const nuevasFilas = [...filas];
+    nuevasFilas[index].aprobatedStatus = !nuevasFilas[index].aprobatedStatus;
+    setFilas(nuevasFilas);
+    setItems(nuevasFilas);
+  };
+
+  useLayoutEffect(() => {
+    if (contentRef.current) {
+      const direction = step > prevStepRef.current ? 100 : -100;
+
+      gsap.fromTo(
+        contentRef.current,
+        { x: direction, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.6, ease: "power2.out" }
+      );
+
+      prevStepRef.current = step;
+    }
+  }, [step]);
+
+  const prevStepRef = useRef(step);
 
   return (
     <div>
@@ -294,13 +342,13 @@ export default function NuevoFormulario() {
           <FontAwesomeIcon icon={faArrowLeft} className="iconBack" />
           <p>Volver al inicio</p>
         </button>
-      </div>
-      <div className="containerNewformulario">
         <div className="headerNewformulario">
           <h1 className="tittleNewformulario">Crea una nueva requisición</h1>
           <p className="descriptionNewformulario">Paso {step} de 3</p>
         </div>
-        <div className="contentNewformulario">
+      </div>
+      <div className="containerNewformulario" >
+        <div className="contentNewformulario" ref={contentRef}>
           {step == 1 && (
             <div className="gugutata">
               <h1 className="tittleContent">Datos generales del solicitante.</h1>
@@ -677,6 +725,15 @@ export default function NuevoFormulario() {
             </div>
           )}
           <div className="spaceButtons">
+            {step === 3 && <button
+              onClick={() => setMostrarModal(true)}
+              className="navegationButton"
+            >
+              Ver Items
+            </button>
+            }
+            {step === 3 && <p className="separator">|</p>
+            }
             {step === 3 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
             {step === 3 && <button
               onClick={nextStep}
@@ -685,6 +742,7 @@ export default function NuevoFormulario() {
               Siguiente
             </button>
             }
+
           </div>
 
           {step === 4 && (
@@ -775,7 +833,6 @@ export default function NuevoFormulario() {
             <div>
               <p className="tittleHeaderRevision">Revisión de productos</p>
               <div className="containerStepFour">
-                {/* Productos ergonómicos */}
                 {filas.some(f => f.siExiste) && (
                   <div className="campoInfo">
                     <div className="headerInfo">
@@ -801,7 +858,6 @@ export default function NuevoFormulario() {
                   </div>
 
                 )}
-                {/* Productos tecnológicos */}
                 {filas.some(f => f.purchaseTecnology) && (
                   <div className="campoInfo">
                     <div className="headerInfo">
@@ -843,6 +899,55 @@ export default function NuevoFormulario() {
           </div>
         </div>
       </div>
+      {mostrarModal && (
+        <div className="modalOverlay" onClick={() => setMostrarModal(false)}>
+          <div className="modalContent" onClick={(e) => e.stopPropagation()}>
+            <button className="modalClose" onClick={() => setMostrarModal(false)}><FontAwesomeIcon icon={faX} className="iconModalTable" /></button>
+            <h2 className="modalHeader">Aprobación de Ítems</h2>
+
+            <div className="tableContainer">
+              <table className="modalTable">
+                <thead>
+                  <tr>
+                    <th>DESCRIPCIÓN</th>
+                    <th>CANTIDAD</th>
+                    <th>VALOR</th>
+                    <th>CUENTA</th>
+                    <th>APROBADO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr key={index}>
+                      <td>{item.descripcion}</td>
+                      <td>{item.cantidad}</td>
+                      <td>{item.valor}</td>
+                      <td>{item.cuenta}</td>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={item.aprobatedStatus || false}
+                          onChange={() => toggleAprobacion(index)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <button
+              className="confirmButton"
+              onClick={() => {
+                setFilas(items);
+                setMostrarModal(false);
+              }}
+            >
+              Guardar cambios
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

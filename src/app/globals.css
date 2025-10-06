@@ -180,16 +180,24 @@
     justify-content: center;
     display: grid;
     margin-top: 30px;
+    overflow-x: hidden;
 }
 
 .buttonBackDash {
     padding: 20px;
+    display: flex;
+    align-items: center;
+    
+    background-color: red;
 }
+
+.buttonBackDash {}
 
 .buttonBackDash button {
     display: flex;
     height: 40px;
     width: 130px;
+    margin-right: auto;
     gap: 5px;
     text-align: center;
     align-items: center;
@@ -215,19 +223,18 @@
     background-color: #F2F2F2;
     color: #1D5DA8;
     font-weight: bold;
-    padding: 20px;
-    width: 100%;
+    height: 100px;
     text-align: center;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    margin-top: -40px;
+
 }
 
 .contentNewformulario {
-    margin-top: 15px;
     background-color: #F2F2F2;
     padding: 20px;
     width: 100%;
+    height: 95%;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
@@ -383,6 +390,7 @@ input[type="time"]:valid {
     display: flex;
     text-align: center;
     gap: 10px;
+    margin-top: 15px;
 }
 
 .spaceButtons .separator {
@@ -1121,7 +1129,7 @@ input[type="time"]:valid {
 .iconCustom {
     font-size: 200px;
     color: #002855;
-    padding: 30px;
+    padding: 50px;
 }
 
 .buttonsDownload {
@@ -1251,92 +1259,274 @@ input[type="time"]:valid {
 }
 
 .loading-container-wizzard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background-color: rgba(255, 255, 255, 0.8);
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: rgba(255, 255, 255, 0.8);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9999;
 }
 
 .spinner-wizzard {
-  border: 8px solid #f3f3f3;
-  border-top: 8px solid #3498db;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  animation: spin 1s linear infinite;
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #3498db;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    animation: spin 1s linear infinite;
 }
 
 .loading-container-wizzard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
 }
 
 .circular-loader {
-  position: relative;
-  width: 140px;
-  height: 140px;
+    position: relative;
+    width: 140px;
+    height: 140px;
 }
 
 .logo-loader {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 70px; /* tamaño del logo */
-  height: 70px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%; /* por si quieres que quede redondo */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70px;
+    /* tamaño del logo */
+    height: 70px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    /* por si quieres que quede redondo */
 }
 
 .progress-ring {
-  transform: rotate(-90deg); /* para que empiece arriba */
+    transform: rotate(-90deg);
+    /* para que empiece arriba */
 }
 
 .progress-ring__background {
-  stroke: #e6e6e6;
+    stroke: #e6e6e6;
 }
 
 .progress-ring__circle {
-  stroke-linecap: round;
+    stroke-linecap: round;
 }
+
 .loading-text {
-  margin-top: 15px;
-  font-size: 16px;
-  font-weight: bold;
-  color: #032c59;
+    margin-top: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #032c59;
+}
+
+/* Fondo semitransparente detrás del modal */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+/* Contenedor del modal */
+.modalContent {
+    background-color: #ffffff;
+    border-radius: 20px;
+    width: 80%;
+    max-width: 900px;
+    padding: 25px 35px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    position: relative;
+    animation: slideDown 0.3s ease;
+}
+
+/* Cuando se va a cerrar */
+.modalContent.closing {
+  animation: slideUp 0.3s ease forwards;
+}
+
+/* Entrada del modal */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Salida del modal */
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-25px);
+  }
+}
+
+/* Botón de cierre */
+.modalClose {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    width: 30px;
+    height: 30px;
+    border-radius: 15px;
+    border-style: solid;
+    border-color: #1D5DA8;
+    color: #555;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.modalClose:hover {
+    color: #000;
+    transform: scale(1.1);
+}
+
+/* Encabezado del modal */
+.modalHeader {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #1D5DA8;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Contenedor de la tabla */
+.tableContainer {
+    width: 100%;
+    max-height: 400px;
+    overflow-y: auto;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    background-color: #fafafa;
+}
+
+/* Tabla */
+.modalTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+/* Encabezado */
+.modalTable thead {
+    background-color: #1D5DA8;
+    color: #fff;
+}
+
+.modalTable th {
+    text-align: center;
+    padding: 12px 14px;
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+
+.modalTable td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e0e0e0;
+    color: #444;
+}
+
+.modalTable tr:nth-child(even) {
+    background-color: #f8f9f9;
+}
+
+.modalTable input[type="checkbox"] {
+    transform: scale(1.3);
+    cursor: pointer;
+    accent-color: #1D5DA8;
+}
+
+.confirmButton {
+    display: block;
+    margin: 25px auto 0 auto;
+    background-color: #1D5DA8;
+    border: none;
+    color: #fff;
+    padding: 10px 25px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1rem;
+    border-color: #1D5DA8;
+    border-radius: 8px;
+    border-width: 2px;
+    cursor: pointer;
+    border-style: solid;
+    transition: 0.3s ease;
+}
+
+.confirmButton:hover {
+    background-color: white;
+    color: #1D5DA8;
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: #1D5DA8;
+    border-style: solid;
+    transition: 0.3s ease;
+    transform: translateY(-2px);
+}
+
+
+.iconModalTable{
+    color: #1D5DA8;
+    font-size: 15px;
 }
 
 @keyframes spinVaried {
     0% {
         transform: rotate(0deg);
         animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
-        /* rápido */
     }
 
     40% {
         transform: rotate(200deg);
         animation-timing-function: ease-out;
-        /* desacelera */
     }
 
     70% {
         transform: rotate(270deg);
         animation-timing-function: ease-in;
-        /* lento */
     }
 
     100% {
         transform: rotate(360deg);
         animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
-        /* vuelve a rápido */
+    }
+}
+
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-25px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }

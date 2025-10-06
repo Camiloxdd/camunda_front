@@ -131,6 +131,7 @@ export default function PdfViewer({ params }) {
                     fechaCompras: formatDate(data.formulario.fechaCompras),
                 });
                 setFilas(data.filas || []);
+                setItems(data.filas || []);
             } catch (error) {
                 console.error(error);
             }
@@ -140,6 +141,16 @@ export default function PdfViewer({ params }) {
             cargarDatos();
         }
     }, [selectedId]);
+
+    const [showModal, setShowModal] = useState(false);
+    const [items, setItems] = useState([]);
+
+    const toggleItemAprobado = (index) => {
+        const newItems = [...items];
+        newItems[index].purchaseAprobated = !newItems[index].purchaseAprobated;
+        setItems(newItems);
+    };
+
 
     const actualizarEstado = async (nuevoEstado) => {
         try {
@@ -155,11 +166,44 @@ export default function PdfViewer({ params }) {
     };
 
     const exportToExcel = () => {
-        const ws = XLSX.utils.json_to_sheet([form]);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Formulario");
-        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        saveAs(new Blob([wbout], { type: "application/octet-stream" }), "formulario.xlsx");
+
+        // Hoja de información general
+        const wsForm = XLSX.utils.json_to_sheet([form]);
+        XLSX.utils.book_append_sheet(wb, wsForm, "Formulario");
+
+        // Hoja de ítems
+        const itemsData = items.map(item => ({
+            Descripción: item.descripcion,
+            Cantidad: item.cantidad,
+            Centro: item.centro,
+            Cuenta: item.cuenta,
+            Valor: item.valor,
+            Aprobado: item.purchaseAprobated ? "Sí" : "No"
+        }));
+
+        const wsItems = XLSX.utils.json_to_sheet(itemsData);
+
+        // Colorear filas
+        const range = XLSX.utils.decode_range(wsItems['!ref']);
+        for (let R = 1; R <= range.e.r; ++R) {
+            const aprobado = items[R - 1]?.purchaseAprobated;
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                if (!wsItems[cellAddress]) continue;
+                wsItems[cellAddress].s = {
+                    fill: {
+                        fgColor: { rgb: aprobado ? "C6EFCE" : "FFC7CE" },
+                    },
+                };
+            }
+        }
+
+        wb.Sheets["Ítems"] = wsItems;
+        XLSX.utils.book_append_sheet(wb, wsItems, "Ítems");
+
+        const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
+        saveAs(new Blob([wbout], { type: "application/octet-stream" }), "requisicion.xlsx");
     };
 
     const completarListaFormularios = async () => {
@@ -231,38 +275,6 @@ export default function PdfViewer({ params }) {
         }
     }
 
-    const completarDescargarExcel = async () => {
-        try {
-            const tareasRes = await fetch("http://localhost:4000/api/tasks/search", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({})
-            });
-
-            const tareasData = await tareasRes.json();
-            const tareas = tareasData.items || [];
-
-            // 🔍 Buscar la tarea "Descargar Excel"
-            const tareaExcel = tareas.find(
-                t => t.name === "Descargar Excel" && t.state === "CREATED"
-            );
-
-            if (tareaExcel) {
-                await fetch(`http://localhost:4000/api/tasks/${tareaExcel.userTaskKey}/complete`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ variables: {} }),
-                });
-                alert("User task 'Descargar Excel' completada ✅");
-            } else {
-                alert("No hay user task 'Descargar Excel' activa");
-            }
-        } catch (err) {
-            console.error("Error completando 'Descargar Excel':", err);
-            alert("Error completando 'Descargar Excel'");
-        }
-    };
-
     const [isAprobado, setIsAprobado] = useState(null);
 
     const handleAprobacion = async (estado) => {
@@ -276,6 +288,33 @@ export default function PdfViewer({ params }) {
 
         await completarRevisionCamunda(estado);
     };
+
+    const downloadExcelFromBackend = async () => {
+        try {
+            // ✅ Llama al backend para que prepare el Excel (sin enviar nada)
+            await fetch(`http://localhost:4000/formularios/${selectedId}`, {
+                method: "PUT",
+            });
+
+            // ✅ Luego descarga el archivo generado
+            const res = await fetch(`http://localhost:4000/formularios/${selectedId}/excel`);
+            if (!res.ok) throw new Error("Error al generar Excel");
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `formulario_${selectedId}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("❌ Error al descargar Excel:", err);
+            alert("No fue posible descargar el Excel");
+        }
+    };
+
 
     return (
         <div>
@@ -292,9 +331,23 @@ export default function PdfViewer({ params }) {
                     className="pdfFrame"
                 />
                 <div className="revisionInfo">
-                    <div className="headerTittleRevision">
-                        <h1 className="tittleRevision">Información de la revisión</h1>
+                    <div className="headerTittleRevision" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <h1 className="tittleRevision">Información de la requisición</h1>
+                        <button
+                            onClick={() => setShowModal(true)}
+                            style={{
+                                backgroundColor: "#007bff",
+                                color: "#fff",
+                                border: "none",
+                                borderRadius: "8px",
+                                padding: "8px 16px",
+                                cursor: "pointer",
+                            }}
+                        >
+                            Ver ítems
+                        </button>
                     </div>
+
                     <div className="spaceInputsss">
                         <div className="inputsContainersRevision">
                             <div className="inputAndText">
@@ -381,6 +434,7 @@ export default function PdfViewer({ params }) {
                                     <>
                                         <button
                                             className="navegationButton"
+                                            onClick={downloadExcelFromBackend}
                                         >
                                             Descargar Excel
                                         </button>
@@ -391,6 +445,80 @@ export default function PdfViewer({ params }) {
                     </div>
                 </div>
             </div>
+            {showModal && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        width: "100vw",
+                        height: "100vh",
+                        backgroundColor: "rgba(0,0,0,0.5)",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 9999,
+                    }}
+                >
+                    <div
+                        style={{
+                            background: "#fff",
+                            padding: "20px",
+                            borderRadius: "10px",
+                            width: "80%",
+                            maxHeight: "80vh",
+                            overflowY: "auto",
+                        }}
+                    >
+                        <h2>Ítems de la requisición</h2>
+                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                            <thead>
+                                <tr style={{ backgroundColor: "#f5f5f5" }}>
+                                    <th>Descripción</th>
+                                    <th>Cantidad</th>
+                                    <th>Centro</th>
+                                    <th>Cuenta</th>
+                                    <th>Valor</th>
+                                    <th>Aprobado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {items.map((item, i) => (
+                                    <tr key={i} style={{ textAlign: "center", borderBottom: "1px solid #ddd" }}>
+                                        <td>{item.descripcion}</td>
+                                        <td>{item.cantidad}</td>
+                                        <td>{item.centro}</td>
+                                        <td>{item.cuenta}</td>
+                                        <td>{item.valor}</td>
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                checked={item.purchaseAprobated}
+                                                onChange={() => toggleItemAprobado(i)}
+                                            />
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <div style={{ marginTop: "20px", textAlign: "right" }}>
+                            <button
+                                onClick={() => setShowModal(false)}
+                                style={{
+                                    backgroundColor: "#dc3545",
+                                    color: "#fff",
+                                    border: "none",
+                                    borderRadius: "6px",
+                                    padding: "8px 16px",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
