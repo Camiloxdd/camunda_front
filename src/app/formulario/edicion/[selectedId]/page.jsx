@@ -1,18 +1,18 @@
 "use client";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../../../components/navbar";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft, faPlus } from "@fortawesome/free-solid-svg-icons";
 
-export default function NuevoFormulario({ params }) {
-    const { selectedId } = use(params);
+export default function NuevoFormulario() {
+    const { selectedId } = useParams();
     const router = useRouter();
 
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(true);
     const [progress, setProgress] = useState(0); // ⬅️ progreso del loader
-    const [form, setForm] = useState({
+    const initialForm = {
         nombre: "",
         fechaSolicitud: "",
         fechaEntrega: "",
@@ -36,9 +36,29 @@ export default function NuevoFormulario({ params }) {
         horaCompras: "",
         consecutivoCompras: "",
         firmaCompras: "",
-    });
+    };
+    const [form, setForm] = useState(initialForm);
 
     const [filas, setFilas] = useState([]);
+
+    function formatDate(date) {
+        if (!date) return "";
+        if (typeof date === "string" && date.length === 10) return date;
+        const d = new Date(date);
+        if (isNaN(d)) return "";
+        return d.toISOString().slice(0, 10);
+    }
+
+    function normalizeForm(data) {
+        const source = data ?? {};
+        const merged = { ...initialForm, ...source };
+        return {
+            ...merged,
+            fechaSolicitud: formatDate(source?.fechaSolicitud),
+            fechaEntrega: formatDate(source?.fechaEntrega),
+            fechaCompras: formatDate(source?.fechaCompras),
+        };
+    }
 
     useEffect(() => {
         async function cargarDatos() {
@@ -55,19 +75,14 @@ export default function NuevoFormulario({ params }) {
                         }
                         return prev + 5;
                     });
-                }, 100); // cada 100ms suma 5 → 2 segundos
+                }, 100);
 
                 const res = await fetch(`http://localhost:4000/formularios/${selectedId}`);
                 if (!res.ok) throw new Error("Error al cargar los datos");
                 const data = await res.json();
 
-                setForm({
-                    ...data.formulario,
-                    fechaSolicitud: formatDate(data.formulario.fechaSolicitud),
-                    fechaEntrega: formatDate(data.formulario.fechaEntrega),
-                    fechaCompras: formatDate(data.formulario.fechaCompras),
-                });
-                setFilas(data.filas || []);
+                setForm(normalizeForm(data.formulario));
+                setFilas(Array.isArray(data.filas) ? data.filas : []);
 
                 // mínimo 2 segundos de loader
                 setTimeout(() => setLoading(false), 2000);
@@ -126,40 +141,7 @@ export default function NuevoFormulario({ params }) {
             alert("Error al guardar los datos ❌");
         }
     };
-
-
-
-    function formatDate(date) {
-        if (!date) return "";
-        if (typeof date === "string" && date.length === 10) return date;
-        const d = new Date(date);
-        if (isNaN(d)) return "";
-        return d.toISOString().slice(0, 10);
-    }
-
-    useEffect(() => {
-        async function cargarDatos() {
-            try {
-                const res = await fetch(`http://localhost:4000/formularios/${selectedId}`);
-                if (!res.ok) throw new Error("Error al cargar los datos");
-                const data = await res.json();
-
-                setForm({
-                    ...data.formulario,
-                    fechaSolicitud: formatDate(data.formulario.fechaSolicitud),
-                    fechaEntrega: formatDate(data.formulario.fechaEntrega),
-                    fechaCompras: formatDate(data.formulario.fechaCompras),
-                });
-                setFilas(data.filas || []);
-            } catch (error) {
-                console.error(error);
-            }
-        }
-
-        if (selectedId) {
-            cargarDatos();
-        }
-    }, [selectedId]);
+    // Removed duplicate fetch effect to avoid state thrashing and undefined fields
 
     if (loading) {
         const radius = 60;
