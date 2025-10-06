@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState, use, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import Navbar from "@/app/components/navbar";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faCalendar, faClipboard, faBuilding, faFileExcel, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
-export default function PdfViewer({ params }) {
+export default function PdfViewer() {
 
-    const { selectedId } = use(params);
+    const { selectedId } = useParams();
 
     const started = useRef(false);
 
@@ -38,7 +38,8 @@ export default function PdfViewer({ params }) {
     }, [selectedId]);
 
     const router = useRouter();
-    const [form, setForm] = useState({
+
+    const initialForm = {
         nombre: "",
         fechaSolicitud: "",
         fechaEntrega: "",
@@ -63,7 +64,9 @@ export default function PdfViewer({ params }) {
         consecutivoCompras: "",
         firmaCompras: "",
         estado: "",
-    });
+    };
+
+    const [form, setForm] = useState(initialForm);
     const [filas, setFilas] = useState([
         {
             descripcion: "",
@@ -96,14 +99,7 @@ export default function PdfViewer({ params }) {
         ]);
     };
 
-    useEffect(() => {
-        async function fetchData() {
-            const res = await fetch(`http://localhost:4000/formularios/${selectedId}`);
-            const data = await res.json();
-            setForm(data.formulario);
-        }
-        if (selectedId) fetchData();
-    }, [selectedId]);
+    // Removed duplicate fetch that could introduce undefined fields into form
 
     const handleChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
@@ -117,6 +113,17 @@ export default function PdfViewer({ params }) {
         return d.toISOString().slice(0, 10);
     }
 
+    function normalizeForm(data) {
+        const source = data ?? {};
+        const merged = { ...initialForm, ...source };
+        return {
+            ...merged,
+            fechaSolicitud: formatDate(source?.fechaSolicitud),
+            fechaEntrega: formatDate(source?.fechaEntrega),
+            fechaCompras: formatDate(source?.fechaCompras),
+        };
+    }
+
     useEffect(() => {
         async function cargarDatos() {
             try {
@@ -124,13 +131,8 @@ export default function PdfViewer({ params }) {
                 if (!res.ok) throw new Error("Error al cargar los datos");
                 const data = await res.json();
 
-                setForm({
-                    ...data.formulario,
-                    fechaSolicitud: formatDate(data.formulario.fechaSolicitud),
-                    fechaEntrega: formatDate(data.formulario.fechaEntrega),
-                    fechaCompras: formatDate(data.formulario.fechaCompras),
-                });
-                setFilas(data.filas || []);
+                setForm(normalizeForm(data.formulario));
+                setFilas(Array.isArray(data.filas) ? data.filas : []);
             } catch (error) {
                 console.error(error);
             }
