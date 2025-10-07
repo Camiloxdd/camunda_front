@@ -96,7 +96,19 @@ export async function endTwoStepStartThreeStep(variables) {
         const completeUno = await fetch(`${API_BASE}/tasks/${userTaskKeyUno}/complete`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ variables })
+            body: JSON.stringify({
+                variables: {
+                    siExiste: variables.siExiste,
+                    purchaseTecnology: variables.purchaseTecnology,
+                    sstAprobacion: variables.sstAprobacion,
+                    vobo: variables.vobo,
+                    purchaseAprobated: variables.purchaseAprobated,
+                    esMayor: variables.esMayor,
+                    purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
+                    purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
+                    filas: variables.filas,
+                }
+            })
         });
 
         if (!completeUno.ok) throw new Error("No se pudo completar la primera tarea");
@@ -137,7 +149,19 @@ export async function endTwoStepStartThreeStep(variables) {
                 fetch(`${API_BASE}/tasks/${tareaTwo.userTaskKey}/complete`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ variables })
+                    body: JSON.stringify({
+                        variables: {
+                            siExiste: variables.siExiste,
+                            purchaseTecnology: variables.purchaseTecnology,
+                            sstAprobacion: variables.sstAprobacion,
+                            vobo: variables.vobo,
+                            purchaseAprobated: variables.purchaseAprobated,
+                            esMayor: variables.esMayor,
+                            purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
+                            purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
+                            filas: variables.filas,
+                        }
+                    })
                 })
             )
         );
@@ -185,9 +209,15 @@ export async function startThreeStep(variables) {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         variables: {
-                            ...variables,
-                            aprobado: true,
-                            processInstanceKey: tareaDir.processInstanceKey
+                            siExiste: variables.siExiste,
+                            purchaseTecnology: variables.purchaseTecnology,
+                            sstAprobacion: variables.sstAprobacion,
+                            vobo: variables.vobo,
+                            purchaseAprobated: variables.purchaseAprobated,
+                            esMayor: variables.esMayor,
+                            purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
+                            purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
+                            filas: variables.filas,
                         }
                     })
                 })
@@ -231,9 +261,15 @@ export async function startThreeStep(variables) {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         variables: {
-                            ...variables,
-                            aprobado: true,
-                            processInstanceKey: tareaGerenteArea.processInstanceKey
+                            siExiste: variables.siExiste,
+                            purchaseTecnology: variables.purchaseTecnology,
+                            sstAprobacion: variables.sstAprobacion,
+                            vobo: variables.vobo,
+                            purchaseAprobated: variables.purchaseAprobated,
+                            esMayor: variables.esMayor,
+                            purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
+                            purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
+                            filas: variables.filas,
                         }
                     })
                 })
@@ -244,15 +280,121 @@ export async function startThreeStep(variables) {
 
         await delay(3000);
 
-        const aprobacionesIds = [
-            "Activity_1gfg2b4",
-            "Activity_03zql95"
-        ];
+                // ============ GERENTE DE ÁREA ============
+        let tareasResGerenteAreaFinal = await fetch(`${API_BASE}/tasks/search`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
+
+        let tareasDataGerenteAreaFinal = await tareasResGerenteAreaFinal.json();
+        console.log("📌 Tareas recibidas (GerenteArea):", tareasDataGerenteAreaFinal);
+
+        const FinalcoincidenciasGerenteArea = tareasDataGerenteAreaFinal.items
+            .filter(t =>
+                t.elementId === "Activity_1gfg2b4" && // ID real del userTask Gerente
+                t.state === "CREATED"
+            );
+
+        if (FinalcoincidenciasGerenteArea.length === 0) {
+            console.error("⚠️ No hay tareas activas del GerenteArea");
+            return;
+        }
+
+        console.log("✅ Tareas de GerenteArea encontradas:", FinalcoincidenciasGerenteArea.map(t => ({
+            userTaskKey: t.userTaskKey,
+            processInstanceKey: t.processInstanceKey
+        })));
+
+        await Promise.all(
+            FinalcoincidenciasGerenteArea.map(tareaGerenteAreaFinal =>
+                fetch(`${API_BASE}/tasks/${tareaGerenteAreaFinal.userTaskKey}/complete`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        variables: {
+                            siExiste: variables.siExiste,
+                            purchaseTecnology: variables.purchaseTecnology,
+                            sstAprobacion: variables.sstAprobacion,
+                            vobo: variables.vobo,
+                            purchaseAprobated: variables.purchaseAprobated,
+                            esMayor: variables.esMayor,
+                            purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
+                            purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
+                            filas: variables.filas,
+                        }
+                    })
+                })
+            )
+        );
+
+        console.log("🎉 Todas las tareas de GerenteArea fueron completadas");
+
+        await delay(4000);
+
+                // ============ GERENTE DE ÁREA ============
+        let tareasResGerenteAreaFinalisima = await fetch(`${API_BASE}/tasks/search`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({})
+        });
+
+        let tareasDataGerenteAreaFinalisima = await tareasResGerenteAreaFinalisima.json();
+        console.log("📌 Tareas recibidas (GerenteArea):", tareasDataGerenteAreaFinal);
+
+        const FinalisimacoincidenciasGerenteArea = tareasDataGerenteAreaFinalisima.items
+            .filter(t =>
+                t.elementId === "Activity_03zql95" && // ID real del userTask Gerente
+                t.state === "CREATED"
+            );
+
+        if (FinalisimacoincidenciasGerenteArea.length === 0) {
+            console.error("⚠️ No hay tareas activas del GerenteArea");
+            return;
+        }
+
+        console.log("✅ Tareas de GerenteArea encontradas:", FinalisimacoincidenciasGerenteArea.map(t => ({
+            userTaskKey: t.userTaskKey,
+            processInstanceKey: t.processInstanceKey
+        })));
+
+        await Promise.all(
+            FinalisimacoincidenciasGerenteArea.map(tareaGerenteAreaFinalisima =>
+                fetch(`${API_BASE}/tasks/${tareaGerenteAreaFinalisima.userTaskKey}/complete`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        variables: {
+                            siExiste: variables.siExiste,
+                            purchaseTecnology: variables.purchaseTecnology,
+                            sstAprobacion: variables.sstAprobacion,
+                            vobo: variables.vobo,
+                            purchaseAprobated: variables.purchaseAprobated,
+                            esMayor: variables.esMayor,
+                            purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
+                            purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
+                            filas: variables.filas,
+                        }
+                    })
+                })
+            )
+        );
+
+        console.log("🎉 Todas las tareas de GerenteArea fueron completadas");
+
+    } catch (err) {
+        console.error("❌ Error en startThreeStep:", err);
+    }
+}
+
+export async function EndFourStep(variables) {
+    try {
+        const aprobacionesIds = ["Activity_1mpfix0", "Activity_05mekco"];
 
         const tareasCompletadas = new Set();
-        let pendientes = new Set(aprobacionesIds);
+        let pendientes = new Set();
 
-        while (pendientes.size > 0) {
+        while (true) {
             console.log("\n🔄 Buscando nuevas tareas de aprobación...");
 
             let tareasRes = await fetch(`${API_BASE}/tasks/search`, {
@@ -264,19 +406,30 @@ export async function startThreeStep(variables) {
             let tareasData = await tareasRes.json();
             let tareas = tareasData.items || [];
 
-            const coincidencias = tareas.filter(t =>
-                aprobacionesIds.includes(t.elementId) &&
-                t.state === "CREATED" &&
-                !tareasCompletadas.has(t.userTaskKey)
+            // Filtrar solo las que son de aprobación y están en CREATED
+            const coincidencias = tareas.filter(
+                t =>
+                    aprobacionesIds.includes(t.elementId) &&
+                    t.state === "CREATED" &&
+                    !tareasCompletadas.has(t.userTaskKey)
             );
+
+            // Agregar esas tareas al set de pendientes
+            coincidencias.forEach(t => pendientes.add(t.elementId));
+
+            if (pendientes.size === 0) {
+                console.log("⏳ No hay tareas de aprobación, saliendo...");
+                break; // si no hay ninguna, no tiene sentido esperar
+            }
 
             if (coincidencias.length === 0) {
                 console.log("⏳ No hay nuevas tareas todavía, esperando...");
-                await new Promise(resolve => setTimeout(resolve, 2000)); // espera 2s y vuelve a revisar
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 continue;
             }
 
-            console.log("✅ Nuevas tareas encontradas:",
+            console.log(
+                "✅ Nuevas tareas encontradas:",
                 coincidencias.map(t => ({
                     userTaskKey: t.userTaskKey,
                     elementId: t.elementId,
@@ -287,125 +440,49 @@ export async function startThreeStep(variables) {
             await Promise.all(
                 coincidencias.map(async tarea => {
                     try {
-                        let res = await fetch(`${API_BASE}/tasks/${tarea.userTaskKey}/complete`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                variables: {
-                                    ...variables,
-                                    aprobado: true,
-                                    processInstanceKey: tarea.processInstanceKey
-                                }
-                            })
-                        });
+                        let res = await fetch(
+                            `${API_BASE}/tasks/${tarea.userTaskKey}/complete`,
+                            {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    variables: {
+                                        siExiste: variables.siExiste,
+                                        purchaseTecnology: variables.purchaseTecnology,
+                                        sstAprobacion: variables.sstAprobacion,
+                                        vobo: variables.vobo,
+                                        purchaseAprobated: variables.purchaseAprobated,
+                                        esMayor: variables.esMayor,
+                                        purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
+                                        purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
+                                        filas: variables.filas,
+                                    }
+                                })
+                            }
+                        );
 
                         if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
 
                         console.log(`🎯 Tarea ${tarea.elementId} completada`);
                         tareasCompletadas.add(tarea.userTaskKey);
-                        pendientes.delete(tarea.elementId); // 👈 eliminar de las pendientes
+                        pendientes.delete(tarea.elementId); // quitar de pendientes
                     } catch (err) {
-                        console.error(`❌ Error al completar ${tarea.elementId}:`, err.message);
+                        console.error(
+                            `❌ Error al completar ${tarea.elementId}:`,
+                            err.message
+                        );
                     }
                 })
             );
+
+            // 👌 Si ya no queda nada pendiente, salir
+            if (pendientes.size === 0) {
+                console.log("🏁 Todas las aprobaciones finalizadas.");
+                break;
+            }
         }
-
     } catch (err) {
-        console.error("❌ Error en startThreeStep:", err);
+        console.error("❌ Error en EndFourStep:", err);
     }
-}
-
-export async function EndFourStep(variables) {
-  try {
-    const aprobacionesIds = ["Activity_1mpfix0", "Activity_05mekco"];
-
-    const tareasCompletadas = new Set();
-    let pendientes = new Set();
-
-    while (true) {
-      console.log("\n🔄 Buscando nuevas tareas de aprobación...");
-
-      let tareasRes = await fetch(`${API_BASE}/tasks/search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({})
-      });
-
-      let tareasData = await tareasRes.json();
-      let tareas = tareasData.items || [];
-
-      // Filtrar solo las que son de aprobación y están en CREATED
-      const coincidencias = tareas.filter(
-        t =>
-          aprobacionesIds.includes(t.elementId) &&
-          t.state === "CREATED" &&
-          !tareasCompletadas.has(t.userTaskKey)
-      );
-
-      // Agregar esas tareas al set de pendientes
-      coincidencias.forEach(t => pendientes.add(t.elementId));
-
-      if (pendientes.size === 0) {
-        console.log("⏳ No hay tareas de aprobación, saliendo...");
-        break; // si no hay ninguna, no tiene sentido esperar
-      }
-
-      if (coincidencias.length === 0) {
-        console.log("⏳ No hay nuevas tareas todavía, esperando...");
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        continue;
-      }
-
-      console.log(
-        "✅ Nuevas tareas encontradas:",
-        coincidencias.map(t => ({
-          userTaskKey: t.userTaskKey,
-          elementId: t.elementId,
-          processInstanceKey: t.processInstanceKey
-        }))
-      );
-
-      await Promise.all(
-        coincidencias.map(async tarea => {
-          try {
-            let res = await fetch(
-              `${API_BASE}/tasks/${tarea.userTaskKey}/complete`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  variables: {
-                    ...variables,
-                    aprobado: true,
-                    processInstanceKey: tarea.processInstanceKey
-                  }
-                })
-              }
-            );
-
-            if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
-
-            console.log(`🎯 Tarea ${tarea.elementId} completada`);
-            tareasCompletadas.add(tarea.userTaskKey);
-            pendientes.delete(tarea.elementId); // quitar de pendientes
-          } catch (err) {
-            console.error(
-              `❌ Error al completar ${tarea.elementId}:`,
-              err.message
-            );
-          }
-        })
-      );
-
-      // 👌 Si ya no queda nada pendiente, salir
-      if (pendientes.size === 0) {
-        console.log("🏁 Todas las aprobaciones finalizadas.");
-        break;
-      }
-    }
-  } catch (err) {
-    console.error("❌ Error en EndFourStep:", err);
-  }
 }
 

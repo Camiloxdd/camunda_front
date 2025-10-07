@@ -11,23 +11,7 @@ import gsap from "gsap";
 
 
 export default function NuevoFormulario() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
-
   const contentRef = useRef(null);
-
-  const openModal = (id) => {
-    setSelectedId(id);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setCerrando(true);
-    setTimeout(() => {
-      setMostrarModal(false);
-      setCerrando(false);
-    }, 300); // duración igual al animation-duration
-  };
 
   const router = useRouter();
 
@@ -107,6 +91,7 @@ export default function NuevoFormulario() {
         purchaseTecnology,
         sstAprobacion,
         vobo,
+        esMayor,
         purchaseAprobated,
         purchaseAprobatedTecnology,
         purchaseAprobatedErgonomic,
@@ -210,25 +195,27 @@ export default function NuevoFormulario() {
   };
 
   const manejarCambio = (index, campo, valor) => {
-    const nuevasFilas = [...filas];
-    nuevasFilas[index][campo] = valor;
-    setFilas(nuevasFilas);
+    // actualizar filas
+    setFilas(prev => {
+      const nuevasFilas = [...prev];
+      nuevasFilas[index] = { ...nuevasFilas[index], [campo]: valor };
+      return nuevasFilas;
+    });
+
+    // mantener sincronía con items (preservando aprobatedStatus si ya existía)
+    setItems(prev => {
+      const nuevas = Array.isArray(prev) ? [...prev] : [];
+      // asegurar longitud
+      while (nuevas.length <= index) nuevas.push({});
+      nuevas[index] = { ...nuevas[index], [campo]: valor };
+      return nuevas;
+    });
   };
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const nextStep = () => {
-    setStep((prev) => {
-      if (prev === 3) {
-        // desde step 3, si inputs === 4 mostramos step 4, sino saltamos al 5
-        return rango.inputs === 4 ? 4 : 5;
-      } else {
-        return prev + 1; // otros steps normales
-      }
-    });
-  };
 
   const prevStep = () => {
     setStep((prev) => {
@@ -302,21 +289,85 @@ export default function NuevoFormulario() {
     setForm(prev => ({ ...prev, fechaSolicitud: fechaHoy }));
   }, []);
 
-  const [items, setItems] = useState([]);
+  useEffect(() => {
+    if (step === 3) {
+      setItems(filas);
+    }
+  }, [step, filas]);
+
+  const [items, setItems] = useState(() => {
+    try {
+      const saved = typeof window !== "undefined" ? localStorage.getItem("approvalItems") : null;
+      return saved ? JSON.parse(saved) : filas;
+    } catch (e) {
+      return filas;
+    }
+  });
   const [mostrarModal, setMostrarModal] = useState(false);
 
   useEffect(() => {
-    if (mostrarModal) {
-      setItems(filas);
-    }
-  }, [mostrarModal, filas]);
+    setItems(prev => {
+      const base = Array.isArray(prev) ? prev : [];
+      const merged = filas.map((f, i) => {
+        const prevItem = base[i] || {};
+        return {
+          ...f,
+          aprobatedStatus: typeof prevItem.aprobatedStatus !== "undefined" ? prevItem.aprobatedStatus : (f.aprobatedStatus || false)
+        };
+      });
+      return merged;
+    });
+  }, [filas]);
 
+  useEffect(() => {
+    setItems(prev => {
+      const base = Array.isArray(prev) ? prev : [];
+      const merged = filas.map((f, i) => {
+        const prevItem = base[i] || {};
+        return {
+          ...f,
+          aprobatedStatus: typeof prevItem.aprobatedStatus !== "undefined" ? prevItem.aprobatedStatus : (f.aprobatedStatus || false)
+        };
+      });
+      return merged;
+    });
+  }, [filas]);
+
+  const [visibleSnapshotIds, setVisibleSnapshotIds] = useState([]);
+
+  useEffect(() => {
+    // Al entrar a cada step hacemos snapshot:
+    if (step < 3) {
+      setVisibleSnapshotIds([]);
+      return;
+    }
+    if (step === 3) {
+      // En step 3 mostramos TODOS los ítems para poder aprobar/desaprobar
+      setVisibleSnapshotIds(items.map((_, i) => i));
+      return;
+    }
+    // En steps > 3: muestra los índices de los items que AL MOMENTO de entrar al step están aprobados
+    const visibles = [];
+    items.forEach((it, i) => {
+      if (it && it.aprobatedStatus) visibles.push(i);
+    });
+    setVisibleSnapshotIds(visibles);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  // toggle de aprobación: actualiza items y filas (pero la visibilidad en el step actual se mantiene
+  // porque usamos snapshot por step; el cambio afectará pasos siguientes)
   const toggleAprobacion = (index) => {
-    const nuevasFilas = [...filas];
-    nuevasFilas[index].aprobatedStatus = !nuevasFilas[index].aprobatedStatus;
-    setFilas(nuevasFilas);
-    setItems(nuevasFilas);
+    setItems(prev => {
+      const copy = [...prev];
+      copy[index] = { ...(copy[index] || {}), aprobatedStatus: !copy[index]?.aprobatedStatus };
+      // 🔹 Guardar también en filas de inmediato
+      setFilas(copy);
+      return copy;
+    });
   };
+
+  const itemsToShow = visibleSnapshotIds.map(i => items[i]).filter(Boolean);
 
   useLayoutEffect(() => {
     if (contentRef.current) {
@@ -334,18 +385,79 @@ export default function NuevoFormulario() {
 
   const prevStepRef = useRef(step);
 
+  const [itemsAprobadosStep3, setItemsAprobadosStep3] = useState([]);
+  const [itemsPendientesStep4, setItemsPendientesStep4] = useState([]);
+  const [itemsAprobadosStep4, setItemsAprobadosStep4] = useState([]);
+  const [itemsPendientesStep5, setItemsPendientesStep5] = useState([]);
+  const [itemsAprobadosStep5, setItemsAprobadosStep5] = useState([]);
+  const [itemsPendientesStep6, setItemsPendientesStep6] = useState([]);
+
+  const nextStep = () => {
+    setStep((prev) => {
+      if (prev === 3) {
+        // Guardar los aprobados y los pendientes del paso 3
+        const aprobadosPaso3 = items.filter(item => item.aprobatedStatus === true);
+        const pendientesPaso4 = items.filter(item => item.aprobatedStatus !== true);
+
+        // Actualiza las filas para que el valor de aprobatedStatus quede guardado
+        setFilas(items);
+
+        // Guarda en estado
+        setItemsAprobadosStep3(aprobadosPaso3);
+        setItemsPendientesStep4(pendientesPaso4);
+
+        // 🔹 Al pasar al paso 4, mostramos solo los aprobados
+        setItems(aprobadosPaso3);
+
+        return 4;
+      }
+
+      if (prev === 4) {
+        const aprobadosPaso4 = items.filter(item => item.aprobatedStatus === true);
+        const pendientesPaso5 = items.filter(item => item.aprobatedStatus !== true);
+
+        // Guardamos valores reales
+        setFilas(items);
+        setItemsAprobadosStep4(aprobadosPaso4);
+        setItemsPendientesStep5(pendientesPaso5);
+
+        // 🔹 Solo los aprobados pasan al siguiente paso
+        setItems(aprobadosPaso4);
+
+        return 5;
+      }
+
+      if (prev === 5) {
+        const aprobadosPaso5 = items.filter(item => item.aprobatedStatus === true);
+        const pendientesPaso6 = items.filter(item => item.aprobatedStatus !== true);
+
+        setFilas(items);
+        setItemsAprobadosStep5(aprobadosPaso5);
+        setItemsPendientesStep6(pendientesPaso6);
+
+        setItems(aprobadosPaso5);
+
+        return 6;
+      }
+
+      // 🔹 Continúa normalmente hasta el paso 9
+      return Math.min(prev + 1, 9);
+    });
+  };
+
+
   return (
     <div>
       <Navbar />
       <div className="buttonBackDash">
         <button onClick={() => router.push('/')}>
           <FontAwesomeIcon icon={faArrowLeft} className="iconBack" />
-          <p>Volver al inicio</p>
         </button>
-        <div className="headerNewformulario">
-          <h1 className="tittleNewformulario">Crea una nueva requisición</h1>
-          <p className="descriptionNewformulario">Paso {step} de 3</p>
-        </div>
+
+      </div>
+      <div className="headerNewformulario">
+        <h1 className="tittleNewformulario">Crea una nueva requisición</h1>
+        <p className="descriptionNewformulario">Paso {step} de 9</p>
       </div>
       <div className="containerNewformulario" >
         <div className="contentNewformulario" ref={contentRef}>
@@ -492,7 +604,7 @@ export default function NuevoFormulario() {
           )}
 
           {step == 2 && (
-            <div>
+            <div className="containerTablitas">
               <div className="tableContainer">
                 <h1 className="tittleTable">DESCRIPCION DEL ELEMENTO</h1>
                 <div className="tabla-container">
@@ -664,172 +776,497 @@ export default function NuevoFormulario() {
           {step === 3 && (
             <div>
               <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
-              <div className="containerStepFour">
-                <div className="campoInfo">
-                  <div className="headerInfo">
-                    <p>DIRECTOR/ LIDER DE AREA</p>
-                  </div>
-                  <div className="camposTextuales">
-                    <label>Nombre</label>
-                    <div className="text">
-                      <input
-                        type="text"
-                        name="nombreSolicitante"
-                        placeholder=""
-                        value={form.nombreSolicitante}
-                        onChange={handleChange}
-                      />
+              <div className="papiContainer">
+                <div className="containerStepFour">
+                  <div className="campoInfo">
+                    <div className="headerInfo">
+                      <p>DIRECTOR/ LIDER DE AREA</p>
+                    </div>
+                    <div className="camposTextuales">
+                      <label>Nombre</label>
+                      <div className="text">
+                        <input
+                          type="text"
+                          name="nombreSolicitante"
+                          placeholder=""
+                          value={form.nombreSolicitante}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="camposTextuales">
+                      <label>Firma</label>
+                      <div className="text">
+                        <input type="text"
+                          name="firmaSolicitante"
+                          placeholder=""
+                          value={form.firmaSolicitante}
+                          onChange={handleChange}
+                          className="inputFirma" />
+                      </div>
                     </div>
                   </div>
-                  <div className="camposTextuales">
-                    <label>Firma</label>
-                    <div className="text">
-                      <input type="text"
-                        name="firmaSolicitante"
-                        placeholder=""
-                        value={form.firmaSolicitante}
-                        onChange={handleChange}
-                        className="inputFirma" />
+                  <div className="modalContent" >
+                    <h2 className="modalHeader">Aprobación de Ítems</h2>
+                    <div className="tableContainer">
+                      <table className="modalTable">
+                        <thead>
+                          <tr>
+                            <th>DESCRIPCIÓN</th>
+                            <th>CANTIDAD</th>
+                            <th>VALOR</th>
+                            <th>CUENTA</th>
+                            <th>APROBADO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((item, index) => (
+                            <tr key={index}>
+                              <td>{item.descripcion}</td>
+                              <td>{item.cantidad}</td>
+                              <td>{item.valor}</td>
+                              <td>{item.cuenta}</td>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={item.aprobatedStatus || false}
+                                  onChange={() => toggleAprobacion(index)}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  </div>
-                </div>
-                <div className="campoInfo">
-                  <div className="headerInfo">
-                    <p>GERENTE DE AREA</p>
-                  </div>
-                  <div className="camposTextuales">
-                    <label>Nombre</label>
-                    <div className="text">
-                      <input
-                        type="text"
-                        name="nombreAdministrativo"
-                        placeholder=""
-                        value={form.nombreAdministrativo}
-                        onChange={handleChange} />
-                    </div>
-                  </div>
-                  <div className="camposTextuales">
-                    <label>Firma</label>
-                    <div className="text">
-                      <input
-                        type="text"
-                        name="firmaAdministrativo"
-                        placeholder=""
-                        value={form.firmaAdministrativo}
-                        onChange={handleChange}
-                        className="inputFirma" />
-                    </div>
+                    <button
+                      className="confirmButton"
+                      onClick={() => {
+                        setFilas(items);
+                        setMostrarModal(false);
+                      }}
+                    >
+                      Guardar cambios
+                    </button>
                   </div>
                 </div>
               </div>
+              <div className="spaceButtons">
+                {step === 3 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
+                {step === 3 && <button
+                  onClick={nextStep}
+                  className="navegationButton"
+                >
+                  Siguiente
+                </button>
+                }
+              </div>
             </div>
           )}
-          <div className="spaceButtons">
-            {step === 3 && <button
-              onClick={() => setMostrarModal(true)}
-              className="navegationButton"
-            >
-              Ver Items
-            </button>
-            }
-            {step === 3 && <p className="separator">|</p>
-            }
-            {step === 3 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-            {step === 3 && <button
-              onClick={nextStep}
-              className="navegationButton"
-            >
-              Siguiente
-            </button>
-            }
 
-          </div>
 
           {step === 4 && (
             <div>
               <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
-              <div className="containerStepFour">
-                <div className="campoInfo">
-                  <div className="headerInfo">
-                    <p>GERENCIA GENERAL</p>
-                  </div>
-                  <div className="camposTextuales">
-                    <label>Nombre</label>
-                    <div className="text">
-                      <input
-                        type="text"
-                        name="autorizacionGerencia"
-                        className="inputGerenciaGeneral"
-                        placeholder=""
-                        value={form.autorizacionGerencia}
-                        onChange={handleChange} />
+              <div className="papiContainer">
+                <div className="containerStepFour">
+                  <div className="campoInfo">
+                    <div className="headerInfo">
+                      <p>GERENTE DE AREA</p>
+                    </div>
+                    <div className="camposTextuales">
+                      <label>Nombre</label>
+                      <div className="text">
+                        <input
+                          type="text"
+                          name="nombreAdministrativo"
+                          placeholder=""
+                          value={form.nombreAdministrativo}
+                          onChange={handleChange} />
+                      </div>
+                    </div>
+                    <div className="camposTextuales">
+                      <label>Firma</label>
+                      <div className="text">
+                        <input
+                          type="text"
+                          name="firmaAdministrativo"
+                          placeholder=""
+                          value={form.firmaAdministrativo}
+                          onChange={handleChange}
+                          className="inputFirma" />
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="campoInfo">
-                  <div className="headerInfo">
-                    <p>GERENTE ADMINISTRATIVO</p>
-                  </div>
-                  <div className="camposTextuales">
-                    <label>Nombre</label>
-                    <div className="text">
-                      <input
-                        type="text"
-                        name="nombreGerente"
-                        placeholder=""
-                        value={form.nombreGerente}
-                        onChange={handleChange}
-                      />
+                  <div className="modalContent" >
+                    <h2 className="modalHeader">Aprobación de Ítems</h2>
+                    <div className="tableContainer">
+                      <table className="modalTable">
+                        <thead>
+                          <tr>
+                            <th>DESCRIPCIÓN</th>
+                            <th>CANTIDAD</th>
+                            <th>VALOR</th>
+                            <th>CUENTA</th>
+                            <th>APROBADO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((item, index) => (
+                            <tr key={index}>
+                              <td>{item.descripcion}</td>
+                              <td>{item.cantidad}</td>
+                              <td>{item.valor}</td>
+                              <td>{item.cuenta}</td>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={item.aprobatedStatus || false}
+                                  onChange={() => toggleAprobacion(index)}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  </div>
-                  <div className="camposTextuales">
-                    <label>Firma</label>
-                    <div className="text">
-                      <input
-                        type="text"
-                        name="firmaGerente"
-                        placeholder=""
-                        value={form.firmaGerente}
-                        onChange={handleChange}
-                        className="inputFirma" />
-                    </div>
-                  </div>
-                </div>
-                <div className="campoInfo">
-                  <div className="headerInfo">
-                    <p>FIRMA SERVICIO ADMIN</p>
-                  </div>
-                  <div className="camposTextuales">
-                    <label>Nombre</label>
-                    <div className="text">
-                      <input
-                        type="text"
-                        name="firmaCompras"
-                        placeholder=""
-                        value={form.firmaCompras}
-                        onChange={handleChange}
-                        className="inputFirma" />
-                    </div>
+                    <button
+                      className="confirmButton"
+                      onClick={() => {
+                        setFilas(items);
+                        setMostrarModal(false);
+                      }}
+                    >
+                      Guardar cambios
+                    </button>
                   </div>
                 </div>
               </div>
+              <div className="spaceButtons">
+                {step === 4 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
+                {step === 4 && <button
+                  onClick={handleClickThree}
+                  className="navegationButton"
+                >
+                  Siguiente
+                </button>
+                }
+              </div>
             </div>
           )}
-          <div className="spaceButtons">
-            {step === 4 && (
-              <button className="navegationButton" onClick={prevStep}>
-                Volver
-              </button>
-            )}
-            {step === 4 && (
-              <button className="navegationButton" onClick={handleClickThree}>
-                Siguiente
-              </button>
-            )}
-          </div>
-
 
           {step === 5 && (
+            <div>
+              <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
+              <div className="papiContainer">
+                <div className="containerStepFour">
+                  <div className="campoInfo">
+                    <div className="headerInfo">
+                      <p>GERENCIA GENERAL</p>
+                    </div>
+                    <div className="camposTextuales">
+                      <label>Nombre</label>
+                      <div className="text">
+                        <input
+                          type="text"
+                          name="autorizacionGerencia"
+                          className="inputGerenciaGeneral"
+                          placeholder=""
+                          value={form.autorizacionGerencia}
+                          onChange={handleChange} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modalContent" >
+                    <h2 className="modalHeader">Aprobación de Ítems</h2>
+                    <div className="tableContainer">
+                      <table className="modalTable">
+                        <thead>
+                          <tr>
+                            <th>DESCRIPCIÓN</th>
+                            <th>CANTIDAD</th>
+                            <th>VALOR</th>
+                            <th>CUENTA</th>
+                            <th>APROBADO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((item, index) => (
+                            <tr key={index}>
+                              <td>{item.descripcion}</td>
+                              <td>{item.cantidad}</td>
+                              <td>{item.valor}</td>
+                              <td>{item.cuenta}</td>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={item.aprobatedStatus || false}
+                                  onChange={() => toggleAprobacion(index)}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <button
+                      className="confirmButton"
+                      onClick={() => {
+                        setFilas(items);
+                        setMostrarModal(false);
+                      }}
+                    >
+                      Guardar cambios
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="spaceButtons">
+                {step === 5 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
+                {step === 5 && <button
+                  onClick={nextStep}
+                  className="navegationButton"
+                >
+                  Enviar
+                </button>
+                }
+              </div>
+            </div>
+          )}
+
+          {step === 6 && (
+            <div>
+              <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
+              <div className="papiContainer">
+                <div className="containerStepFour">
+                  <div className="campoInfo">
+                    <div className="headerInfo">
+                      <p>GERENCIA GENERAL</p>
+                    </div>
+                    <div className="camposTextuales">
+                      <label>Nombre</label>
+                      <div className="text">
+                        <input
+                          type="text"
+                          name="autorizacionGerencia"
+                          className="inputGerenciaGeneral"
+                          placeholder=""
+                          value={form.autorizacionGerencia}
+                          onChange={handleChange} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modalContent" >
+                    <h2 className="modalHeader">Aprobación de Ítems</h2>
+                    <div className="tableContainer">
+                      <table className="modalTable">
+                        <thead>
+                          <tr>
+                            <th>DESCRIPCIÓN</th>
+                            <th>CANTIDAD</th>
+                            <th>VALOR</th>
+                            <th>CUENTA</th>
+                            <th>APROBADO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((item, index) => (
+                            <tr key={index}>
+                              <td>{item.descripcion}</td>
+                              <td>{item.cantidad}</td>
+                              <td>{item.valor}</td>
+                              <td>{item.cuenta}</td>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={item.aprobatedStatus || false}
+                                  onChange={() => toggleAprobacion(index)}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <button
+                      className="confirmButton"
+                      onClick={() => {
+                        setFilas(items);
+                        setMostrarModal(false);
+                      }}
+                    >
+                      Guardar cambios
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="spaceButtons">
+                {step === 6 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
+                {step === 6 && <button
+                  onClick={nextStep}
+                  className="navegationButton"
+                >
+                  Enviar
+                </button>
+                }
+              </div>
+            </div>
+          )}
+
+          {step === 7 && (
+            <div>
+              <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
+              <div className="papiContainer">
+                <div className="containerStepFour">
+                  <div className="campoInfo">
+                    <div className="headerInfo">
+                      <p>GERENTE ADMINISTRATIVO</p>
+                    </div>
+                    <div className="camposTextuales">
+                      <label>Nombre</label>
+                      <div className="text">
+                        <input type="text" name="nombreGerente" placeholder="" value={form.nombreGerente} onChange={handleChange} />
+                      </div>
+                    </div>
+                    <div className="camposTextuales">
+                      <label>Firma</label>
+                      <div className="text">
+                        <input type="text" name="firmaGerente" placeholder="" value={form.firmaGerente} onChange={handleChange}
+                          className="inputFirma" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modalContent" >
+                    <h2 className="modalHeader">Aprobación de Ítems</h2>
+                    <div className="tableContainer">
+                      <table className="modalTable">
+                        <thead>
+                          <tr>
+                            <th>DESCRIPCIÓN</th>
+                            <th>CANTIDAD</th>
+                            <th>VALOR</th>
+                            <th>CUENTA</th>
+                            <th>APROBADO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((item, index) => (
+                            <tr key={index}>
+                              <td>{item.descripcion}</td>
+                              <td>{item.cantidad}</td>
+                              <td>{item.valor}</td>
+                              <td>{item.cuenta}</td>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={item.aprobatedStatus || false}
+                                  onChange={() => toggleAprobacion(index)}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <button
+                      className="confirmButton"
+                      onClick={() => {
+                        setFilas(items);
+                        setMostrarModal(false);
+                      }}
+                    >
+                      Guardar cambios
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="spaceButtons">
+                {step === 7 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
+                {step === 7 && <button
+                  onClick={nextStep}
+                  className="navegationButton"
+                >
+                  Enviar
+                </button>
+                }
+              </div>
+            </div>
+          )}
+
+          {step === 8 && (
+            <div>
+              <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
+              <div className="papiContainer">
+                <div className="containerStepFour">
+                  <div className="campoInfo">
+                    <div className="headerInfo">
+                      <p>FIRMA SERVICIO ADMIN</p>
+                    </div>
+                    <div className="camposTextuales">
+                      <label>Nombre</label>
+                      <div className="text">
+                        <input type="text" name="firmaCompras" placeholder="" value={form.firmaCompras} onChange={handleChange}
+                          className="inputFirma" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modalContent" >
+                    <h2 className="modalHeader">Aprobación de Ítems</h2>
+                    <div className="tableContainer">
+                      <table className="modalTable">
+                        <thead>
+                          <tr>
+                            <th>DESCRIPCIÓN</th>
+                            <th>CANTIDAD</th>
+                            <th>VALOR</th>
+                            <th>CUENTA</th>
+                            <th>APROBADO</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {items.map((item, index) => (
+                            <tr key={index}>
+                              <td>{item.descripcion}</td>
+                              <td>{item.cantidad}</td>
+                              <td>{item.valor}</td>
+                              <td>{item.cuenta}</td>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={item.aprobatedStatus || false}
+                                  onChange={() => toggleAprobacion(index)}
+                                />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <button
+                      className="confirmButton"
+                      onClick={() => {
+                        setFilas(items);
+                        setMostrarModal(false);
+                      }}
+                    >
+                      Guardar cambios
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="spaceButtons">
+                {step === 8 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
+                {step === 8 && <button
+                  onClick={nextStep}
+                  className="navegationButton"
+                >
+                  Enviar
+                </button>
+                }
+              </div>
+            </div>
+          )}
+
+          {step === 9 && (
             <div>
               <p className="tittleHeaderRevision">Revisión de productos</p>
               <div className="containerStepFour">
@@ -884,70 +1321,63 @@ export default function NuevoFormulario() {
                       ))}
                   </div>
                 )}
+                <div className="modalContent" >
+                  <h2 className="modalHeader">Aprobación de Ítems</h2>
+                  <div className="tableContainer">
+                    <table className="modalTable">
+                      <thead>
+                        <tr>
+                          <th>DESCRIPCIÓN</th>
+                          <th>CANTIDAD</th>
+                          <th>VALOR</th>
+                          <th>CUENTA</th>
+                          <th>APROBADO</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((item, index) => (
+                          <tr key={index}>
+                            <td>{item.descripcion}</td>
+                            <td>{item.cantidad}</td>
+                            <td>{item.valor}</td>
+                            <td>{item.cuenta}</td>
+                            <td>
+                              <input
+                                type="checkbox"
+                                checked={item.aprobatedStatus || false}
+                                onChange={() => toggleAprobacion(index)}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <button
+                    className="confirmButton"
+                    onClick={() => {
+                      setFilas(items);
+                      setMostrarModal(false);
+                    }}
+                  >
+                    Guardar cambios
+                  </button>
+                </div>
+              </div>
+              <div className="spaceButtons">
+                {step === 9 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
+                {step === 9 && <button
+                  onClick={handleClickFour}
+                  className="navegationButton"
+                >
+                  Enviar
+                </button>
+                }
               </div>
             </div>
           )}
-          <div className="spaceButtons">
-            {step === 5 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-            {step === 5 && <button
-              onClick={handleClickFour}
-              className="navegationButton"
-            >
-              Enviar
-            </button>
-            }
-          </div>
         </div>
       </div>
-      {mostrarModal && (
-        <div className="modalOverlay" onClick={() => setMostrarModal(false)}>
-          <div className="modalContent" onClick={(e) => e.stopPropagation()}>
-            <button className="modalClose" onClick={() => setMostrarModal(false)}><FontAwesomeIcon icon={faX} className="iconModalTable" /></button>
-            <h2 className="modalHeader">Aprobación de Ítems</h2>
-
-            <div className="tableContainer">
-              <table className="modalTable">
-                <thead>
-                  <tr>
-                    <th>DESCRIPCIÓN</th>
-                    <th>CANTIDAD</th>
-                    <th>VALOR</th>
-                    <th>CUENTA</th>
-                    <th>APROBADO</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, index) => (
-                    <tr key={index}>
-                      <td>{item.descripcion}</td>
-                      <td>{item.cantidad}</td>
-                      <td>{item.valor}</td>
-                      <td>{item.cuenta}</td>
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={item.aprobatedStatus || false}
-                          onChange={() => toggleAprobacion(index)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <button
-              className="confirmButton"
-              onClick={() => {
-                setFilas(items);
-                setMostrarModal(false);
-              }}
-            >
-              Guardar cambios
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -7,26 +7,26 @@
     font-family: 'Poppins', sans-serif;
 }
 
+/* NAVBAR */
 .navbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     background-color: white;
-    padding: 1rem 2rem;
-    color: white;
+    padding: clamp(0.5rem, 2vw, 1rem) clamp(1rem, 3vw, 2rem);
     border-bottom: 3px solid #1D5DA8;
 }
 
 .nav-links .tittle {
-    font-size: 25px;
+    font-size: clamp(1rem, 2vw, 1.6rem);
     font-weight: bold;
     color: #EA7600;
 }
 
 .logo {
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 2vw, 1.8rem);
     font-weight: bold;
-    height: 60px;
+    height: clamp(40px, 5vw, 60px);
     letter-spacing: 1px;
     color: #ffcc00;
 }
@@ -34,17 +34,17 @@
 .nav-links {
     list-style: none;
     display: flex;
-    gap: 1.5rem;
+    gap: clamp(0.5rem, 2vw, 1.5rem);
 }
 
 .nav-links li {
-    font-size: 14px;
+    font-size: clamp(0.8rem, 1.5vw, 1rem);
     position: relative;
     display: flex;
-    height: 40px;
+    height: clamp(30px, 4vw, 40px);
     align-items: center;
     border-radius: 8px;
-    padding: 0 1rem;
+    padding: 0 clamp(0.5rem, 2vw, 1rem);
     transition: 0.3s all ease;
 }
 
@@ -61,10 +61,10 @@
 }
 
 .user-menu {
-    font-size: 0.9rem;
+    font-size: clamp(0.8rem, 1.5vw, 1rem);
     background: #ffcc00;
     color: #1a1a40;
-    padding: 0.4rem 0.8rem;
+    padding: clamp(0.2rem, 0.8vw, 0.4rem) clamp(0.5rem, 1vw, 0.8rem);
     border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
@@ -75,11 +75,12 @@
     background: #ffd633;
 }
 
+/* BOTONES SUPERIORES */
 .space-buttons {
-    margin-top: 20px;
+    margin-top: clamp(10px, 2vw, 20px);
     display: flex;
     margin-left: auto;
-    width: 310px;
+    width: clamp(250px, 30vw, 310px);
     gap: 10px;
     margin-right: 15px;
 }
@@ -88,8 +89,8 @@
     background-color: #1D5DA8;
     font-weight: bold;
     color: white;
-    width: 150px;
-    height: 40px;
+    width: clamp(100px, 15vw, 150px);
+    height: clamp(35px, 5vw, 40px);
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -100,45 +101,50 @@
     transform: scale(1.05);
 }
 
+/* CUERPO */
 .body {
     align-items: center;
-    justify-content: center;
-    display: grid;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
 }
 
+/* ENCABEZADO */
 .body .header-container {
-    margin-top: 30px;
+    margin-top: clamp(20px, 3vw, 30px);
     background-color: #1D5DA8;
     color: white;
     font-weight: bold;
-    padding: 20px;
-    width: 1500px;
+    padding: clamp(10px, 2vw, 20px);
+    width: clamp(90%, 80vw, 1500px);
     border-radius: 8px;
     display: flex;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .body .header-container .header-name {
-    margin-left: 20px;
+    margin-left: clamp(10px, 2vw, 20px);
 }
 
 .body .header-container .header-actions {
     margin-left: auto;
-    margin-right: 45px;
+    margin-right: clamp(20px, 3vw, 45px);
 }
 
+/* TABLA / CONTENEDOR PRINCIPAL */
 .body .table-container {
     margin-top: 15px;
     background-color: white;
-    padding: 20px;
-    width: 1500px;
+    padding: clamp(10px, 2vw, 20px);
+    width: clamp(90%, 80vw, 1500px);
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
+/* FORMULARIO INTERNO */
 .body .table-container .container-formulario {
     background-color: #F2F2F2;
-    height: 60px;
+    height: clamp(50px, 6vw, 60px);
     margin-top: 10px;
     display: flex;
     align-items: center;
@@ -151,7 +157,8 @@
     font-weight: bold;
     color: #002855;
     margin-right: auto;
-    margin-left: 27px;
+    margin-left: clamp(10px, 3vw, 27px);
+    font-size: clamp(0.9rem, 1.5vw, );
 }
 
 .body .table-container .container-formulario .options-formulario {
@@ -159,13 +166,13 @@
     background-color: #1D5DA8;
     border-color: transparent;
     color: white;
-    font-size: 22px;
-    height: 30px;
-    width: 100px;
+    font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+    height: clamp(28px, 3vw, 30px);
+    width: clamp(80px, 10vw, 100px);
     border-radius: 8px;
     cursor: pointer;
     transition: 0.3s all ease;
-    margin-right: 27px;
+    margin-right: clamp(10px, 3vw, 27px);
 }
 
 .body .table-container .container-formulario .options-formulario:hover {
@@ -174,34 +181,34 @@
 }
 
 
-/*FORMULARIO NUEVO*/
+
+/* 🌐 FORMULARIO NUEVO RESPONSIVO */
 .containerNewformulario {
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     display: grid;
-    margin-top: 30px;
+    margin-top: clamp(1rem, 4vw, 2rem);
     overflow-x: hidden;
+    height: 720px;
+    padding: 20px;
+    margin-top: 60px;
 }
 
 .buttonBackDash {
-    padding: 20px;
+    padding: clamp(0.8rem, 2vw, 1.2rem);
     display: flex;
     align-items: center;
-    
-    background-color: red;
 }
-
-.buttonBackDash {}
 
 .buttonBackDash button {
     display: flex;
-    height: 40px;
-    width: 130px;
+    height: clamp(2.5rem, 5vw, 2.5rem);
+    width: clamp(2.5rem, 15vw, 1rem);
     margin-right: auto;
     gap: 5px;
     text-align: center;
     align-items: center;
-    background-color: #1D5DA8;
+    background-color: #1d5da8;
     color: white;
     cursor: pointer;
     border-color: transparent;
@@ -210,7 +217,6 @@
 }
 
 .buttonBackDash button:hover {
-    transition: 0.3s all ease;
     transform: scale(1.05);
 }
 
@@ -220,83 +226,92 @@
 }
 
 .headerNewformulario {
-    background-color: #F2F2F2;
-    color: #1D5DA8;
+    background-color: #f2f2f2;
+    color: #1d5da8;
     font-weight: bold;
-    height: 100px;
+    height: clamp(4rem, 10vw, 6rem);
+    width: clamp(18rem, 70vw, 47rem);
+    margin: -50px auto;
     text-align: center;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-
+    display: grid;
+    align-items: center;
+    justify-content: center;
 }
 
 .contentNewformulario {
-    background-color: #F2F2F2;
-    padding: 20px;
-    width: 100%;
-    height: 95%;
+    background-color: #f2f2f2;
+    padding: clamp(1rem, 3vw, 1.5rem);
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
+
 
 .tableContainer {
     justify-content: center;
     text-align: center;
     align-items: center;
+    overflow-x: auto;
+    /* ✅ Tabla scrolleable horizontal */
 }
+
+
 
 .tittleNewformulario {
     font-weight: bold;
-    color: #1D5DA8;
-    margin-top: 20px;
+    color: #1d5da8;
+    margin-top: clamp(0.8rem, 2vw, 1.2rem);
     text-align: center;
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
 }
 
 .descriptionNewformulario {
     color: #555555;
     text-align: center;
     font-weight: bold;
-    margin-top: 10px;
-    margin-bottom: 20px;
+    margin: clamp(0.5rem, 2vw, 1rem) 0;
+    font-size: clamp(0.9rem, 2vw, 1.1rem);
 }
 
 .tittleContent {
     font-weight: bold;
-    color: #1D5DA8;
+    color: #1d5da8;
     margin-top: 20px;
     text-align: center;
-    font-size: 22px;
+    font-size: clamp(1.2rem, 3vw, 1.5rem);
 }
 
 .gugutata {
-    width: 700px;
+    width: clamp(18rem, 70vw, 44rem);
 }
 
 .inputsContainers {
     display: flex;
-    margin-top: 20px;
+    margin-top: clamp(1rem, 3vw, 2rem);
     justify-content: center;
-    gap: 70px;
-    color: #1D5DA8;
-    font-size: 20px;
+    gap: clamp(1rem, 5vw, 4rem);
+    color: #1d5da8;
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    flex-wrap: wrap;
 }
 
 .inputsContainers p {
     font-weight: bold;
-    color: #1D5DA8;
+    color: #1d5da8;
     margin-top: 20px;
     text-align: left;
     margin-right: 10px;
 }
 
 .inputsContainers input {
-    width: 250px;
-    height: 44px;
-    border-radius: .5rem;
+    width: clamp(10rem, 40vw, 15rem);
+    height: clamp(2.2rem, 5vw, 2.8rem);
+    border-radius: 0.5rem;
     padding: 0 1rem;
     border: 2px solid transparent;
-    font-size: 1rem;
-    transition: border-color .3s cubic-bezier(.25, .01, .25, 1) 0s, color .3s cubic-bezier(.25, .01, .25, 1) 0s, background .2s cubic-bezier(.25, .01, .25, 1) 0s;
+    font-size: clamp(0.9rem, 2vw, 1rem);
+    transition: border-color 0.3s ease, background 0.2s ease;
 }
 
 .inputsContainers input:focus {
@@ -306,11 +321,11 @@
 
 .inputsContainers label {
     display: block;
-    margin-bottom: .3rem;
-    font-size: .9rem;
+    margin-bottom: 0.3rem;
+    font-size: clamp(0.8rem, 2vw, 0.9rem);
     font-weight: bold;
     color: #05060f99;
-    transition: color .3s cubic-bezier(.25, .01, .25, 1) 0s;
+    transition: color 0.3s ease;
 }
 
 .completeInputs {
@@ -326,25 +341,13 @@
 }
 
 .icon {
-    color: #1D5DA8;
+    color: #1d5da8;
     margin-left: 15px;
-    font-size: 15px;
+    font-size: clamp(0.8rem, 2vw, 1rem);
 }
 
-input[type="date"]::-webkit-datetime-edit-year-field,
-input[type="date"]::-webkit-datetime-edit-month-field,
-input[type="date"]::-webkit-datetime-edit-day-field,
-input[type="date"]::-webkit-datetime-edit-text {
-    color: #6f737a;
-}
-
-input[type="time"]::-webkit-datetime-edit-text {
-    color: #6f737a;
-    /* Un tono de gris similar a placeholder-gray-400 */
-}
-
-input[type="date"]:valid,
-input[type="time"]:valid {
+input[type="date"],
+input[type="time"] {
     color: #6f737a;
 }
 
@@ -352,45 +355,44 @@ input[type="time"]:valid {
     display: flex;
     justify-content: center;
     align-items: center;
-    display: flex;
-    margin-top: 15px;
+    margin-top: clamp(0.8rem, 2vw, 1rem);
     text-align: center;
+    flex-wrap: wrap;
 }
 
 .headerPrecio .textPrecio {
-    background-color: #1D5DA8;
+    background-color: #1d5da8;
     color: white;
     font-weight: bold;
-    width: 100px;
-    padding: 10px;
-    height: 40px;
-    border-width: 2px;
-    border-style: solid;
-    border-color: #1D5DA8;
-    border-radius: 8px 0px 0px 8px;
+    width: clamp(5rem, 12vw, 7rem);
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    height: clamp(2rem, 5vw, 2.5rem);
+    border: 2px solid #1d5da8;
+    border-radius: 8px 0 0 8px;
 }
 
 .headerPrecio .TotalPrecio {
     text-align: center;
     justify-content: center;
     display: flex;
-    width: 140px;
-    padding: 10px;
-    height: 40px;
-    border-radius: 0px 8px 8px 0px;
-    border-color: #1D5DA8;
-    border-width: 2px;
-    border-style: solid;
+    align-items: center;
+    width: clamp(6rem, 15vw, 8rem);
+    padding: clamp(0.5rem, 2vw, 0.8rem);
+    height: clamp(2rem, 5vw, 2.5rem);
+    border-radius: 0 8px 8px 0;
+    border: 2px solid #1d5da8;
 }
-
 
 .spaceButtons {
     justify-content: center;
     align-items: center;
     display: flex;
     text-align: center;
-    gap: 10px;
-    margin-top: 15px;
+    gap: clamp(0.5rem, 2vw, 1rem);
+    flex-wrap: wrap;
 }
 
 .spaceButtons .separator {
@@ -401,11 +403,11 @@ input[type="time"]:valid {
 }
 
 .spaceButtons .navegationButton {
-    background-color: #1D5DA8;
+    background-color: #1d5da8;
     font-weight: bold;
     color: white;
-    width: 150px;
-    height: 40px;
+    width: clamp(8rem, 20vw, 10rem);
+    height: clamp(2.2rem, 5vw, 2.6rem);
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -419,12 +421,14 @@ input[type="time"]:valid {
 }
 
 
+
 /*TABLE CONTAINER*/
 .tittleTable {
     font-weight: bold;
     color: #1D5DA8;
     margin-bottom: 10px;
     font-size: 22px;
+    margin-top: 25px;
     text-align: center;
 }
 
@@ -466,7 +470,7 @@ input[type="time"]:valid {
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     font-size: 14px;
     background: #fff;
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
 }
 
@@ -533,7 +537,6 @@ input[type="time"]:valid {
 .tittleHeaderRevision {
     font-weight: bold;
     color: #1D5DA8;
-    margin-top: 20px;
     text-align: center;
     font-size: 22px;
 }
@@ -598,7 +601,7 @@ input[type="time"]:valid {
     justify-content: center;
     align-items: center;
     height: 40px;
-    box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .firmasContainer .campoInfo .nombre .text {
@@ -1169,8 +1172,16 @@ input[type="time"]:valid {
 .containerStepFour {
     display: flex;
     justify-content: center;
-    gap: 50px;
-    margin-top: 15px;
+    padding: 20px;
+    gap: 25px;
+}
+
+.papiContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 25;
 }
 
 .containerStepFour .headerInfo {
@@ -1183,9 +1194,8 @@ input[type="time"]:valid {
     display: flex;
     background-color: white;
     width: 260px;
-    margin-top: 15px;
     padding: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
     border-radius: 8px;
     flex-direction: column;
     justify-content: center;
@@ -1196,7 +1206,6 @@ input[type="time"]:valid {
 .containerStepFour .camposTextuales {
     align-items: center;
     justify-content: center;
-    margin-left: 15px;
     margin-top: 15px;
 }
 
@@ -1214,12 +1223,11 @@ input[type="time"]:valid {
 }
 
 .containerStepFour .camposTextuales label {
-    display: block;
+    display: flex;
     margin-bottom: .3rem;
     font-size: .9rem;
     font-weight: bold;
-    margin-right: auto;
-    color: #05060f99;
+    color: #1D5DA8;
     transition: color .3s cubic-bezier(.25, .01, .25, 1) 0s;
 }
 
@@ -1229,6 +1237,7 @@ input[type="time"]:valid {
     background-color: #05060f0a;
     border-radius: .5rem;
     padding: 0 1rem;
+    margin-left: auto;
     border: 2px solid transparent;
     font-size: 1rem;
     transition: border-color .3s cubic-bezier(.25, .01, .25, 1) 0s, color .3s cubic-bezier(.25, .01, .25, 1) 0s, background .2s cubic-bezier(.25, .01, .25, 1) 0s;
@@ -1344,42 +1353,46 @@ input[type="time"]:valid {
 /* Contenedor del modal */
 .modalContent {
     background-color: #ffffff;
-    border-radius: 20px;
+    border-radius: 8px;
     width: 80%;
     max-width: 900px;
     padding: 25px 35px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
     position: relative;
     animation: slideDown 0.3s ease;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
 /* Cuando se va a cerrar */
 .modalContent.closing {
-  animation: slideUp 0.3s ease forwards;
+    animation: slideUp 0.3s ease forwards;
 }
 
 /* Entrada del modal */
 @keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-25px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateY(-25px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Salida del modal */
 @keyframes slideUp {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(-25px);
-  }
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(-25px);
+    }
 }
 
 /* Botón de cierre */
@@ -1419,7 +1432,7 @@ input[type="time"]:valid {
     width: 100%;
     max-height: 400px;
     overflow-y: auto;
-    border-radius: 12px;
+    border-radius: 8px;
     border: 1px solid #e0e0e0;
     background-color: #fafafa;
 }
@@ -1491,7 +1504,7 @@ input[type="time"]:valid {
 }
 
 
-.iconModalTable{
+.iconModalTable {
     color: #1D5DA8;
     font-size: 15px;
 }
