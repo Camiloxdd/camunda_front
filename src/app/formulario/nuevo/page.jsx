@@ -3,12 +3,28 @@ import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import Navbar from "../../components/navbar";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import emailjs from "emailjs-com"
-import { faUser, faCalendar, faBalanceScale, faClipboard, faBuilding, faExclamationTriangle, faClock, faPaperclip, faArrowLeft, faPlus, faX } from "@fortawesome/free-solid-svg-icons";
+import emailjs from "emailjs-com";
+import {
+  faUser,
+  faCalendar,
+  faBalanceScale,
+  faClipboard,
+  faBuilding,
+  faExclamationTriangle,
+  faClock,
+  faPaperclip,
+  faArrowLeft,
+  faPlus,
+  faX,
+} from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
-import { endFirstStepStartTwoStep, EndFourStep, endTwoStepStartThreeStep, startThreeStep } from "@/app/services/camunda";
+import {
+  endFirstStepStartTwoStep,
+  EndFourStep,
+  endTwoStepStartThreeStep,
+  startThreeStep,
+} from "@/app/services/camunda";
 import gsap from "gsap";
-
 
 export default function NuevoFormulario() {
   const contentRef = useRef(null);
@@ -32,25 +48,25 @@ export default function NuevoFormulario() {
   const handleClickOne = async () => {
     try {
       await endFirstStepStartTwoStep({
-        bienvenida: "Inicio del segundo proceso"
+        bienvenida: "Inicio del segundo proceso",
       });
 
       nextStep();
     } catch (error) {
-      console.error("Error al iniciar el proceso: ", error)
+      console.error("Error al iniciar el proceso: ", error);
     }
-  }
+  };
 
   const handleClickTwo = async () => {
     try {
       const monto = Number(filas[0].valor);
       const esMayor = calcularRango(monto);
 
-      const siExiste = filas.some(f => f.siExiste);
-      const purchaseTecnology = filas.some(f => f.purchaseTecnology)
-      const sstAprobacion = filas.some(f => f.sstAprobacion)
-      const vobo = filas.some(f => f.vobo)
-      const purchaseAprobated = filas.some(f => f.purchaseAprobated)
+      const siExiste = filas.some((f) => f.siExiste);
+      const purchaseTecnology = filas.some((f) => f.purchaseTecnology);
+      const sstAprobacion = filas.some((f) => f.sstAprobacion);
+      const vobo = filas.some((f) => f.vobo);
+      const purchaseAprobated = filas.some((f) => f.purchaseAprobated);
 
       const purchaseAprobatedTecnology = purchaseTecnology && purchaseAprobated;
       const purchaseAprobatedErgonomic = siExiste && purchaseAprobated;
@@ -65,24 +81,24 @@ export default function NuevoFormulario() {
         purchaseAprobatedTecnology,
         purchaseAprobatedErgonomic,
         filas,
-      })
+      });
 
       nextStep();
     } catch (error) {
-      console.error("Error al iniciar el proceso: ", error)
+      console.error("Error al iniciar el proceso: ", error);
     }
-  }
+  };
 
   const handleClickThree = async () => {
     try {
       const monto = Number(filas[0].valor);
       const esMayor = calcularRango(monto);
 
-      const siExiste = filas.some(f => f.siExiste);
-      const purchaseTecnology = filas.some(f => f.purchaseTecnology)
-      const sstAprobacion = filas.some(f => f.sstAprobacion)
-      const vobo = filas.some(f => f.vobo)
-      const purchaseAprobated = filas.some(f => f.purchaseAprobated)
+      const siExiste = filas.some((f) => f.siExiste);
+      const purchaseTecnology = filas.some((f) => f.purchaseTecnology);
+      const sstAprobacion = filas.some((f) => f.sstAprobacion);
+      const vobo = filas.some((f) => f.vobo);
+      const purchaseAprobated = filas.some((f) => f.purchaseAprobated);
       const purchaseAprobatedTecnology = purchaseTecnology && purchaseAprobated;
       const purchaseAprobatedErgonomic = siExiste && purchaseAprobated;
 
@@ -96,24 +112,24 @@ export default function NuevoFormulario() {
         purchaseAprobatedTecnology,
         purchaseAprobatedErgonomic,
         filas,
-      })
+      });
 
       nextStep();
     } catch (error) {
-      console.error("Error al iniciar el proceso: ", error)
+      console.error("Error al iniciar el proceso: ", error);
     }
-  }
+  };
 
   const handleClickFour = async () => {
     try {
       const monto = Number(filas[0].valor);
       const esMayor = calcularRango(monto);
 
-      const siExiste = filas.some(f => f.siExiste);
-      const purchaseTecnology = filas.some(f => f.purchaseTecnology)
-      const sstAprobacion = filas.some(f => f.sstAprobacion)
-      const vobo = filas.some(f => f.vobo)
-      const purchaseAprobated = filas.some(f => f.purchaseAprobated)
+      const siExiste = filas.some((f) => f.siExiste);
+      const purchaseTecnology = filas.some((f) => f.purchaseTecnology);
+      const sstAprobacion = filas.some((f) => f.sstAprobacion);
+      const vobo = filas.some((f) => f.vobo);
+      const purchaseAprobated = filas.some((f) => f.purchaseAprobated);
       const purchaseAprobatedTecnology = purchaseTecnology && purchaseAprobated;
       const purchaseAprobatedErgonomic = siExiste && purchaseAprobated;
 
@@ -126,12 +142,12 @@ export default function NuevoFormulario() {
         purchaseAprobatedTecnology,
         purchaseAprobatedErgonomic,
         filas,
-      })
+      });
       enviarFormulario();
     } catch (error) {
-      console.error("Error al iniciar el proceso: ", error)
+      console.error("Error al iniciar el proceso: ", error);
     }
-  }
+  };
 
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
@@ -169,8 +185,7 @@ export default function NuevoFormulario() {
       purchaseTecnology: false,
       sstAprobacion: false,
       aprobatedStatus: false,
-    }
-
+    },
   ]);
 
   const agregarFila = () => {
@@ -189,21 +204,21 @@ export default function NuevoFormulario() {
         purchaseTecnology: false,
         sstAprobacion: false,
         aprobatedStatus: false,
-      }
+      },
     ]);
     console.log(filas);
   };
 
   const manejarCambio = (index, campo, valor) => {
     // actualizar filas
-    setFilas(prev => {
+    setFilas((prev) => {
       const nuevasFilas = [...prev];
       nuevasFilas[index] = { ...nuevasFilas[index], [campo]: valor };
       return nuevasFilas;
     });
 
     // mantener sincronía con items (preservando aprobatedStatus si ya existía)
-    setItems(prev => {
+    setItems((prev) => {
       const nuevas = Array.isArray(prev) ? [...prev] : [];
       // asegurar longitud
       while (nuevas.length <= index) nuevas.push({});
@@ -215,7 +230,6 @@ export default function NuevoFormulario() {
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
-
 
   const prevStep = () => {
     setStep((prev) => {
@@ -234,10 +248,8 @@ export default function NuevoFormulario() {
   const monto = Number(filas[0]?.valor || 0);
   const rango = rangoInputs(monto);
 
-
   const enviarFormulario = async () => {
     try {
-
       const res = await fetch("http://localhost:4000/formularios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -250,7 +262,7 @@ export default function NuevoFormulario() {
           icon: "error",
           title: "error",
           text: "Error al guardar",
-        })
+        });
         return;
       }
 
@@ -268,7 +280,7 @@ export default function NuevoFormulario() {
           to_email: "juancamiloblloroa@gmail.com",
           name: form.nombre,
           formularioId: data.formularioId,
-          message: "Se ha creado un nuevo formulario en el sistema."
+          message: "Se ha creado un nuevo formulario en el sistema.",
         },
         "_ga863Tjy13VI-b4G"
       );
@@ -276,7 +288,6 @@ export default function NuevoFormulario() {
       console.log("Correo enviado a juancamiloblloroa@gmail.com");
 
       router.push("/");
-
     } catch (error) {
       console.error(error);
       alert("Error en la conexión con el servidor o al enviar correo");
@@ -286,7 +297,7 @@ export default function NuevoFormulario() {
   useEffect(() => {
     const now = new Date();
     const fechaHoy = now.toISOString().split("T")[0];
-    setForm(prev => ({ ...prev, fechaSolicitud: fechaHoy }));
+    setForm((prev) => ({ ...prev, fechaSolicitud: fechaHoy }));
   }, []);
 
   useEffect(() => {
@@ -297,7 +308,10 @@ export default function NuevoFormulario() {
 
   const [items, setItems] = useState(() => {
     try {
-      const saved = typeof window !== "undefined" ? localStorage.getItem("approvalItems") : null;
+      const saved =
+        typeof window !== "undefined"
+          ? localStorage.getItem("approvalItems")
+          : null;
       return saved ? JSON.parse(saved) : filas;
     } catch (e) {
       return filas;
@@ -306,13 +320,16 @@ export default function NuevoFormulario() {
   const [mostrarModal, setMostrarModal] = useState(false);
 
   useEffect(() => {
-    setItems(prev => {
+    setItems((prev) => {
       const base = Array.isArray(prev) ? prev : [];
       const merged = filas.map((f, i) => {
         const prevItem = base[i] || {};
         return {
           ...f,
-          aprobatedStatus: typeof prevItem.aprobatedStatus !== "undefined" ? prevItem.aprobatedStatus : (f.aprobatedStatus || false)
+          aprobatedStatus:
+            typeof prevItem.aprobatedStatus !== "undefined"
+              ? prevItem.aprobatedStatus
+              : f.aprobatedStatus || false,
         };
       });
       return merged;
@@ -320,13 +337,16 @@ export default function NuevoFormulario() {
   }, [filas]);
 
   useEffect(() => {
-    setItems(prev => {
+    setItems((prev) => {
       const base = Array.isArray(prev) ? prev : [];
       const merged = filas.map((f, i) => {
         const prevItem = base[i] || {};
         return {
           ...f,
-          aprobatedStatus: typeof prevItem.aprobatedStatus !== "undefined" ? prevItem.aprobatedStatus : (f.aprobatedStatus || false)
+          aprobatedStatus:
+            typeof prevItem.aprobatedStatus !== "undefined"
+              ? prevItem.aprobatedStatus
+              : f.aprobatedStatus || false,
         };
       });
       return merged;
@@ -358,16 +378,19 @@ export default function NuevoFormulario() {
   // toggle de aprobación: actualiza items y filas (pero la visibilidad en el step actual se mantiene
   // porque usamos snapshot por step; el cambio afectará pasos siguientes)
   const toggleAprobacion = (index) => {
-    setItems(prev => {
+    setItems((prev) => {
       const copy = [...prev];
-      copy[index] = { ...(copy[index] || {}), aprobatedStatus: !copy[index]?.aprobatedStatus };
+      copy[index] = {
+        ...(copy[index] || {}),
+        aprobatedStatus: !copy[index]?.aprobatedStatus,
+      };
       // 🔹 Guardar también en filas de inmediato
       setFilas(copy);
       return copy;
     });
   };
 
-  const itemsToShow = visibleSnapshotIds.map(i => items[i]).filter(Boolean);
+  const itemsToShow = visibleSnapshotIds.map((i) => items[i]).filter(Boolean);
 
   useLayoutEffect(() => {
     if (contentRef.current) {
@@ -391,13 +414,25 @@ export default function NuevoFormulario() {
   const [itemsPendientesStep5, setItemsPendientesStep5] = useState([]);
   const [itemsAprobadosStep5, setItemsAprobadosStep5] = useState([]);
   const [itemsPendientesStep6, setItemsPendientesStep6] = useState([]);
+  // Para mostrar solo las filas aprobadas en el paso 4:
+  // Siempre parte de filas, que tiene el estado completo
+  const itemsStep3 = filas; // Paso 3: todos los ítems
+  const itemsStep4 = itemsStep3.filter((item) => item.aprobatedStatus); // Paso 4: solo aprobados del paso 3
+  const itemsStep5 = itemsStep4.filter((item) => item.aprobatedStatus); // Paso 5: solo aprobados del paso 4
+  const itemsStep6 = itemsStep5.filter((item) => item.aprobatedStatus); // Paso 6: solo aprobados del paso 5
+  const itemsStep7 = itemsStep6.filter((item) => item.aprobatedStatus); // Paso 7: solo aprobados del paso 6
+  const itemsStep8 = itemsStep7.filter((item) => item.aprobatedStatus); // Paso 8: solo aprobados del paso 7
 
   const nextStep = () => {
     setStep((prev) => {
       if (prev === 3) {
         // Guardar los aprobados y los pendientes del paso 3
-        const aprobadosPaso3 = items.filter(item => item.aprobatedStatus === true);
-        const pendientesPaso4 = items.filter(item => item.aprobatedStatus !== true);
+        const aprobadosPaso3 = items.filter(
+          (item) => item.aprobatedStatus === true
+        );
+        const pendientesPaso4 = items.filter(
+          (item) => item.aprobatedStatus !== true
+        );
 
         // Actualiza las filas para que el valor de aprobatedStatus quede guardado
         setFilas(items);
@@ -413,8 +448,12 @@ export default function NuevoFormulario() {
       }
 
       if (prev === 4) {
-        const aprobadosPaso4 = items.filter(item => item.aprobatedStatus === true);
-        const pendientesPaso5 = items.filter(item => item.aprobatedStatus !== true);
+        const aprobadosPaso4 = items.filter(
+          (item) => item.aprobatedStatus === true
+        );
+        const pendientesPaso5 = items.filter(
+          (item) => item.aprobatedStatus !== true
+        );
 
         // Guardamos valores reales
         setFilas(items);
@@ -428,8 +467,12 @@ export default function NuevoFormulario() {
       }
 
       if (prev === 5) {
-        const aprobadosPaso5 = items.filter(item => item.aprobatedStatus === true);
-        const pendientesPaso6 = items.filter(item => item.aprobatedStatus !== true);
+        const aprobadosPaso5 = items.filter(
+          (item) => item.aprobatedStatus === true
+        );
+        const pendientesPaso6 = items.filter(
+          (item) => item.aprobatedStatus !== true
+        );
 
         setFilas(items);
         setItemsAprobadosStep5(aprobadosPaso5);
@@ -445,25 +488,25 @@ export default function NuevoFormulario() {
     });
   };
 
-
   return (
     <div>
       <Navbar />
       <div className="buttonBackDash">
-        <button onClick={() => router.push('/')}>
+        <button onClick={() => router.push("/")}>
           <FontAwesomeIcon icon={faArrowLeft} className="iconBack" />
         </button>
-
       </div>
       <div className="headerNewformulario">
         <h1 className="tittleNewformulario">Crea una nueva requisición</h1>
-        <p className="descriptionNewformulario">Paso {step} de 9</p>
+        <p className="descriptionNewformulario">Paso {step} de 8</p>
       </div>
-      <div className="containerNewformulario" >
+      <div className="containerNewformulario">
         <div className="contentNewformulario" ref={contentRef}>
           {step == 1 && (
             <div className="gugutata">
-              <h1 className="tittleContent">Datos generales del solicitante.</h1>
+              <h1 className="tittleContent">
+                Datos generales del solicitante.
+              </h1>
               <div className="inputsContainers">
                 <div className="campoAdicional">
                   <label>Nombre del solicitante</label>
@@ -537,7 +580,6 @@ export default function NuevoFormulario() {
                 <div className="campoAdicional">
                   <label>Sede del solicitante</label>
                   <div className="completeInputs">
-
                     <FontAwesomeIcon icon={faBuilding} className="icon" />
                     <input
                       type="text"
@@ -553,7 +595,10 @@ export default function NuevoFormulario() {
                 <div className="campoAdicional">
                   <label>Urgencia de la compra</label>
                   <div className="completeInputs">
-                    <FontAwesomeIcon icon={faExclamationTriangle} className="icon" />
+                    <FontAwesomeIcon
+                      icon={faExclamationTriangle}
+                      className="icon"
+                    />
                     <input
                       type="text"
                       name="urgenciaCompra"
@@ -593,10 +638,7 @@ export default function NuevoFormulario() {
                 </div>
               </div>
               <div className="spaceButtons">
-                <button
-                  onClick={handleClickOne}
-                  className="navegationButton"
-                >
+                <button onClick={handleClickOne} className="navegationButton">
                   Siguiente
                 </button>
               </div>
@@ -634,7 +676,13 @@ export default function NuevoFormulario() {
                               className="input-texto"
                               type="text"
                               value={fila.productoOServicio}
-                              onChange={(e) => manejarCambio(index, "productoOServicio", e.target.value)}
+                              onChange={(e) =>
+                                manejarCambio(
+                                  index,
+                                  "productoOServicio",
+                                  e.target.value
+                                )
+                              }
                             />
                           </td>
                           <td>
@@ -643,7 +691,9 @@ export default function NuevoFormulario() {
                               type="number"
                               min="0"
                               value={fila.cantidad}
-                              onChange={(e) => manejarCambio(index, "cantidad", e.target.value)}
+                              onChange={(e) =>
+                                manejarCambio(index, "cantidad", e.target.value)
+                              }
                             />
                           </td>
                           <td>
@@ -651,7 +701,9 @@ export default function NuevoFormulario() {
                               className="input-texto"
                               type="text"
                               value={fila.centro}
-                              onChange={(e) => manejarCambio(index, "centro", e.target.value)}
+                              onChange={(e) =>
+                                manejarCambio(index, "centro", e.target.value)
+                              }
                             />
                           </td>
                           <td>
@@ -659,7 +711,9 @@ export default function NuevoFormulario() {
                               className="input-texto"
                               type="text"
                               value={fila.cuenta}
-                              onChange={(e) => manejarCambio(index, "cuenta", e.target.value)}
+                              onChange={(e) =>
+                                manejarCambio(index, "cuenta", e.target.value)
+                              }
                             />
                           </td>
                           <td className="text-center">
@@ -667,7 +721,11 @@ export default function NuevoFormulario() {
                               type="checkbox"
                               checked={fila.siExiste || false}
                               onChange={(e) =>
-                                manejarCambio(index, "siExiste", e.target.checked)
+                                manejarCambio(
+                                  index,
+                                  "siExiste",
+                                  e.target.checked
+                                )
                               }
                             />
                           </td>
@@ -676,7 +734,11 @@ export default function NuevoFormulario() {
                               type="checkbox"
                               checked={fila.purchaseTecnology || false}
                               onChange={(e) =>
-                                manejarCambio(index, "purchaseTecnology", e.target.checked)
+                                manejarCambio(
+                                  index,
+                                  "purchaseTecnology",
+                                  e.target.checked
+                                )
                               }
                             />
                           </td>
@@ -685,7 +747,11 @@ export default function NuevoFormulario() {
                               type="checkbox"
                               checked={fila.purchaseAprobated || false}
                               onChange={(e) =>
-                                manejarCambio(index, "purchaseAprobated", e.target.checked)
+                                manejarCambio(
+                                  index,
+                                  "purchaseAprobated",
+                                  e.target.checked
+                                )
                               }
                             />
                           </td>
@@ -705,7 +771,13 @@ export default function NuevoFormulario() {
                               className="input-texto"
                               type="text"
                               value={fila.descripcion}
-                              onChange={(e) => manejarCambio(index, "descripcion", e.target.value)}
+                              onChange={(e) =>
+                                manejarCambio(
+                                  index,
+                                  "descripcion",
+                                  e.target.value
+                                )
+                              }
                             />
                           </td>
                           <td>
@@ -718,21 +790,33 @@ export default function NuevoFormulario() {
                                 alignItems: "center",
                                 marginLeft: "6px",
                                 justifyContent: "center",
-                                cursor: "pointer"
+                                cursor: "pointer",
                               }}
                               onDrop={(e) => {
                                 e.preventDefault();
                                 const file = e.dataTransfer.files[0];
                                 if (file && file.type.startsWith("image/")) {
                                   const reader = new FileReader();
-                                  reader.onload = (event) => manejarCambio(index, "imagen", event.target.result);
+                                  reader.onload = (event) =>
+                                    manejarCambio(
+                                      index,
+                                      "imagen",
+                                      event.target.result
+                                    );
                                   reader.readAsDataURL(file);
                                 }
                               }}
                               onDragOver={(e) => e.preventDefault()}
                             >
                               {fila.imagen ? (
-                                <img src={fila.imagen} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                <img
+                                  src={fila.imagen}
+                                  style={{
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "cover",
+                                  }}
+                                />
                               ) : (
                                 <p>Suelta aquí</p>
                               )}
@@ -752,21 +836,19 @@ export default function NuevoFormulario() {
                 <button onClick={prevStep} className="navegationButton">
                   <p>Volver</p>
                 </button>
-                <button
-                  onClick={handleClickTwo}
-                  className="navegationButton"
-                >
+                <button onClick={handleClickTwo} className="navegationButton">
                   Siguiente
                 </button>
                 <div className="headerPrecio">
-                  <div className="textPrecio">
-                    Total:
-                  </div>
+                  <div className="textPrecio">Total:</div>
                   <div className="TotalPrecio">
-                    <p>${filas.reduce(
-                      (acum, fila) => acum + (Number(fila.valor) || 0),
-                      0
-                    )}</p>
+                    <p>
+                      $
+                      {filas.reduce(
+                        (acum, fila) => acum + (Number(fila.valor) || 0),
+                        0
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -775,7 +857,9 @@ export default function NuevoFormulario() {
 
           {step === 3 && (
             <div>
-              <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
+              <p className="tittleHeaderRevision">
+                Revisión, Firmas y Confirmación
+              </p>
               <div className="papiContainer">
                 <div className="containerStepFour">
                   <div className="campoInfo">
@@ -797,22 +881,24 @@ export default function NuevoFormulario() {
                     <div className="camposTextuales">
                       <label>Firma</label>
                       <div className="text">
-                        <input type="text"
+                        <input
+                          type="text"
                           name="firmaSolicitante"
                           placeholder=""
                           value={form.firmaSolicitante}
                           onChange={handleChange}
-                          className="inputFirma" />
+                          className="inputFirma"
+                        />
                       </div>
                     </div>
                   </div>
-                  <div className="modalContent" >
+                  <div className="modalContent">
                     <h2 className="modalHeader">Aprobación de Ítems</h2>
                     <div className="tableContainer">
                       <table className="modalTable">
                         <thead>
                           <tr>
-                            <th>DESCRIPCIÓN</th>
+                            <th>PRODUCTO / SERVICIO</th>
                             <th>CANTIDAD</th>
                             <th>VALOR</th>
                             <th>CUENTA</th>
@@ -820,9 +906,9 @@ export default function NuevoFormulario() {
                           </tr>
                         </thead>
                         <tbody>
-                          {items.map((item, index) => (
-                            <tr key={index}>
-                              <td>{item.descripcion}</td>
+                          {itemsStep3.map((item, idx) => (
+                            <tr key={idx}>
+                              <td>{item.productoOServicio}</td>
                               <td>{item.cantidad}</td>
                               <td>{item.valor}</td>
                               <td>{item.cuenta}</td>
@@ -830,7 +916,7 @@ export default function NuevoFormulario() {
                                 <input
                                   type="checkbox"
                                   checked={item.aprobatedStatus || false}
-                                  onChange={() => toggleAprobacion(index)}
+                                  onChange={() => toggleAprobacion(idx)}
                                 />
                               </td>
                             </tr>
@@ -851,22 +937,25 @@ export default function NuevoFormulario() {
                 </div>
               </div>
               <div className="spaceButtons">
-                {step === 3 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-                {step === 3 && <button
-                  onClick={nextStep}
-                  className="navegationButton"
-                >
-                  Siguiente
-                </button>
-                }
+                {step === 3 && (
+                  <button className="navegationButton" onClick={prevStep}>
+                    Volver
+                  </button>
+                )}
+                {step === 3 && (
+                  <button onClick={nextStep} className="navegationButton">
+                    Siguiente
+                  </button>
+                )}
               </div>
             </div>
           )}
 
-
           {step === 4 && (
             <div>
-              <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
+              <p className="tittleHeaderRevision">
+                Revisión, Firmas y Confirmación
+              </p>
               <div className="papiContainer">
                 <div className="containerStepFour">
                   <div className="campoInfo">
@@ -881,7 +970,8 @@ export default function NuevoFormulario() {
                           name="nombreAdministrativo"
                           placeholder=""
                           value={form.nombreAdministrativo}
-                          onChange={handleChange} />
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
                     <div className="camposTextuales">
@@ -893,17 +983,18 @@ export default function NuevoFormulario() {
                           placeholder=""
                           value={form.firmaAdministrativo}
                           onChange={handleChange}
-                          className="inputFirma" />
+                          className="inputFirma"
+                        />
                       </div>
                     </div>
                   </div>
-                  <div className="modalContent" >
+                  <div className="modalContent">
                     <h2 className="modalHeader">Aprobación de Ítems</h2>
                     <div className="tableContainer">
                       <table className="modalTable">
                         <thead>
                           <tr>
-                            <th>DESCRIPCIÓN</th>
+                            <th>PRODUCTO / SERVICIO</th>
                             <th>CANTIDAD</th>
                             <th>VALOR</th>
                             <th>CUENTA</th>
@@ -911,9 +1002,9 @@ export default function NuevoFormulario() {
                           </tr>
                         </thead>
                         <tbody>
-                          {items.map((item, index) => (
-                            <tr key={index}>
-                              <td>{item.descripcion}</td>
+                          {itemsStep4.map((item, idx) => (
+                            <tr key={idx}>
+                              <td>{item.productoOServicio}</td>
                               <td>{item.cantidad}</td>
                               <td>{item.valor}</td>
                               <td>{item.cuenta}</td>
@@ -921,7 +1012,13 @@ export default function NuevoFormulario() {
                                 <input
                                   type="checkbox"
                                   checked={item.aprobatedStatus || false}
-                                  onChange={() => toggleAprobacion(index)}
+                                  onChange={() => {
+                                    // Busca el índice real en filas
+                                    const realIdx = filas.findIndex(
+                                      (f) => f === item
+                                    );
+                                    toggleAprobacion(realIdx);
+                                  }}
                                 />
                               </td>
                             </tr>
@@ -942,21 +1039,28 @@ export default function NuevoFormulario() {
                 </div>
               </div>
               <div className="spaceButtons">
-                {step === 4 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-                {step === 4 && <button
-                  onClick={handleClickThree}
-                  className="navegationButton"
-                >
-                  Siguiente
-                </button>
-                }
+                {step === 4 && (
+                  <button className="navegationButton" onClick={prevStep}>
+                    Volver
+                  </button>
+                )}
+                {step === 4 && (
+                  <button
+                    onClick={handleClickThree}
+                    className="navegationButton"
+                  >
+                    Siguiente
+                  </button>
+                )}
               </div>
             </div>
           )}
 
           {step === 5 && (
             <div>
-              <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
+              <p className="tittleHeaderRevision">
+                Revisión, Firmas y Confirmación
+              </p>
               <div className="papiContainer">
                 <div className="containerStepFour">
                   <div className="campoInfo">
@@ -972,17 +1076,18 @@ export default function NuevoFormulario() {
                           className="inputGerenciaGeneral"
                           placeholder=""
                           value={form.autorizacionGerencia}
-                          onChange={handleChange} />
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
                   </div>
-                  <div className="modalContent" >
+                  <div className="modalContent">
                     <h2 className="modalHeader">Aprobación de Ítems</h2>
                     <div className="tableContainer">
                       <table className="modalTable">
                         <thead>
                           <tr>
-                            <th>DESCRIPCIÓN</th>
+                            <th>PRODUCTO / SERVICIO</th>
                             <th>CANTIDAD</th>
                             <th>VALOR</th>
                             <th>CUENTA</th>
@@ -990,9 +1095,9 @@ export default function NuevoFormulario() {
                           </tr>
                         </thead>
                         <tbody>
-                          {items.map((item, index) => (
-                            <tr key={index}>
-                              <td>{item.descripcion}</td>
+                          {itemsStep5.map((item, idx) => (
+                            <tr key={idx}>
+                              <td>{item.productoOServicio}</td>
                               <td>{item.cantidad}</td>
                               <td>{item.valor}</td>
                               <td>{item.cuenta}</td>
@@ -1000,7 +1105,12 @@ export default function NuevoFormulario() {
                                 <input
                                   type="checkbox"
                                   checked={item.aprobatedStatus || false}
-                                  onChange={() => toggleAprobacion(index)}
+                                  onChange={() => {
+                                    const realIdx = filas.findIndex(
+                                      (f) => f === item
+                                    );
+                                    toggleAprobacion(realIdx);
+                                  }}
                                 />
                               </td>
                             </tr>
@@ -1021,100 +1131,25 @@ export default function NuevoFormulario() {
                 </div>
               </div>
               <div className="spaceButtons">
-                {step === 5 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-                {step === 5 && <button
-                  onClick={nextStep}
-                  className="navegationButton"
-                >
-                  Enviar
-                </button>
-                }
+                {step === 5 && (
+                  <button className="navegationButton" onClick={prevStep}>
+                    Volver
+                  </button>
+                )}
+                {step === 5 && (
+                  <button onClick={nextStep} className="navegationButton">
+                    Enviar
+                  </button>
+                )}
               </div>
             </div>
           )}
 
           {step === 6 && (
             <div>
-              <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
-              <div className="papiContainer">
-                <div className="containerStepFour">
-                  <div className="campoInfo">
-                    <div className="headerInfo">
-                      <p>GERENCIA GENERAL</p>
-                    </div>
-                    <div className="camposTextuales">
-                      <label>Nombre</label>
-                      <div className="text">
-                        <input
-                          type="text"
-                          name="autorizacionGerencia"
-                          className="inputGerenciaGeneral"
-                          placeholder=""
-                          value={form.autorizacionGerencia}
-                          onChange={handleChange} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="modalContent" >
-                    <h2 className="modalHeader">Aprobación de Ítems</h2>
-                    <div className="tableContainer">
-                      <table className="modalTable">
-                        <thead>
-                          <tr>
-                            <th>DESCRIPCIÓN</th>
-                            <th>CANTIDAD</th>
-                            <th>VALOR</th>
-                            <th>CUENTA</th>
-                            <th>APROBADO</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {items.map((item, index) => (
-                            <tr key={index}>
-                              <td>{item.descripcion}</td>
-                              <td>{item.cantidad}</td>
-                              <td>{item.valor}</td>
-                              <td>{item.cuenta}</td>
-                              <td>
-                                <input
-                                  type="checkbox"
-                                  checked={item.aprobatedStatus || false}
-                                  onChange={() => toggleAprobacion(index)}
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <button
-                      className="confirmButton"
-                      onClick={() => {
-                        setFilas(items);
-                        setMostrarModal(false);
-                      }}
-                    >
-                      Guardar cambios
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="spaceButtons">
-                {step === 6 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-                {step === 6 && <button
-                  onClick={nextStep}
-                  className="navegationButton"
-                >
-                  Enviar
-                </button>
-                }
-              </div>
-            </div>
-          )}
-
-          {step === 7 && (
-            <div>
-              <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
+              <p className="tittleHeaderRevision">
+                Revisión, Firmas y Confirmación
+              </p>
               <div className="papiContainer">
                 <div className="containerStepFour">
                   <div className="campoInfo">
@@ -1124,24 +1159,36 @@ export default function NuevoFormulario() {
                     <div className="camposTextuales">
                       <label>Nombre</label>
                       <div className="text">
-                        <input type="text" name="nombreGerente" placeholder="" value={form.nombreGerente} onChange={handleChange} />
+                        <input
+                          type="text"
+                          name="nombreGerente"
+                          placeholder=""
+                          value={form.nombreGerente}
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
                     <div className="camposTextuales">
                       <label>Firma</label>
                       <div className="text">
-                        <input type="text" name="firmaGerente" placeholder="" value={form.firmaGerente} onChange={handleChange}
-                          className="inputFirma" />
+                        <input
+                          type="text"
+                          name="firmaGerente"
+                          placeholder=""
+                          value={form.firmaGerente}
+                          onChange={handleChange}
+                          className="inputFirma"
+                        />
                       </div>
                     </div>
                   </div>
-                  <div className="modalContent" >
+                  <div className="modalContent">
                     <h2 className="modalHeader">Aprobación de Ítems</h2>
                     <div className="tableContainer">
                       <table className="modalTable">
                         <thead>
                           <tr>
-                            <th>DESCRIPCIÓN</th>
+                            <th>PRODUCTO / SERVICIO</th>
                             <th>CANTIDAD</th>
                             <th>VALOR</th>
                             <th>CUENTA</th>
@@ -1149,9 +1196,9 @@ export default function NuevoFormulario() {
                           </tr>
                         </thead>
                         <tbody>
-                          {items.map((item, index) => (
-                            <tr key={index}>
-                              <td>{item.descripcion}</td>
+                          {itemsStep6.map((item, idx) => (
+                            <tr key={idx}>
+                              <td>{item.productoOServicio}</td>
                               <td>{item.cantidad}</td>
                               <td>{item.valor}</td>
                               <td>{item.cuenta}</td>
@@ -1159,7 +1206,12 @@ export default function NuevoFormulario() {
                                 <input
                                   type="checkbox"
                                   checked={item.aprobatedStatus || false}
-                                  onChange={() => toggleAprobacion(index)}
+                                  onChange={() => {
+                                    const realIdx = filas.findIndex(
+                                      (f) => f === item
+                                    );
+                                    toggleAprobacion(realIdx);
+                                  }}
                                 />
                               </td>
                             </tr>
@@ -1180,21 +1232,25 @@ export default function NuevoFormulario() {
                 </div>
               </div>
               <div className="spaceButtons">
-                {step === 7 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-                {step === 7 && <button
-                  onClick={nextStep}
-                  className="navegationButton"
-                >
-                  Enviar
-                </button>
-                }
+                {step === 6 && (
+                  <button className="navegationButton" onClick={prevStep}>
+                    Volver
+                  </button>
+                )}
+                {step === 6 && (
+                  <button onClick={nextStep} className="navegationButton">
+                    Enviar
+                  </button>
+                )}
               </div>
             </div>
           )}
 
-          {step === 8 && (
+          {step === 7 && (
             <div>
-              <p className="tittleHeaderRevision">Revisión, Firmas y Confirmación</p>
+              <p className="tittleHeaderRevision">
+                Revisión, Firmas y Confirmación
+              </p>
               <div className="papiContainer">
                 <div className="containerStepFour">
                   <div className="campoInfo">
@@ -1204,18 +1260,24 @@ export default function NuevoFormulario() {
                     <div className="camposTextuales">
                       <label>Nombre</label>
                       <div className="text">
-                        <input type="text" name="firmaCompras" placeholder="" value={form.firmaCompras} onChange={handleChange}
-                          className="inputFirma" />
+                        <input
+                          type="text"
+                          name="firmaCompras"
+                          placeholder=""
+                          value={form.firmaCompras}
+                          onChange={handleChange}
+                          className="inputFirma"
+                        />
                       </div>
                     </div>
                   </div>
-                  <div className="modalContent" >
+                  <div className="modalContent">
                     <h2 className="modalHeader">Aprobación de Ítems</h2>
                     <div className="tableContainer">
                       <table className="modalTable">
                         <thead>
                           <tr>
-                            <th>DESCRIPCIÓN</th>
+                            <th>PRODUCTO / SERVICIO</th>
                             <th>CANTIDAD</th>
                             <th>VALOR</th>
                             <th>CUENTA</th>
@@ -1223,9 +1285,9 @@ export default function NuevoFormulario() {
                           </tr>
                         </thead>
                         <tbody>
-                          {items.map((item, index) => (
-                            <tr key={index}>
-                              <td>{item.descripcion}</td>
+                          {itemsStep7.map((item, idx) => (
+                            <tr key={idx}>
+                              <td>{item.productoOServicio}</td>
                               <td>{item.cantidad}</td>
                               <td>{item.valor}</td>
                               <td>{item.cuenta}</td>
@@ -1233,7 +1295,12 @@ export default function NuevoFormulario() {
                                 <input
                                   type="checkbox"
                                   checked={item.aprobatedStatus || false}
-                                  onChange={() => toggleAprobacion(index)}
+                                  onChange={() => {
+                                    const realIdx = filas.findIndex(
+                                      (f) => f === item
+                                    );
+                                    toggleAprobacion(realIdx);
+                                  }}
                                 />
                               </td>
                             </tr>
@@ -1254,80 +1321,158 @@ export default function NuevoFormulario() {
                 </div>
               </div>
               <div className="spaceButtons">
-                {step === 8 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-                {step === 8 && <button
-                  onClick={nextStep}
-                  className="navegationButton"
-                >
-                  Enviar
-                </button>
-                }
+                {step === 7 && (
+                  <button onClick={prevStep} className="navegationButton">
+                    Volver
+                  </button>
+                )}
+                {step === 7 && (
+                  <button onClick={nextStep} className="navegationButton">
+                    Enviar
+                  </button>
+                )}
               </div>
             </div>
           )}
 
-          {step === 9 && (
+          {step === 8 && (
             <div>
               <p className="tittleHeaderRevision">Revisión de productos</p>
               <div className="containerStepFour">
-                {filas.some(f => f.siExiste) && (
-                  <div className="campoInfo">
-                    <div className="headerInfo">
-                      <p>Se requiere aprobación de Dirección SST</p>
+                {/* --- SOLO TECNOLÓGICO --- */}
+                {itemsStep8.length === 1 &&
+                  itemsStep8[0].purchaseTecnology &&
+                  !itemsStep8[0].siExiste && (
+                    <div className="campoInfo">
+                      <div className="headerInfo">
+                        <p>Aprobación del Gerente de Tecnológia y proyectos</p>
+                      </div>
+                      <div className="camposTextualesUltimoStep">
+                        <input
+                          type="checkbox"
+                          id={`vobo-0`}
+                          checked={itemsStep8[0].vobo || false}
+                          onChange={(e) =>
+                            manejarCambio(
+                              filas.findIndex((f) => f === itemsStep8[0]),
+                              "vobo",
+                              e.target.checked
+                            )
+                          }
+                        />
+                        <label htmlFor={`vobo-0`}>
+                          <div></div>
+                        </label>
+                      </div>
                     </div>
-                    {filas
-                      .filter(f => f.siExiste)
-                      .map((fila, index) => (
-                        <div key={index} className="camposTextualesUltimoStep">
-                          <input
-                            type="checkbox"
-                            id={`sstAprobacion-${index}`}
-                            checked={fila.sstAprobacion || false}
-                            onChange={(e) =>
-                              manejarCambio(filas.indexOf(fila), "sstAprobacion", e.target.checked)
-                            }
-                          />
-                          <label htmlFor={`sstAprobacion-${index}`}>
-                            <div></div>
-                          </label>
-                        </div>
-                      ))}
-                  </div>
+                  )}
 
-                )}
-                {filas.some(f => f.purchaseTecnology) && (
-                  <div className="campoInfo">
-                    <div className="headerInfo">
-                      <p>
-                        Aprobación del Gerente de Tecnológia y proyectos
-                      </p>
+                {/* --- SOLO ERGONÓMICO --- */}
+                {itemsStep8.length === 1 &&
+                  itemsStep8[0].siExiste &&
+                  !itemsStep8[0].purchaseTecnology && (
+                    <div className="campoInfo">
+                      <div className="headerInfo">
+                        <p>Se requiere aprobación de Dirección SST</p>
+                      </div>
+                      <div className="camposTextualesUltimoStep">
+                        <input
+                          type="checkbox"
+                          id={`sstAprobacion-0`}
+                          checked={itemsStep8[0].sstAprobacion || false}
+                          onChange={(e) =>
+                            manejarCambio(
+                              filas.findIndex((f) => f === itemsStep8[0]),
+                              "sstAprobacion",
+                              e.target.checked
+                            )
+                          }
+                        />
+                        <label htmlFor={`sstAprobacion-0`}>
+                          <div></div>
+                        </label>
+                      </div>
                     </div>
-                    {filas
-                      .filter(f => f.purchaseTecnology)
-                      .map((fila, index) => (
-                        <div key={index} className="camposTextualesUltimoStep">
-                          <input
-                            type="checkbox"
-                            id={`vobo-${index}`}
-                            checked={fila.vobo || false}
-                            onChange={(e) =>
-                              manejarCambio(filas.indexOf(fila), "vobo", e.target.checked)
-                            }
-                          />
-                          <label htmlFor={`vobo-${index}`}>
-                            <div></div>
-                          </label>
+                  )}
+
+                {/* --- AMBOS TIPOS PRESENTES --- */}
+                {itemsStep8.length > 1 && (
+                  <>
+                    {itemsStep8.some((item) => item.purchaseTecnology) && (
+                      <div className="campoInfo">
+                        <div className="headerInfo">
+                          <p>
+                            Aprobación del Gerente de Tecnológia y proyectos
+                          </p>
                         </div>
-                      ))}
-                  </div>
+                        {itemsStep8.map((fila, index) =>
+                          fila.purchaseTecnology ? (
+                            <div
+                              key={index}
+                              className="camposTextualesUltimoStep"
+                            >
+                              <input
+                                type="checkbox"
+                                id={`vobo-${index}`}
+                                checked={fila.vobo || false}
+                                onChange={(e) =>
+                                  manejarCambio(
+                                    filas.findIndex((f) => f === fila),
+                                    "vobo",
+                                    e.target.checked
+                                  )
+                                }
+                              />
+                              <label htmlFor={`vobo-${index}`}>
+                                <div></div>
+                              </label>
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+                    )}
+                    {itemsStep8.some((item) => item.siExiste) && (
+                      <div className="campoInfo">
+                        <div className="headerInfo">
+                          <p>Se requiere aprobación de Dirección SST</p>
+                        </div>
+                        {itemsStep8.map((fila, index) =>
+                          fila.siExiste ? (
+                            <div
+                              key={index}
+                              className="camposTextualesUltimoStep"
+                            >
+                              <input
+                                type="checkbox"
+                                id={`sstAprobacion-${index}`}
+                                checked={fila.sstAprobacion || false}
+                                onChange={(e) =>
+                                  manejarCambio(
+                                    filas.findIndex((f) => f === fila),
+                                    "sstAprobacion",
+                                    e.target.checked
+                                  )
+                                }
+                              />
+                              <label htmlFor={`sstAprobacion-${index}`}>
+                                <div></div>
+                              </label>
+                            </div>
+                          ) : null
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
-                <div className="modalContent" >
+
+                {/* ...tu tabla y botones siguen igual... */}
+                <div className="modalContent">
                   <h2 className="modalHeader">Aprobación de Ítems</h2>
                   <div className="tableContainer">
                     <table className="modalTable">
                       <thead>
                         <tr>
-                          <th>DESCRIPCIÓN</th>
+                          <th>PRODUCTO / SERVICIO</th>
                           <th>CANTIDAD</th>
                           <th>VALOR</th>
                           <th>CUENTA</th>
@@ -1335,9 +1480,9 @@ export default function NuevoFormulario() {
                         </tr>
                       </thead>
                       <tbody>
-                        {items.map((item, index) => (
-                          <tr key={index}>
-                            <td>{item.descripcion}</td>
+                        {itemsStep8.map((item, idx) => (
+                          <tr key={idx}>
+                            <td>{item.productoOServicio}</td>
                             <td>{item.cantidad}</td>
                             <td>{item.valor}</td>
                             <td>{item.cuenta}</td>
@@ -1345,7 +1490,12 @@ export default function NuevoFormulario() {
                               <input
                                 type="checkbox"
                                 checked={item.aprobatedStatus || false}
-                                onChange={() => toggleAprobacion(index)}
+                                onChange={() => {
+                                  const realIdx = filas.findIndex(
+                                    (f) => f === item
+                                  );
+                                  toggleAprobacion(realIdx);
+                                }}
                               />
                             </td>
                           </tr>
@@ -1365,14 +1515,12 @@ export default function NuevoFormulario() {
                 </div>
               </div>
               <div className="spaceButtons">
-                {step === 9 && <button className="navegationButton" onClick={prevStep}>Volver</button>}
-                {step === 9 && <button
-                  onClick={handleClickFour}
-                  className="navegationButton"
-                >
+                <button className="navegationButton" onClick={prevStep}>
+                  Volver
+                </button>
+                <button onClick={handleClickFour} className="navegationButton">
                   Enviar
                 </button>
-                }
               </div>
             </div>
           )}

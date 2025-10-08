@@ -278,7 +278,7 @@ export async function startThreeStep(variables) {
 
         console.log("🎉 Todas las tareas de GerenteArea fueron completadas");
 
-        await delay(3000);
+        await delay(6000);
 
                 // ============ GERENTE DE ÁREA ============
         let tareasResGerenteAreaFinal = await fetch(`${API_BASE}/tasks/search`, {
@@ -330,7 +330,7 @@ export async function startThreeStep(variables) {
 
         console.log("🎉 Todas las tareas de GerenteArea fueron completadas");
 
-        await delay(4000);
+        await delay(5000);
 
                 // ============ GERENTE DE ÁREA ============
         let tareasResGerenteAreaFinalisima = await fetch(`${API_BASE}/tasks/search`, {

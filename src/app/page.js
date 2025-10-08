@@ -1,110 +1,43 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import Navbar from "./components/navbar";
-import OptionsModal from "./components/optionsModal";
+import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faSync, faEllipsis } from "@fortawesome/free-solid-svg-icons";
-import { useRouter } from "next/navigation";
-import { iniciarProceso } from "./services/camunda";
+import { faLock, faUser } from "@fortawesome/free-solid-svg-icons";
 
 export default function Dashboard() {
-    const [selectedId, setSelectedId] = useState(null);
-    const [isOpen, setIsOpen] = useState(false);
-    const [formularios, setFormularios] = useState([]);
-    const [loading, setLoading] = useState(true); // 👈 estado de carga
-    const router = useRouter();
-
-    //CAMUNDA
-    const handleClick = async () => {
-        try {
-            await iniciarProceso({
-                bienvenida: "Inicio del proceso de compras",
-            });
-
-            router.push("/formulario/nuevo/");
-        } catch (error) {
-            console.error("Error al iniciar el proceso:", error);
-        }
-    };
-
-    // Función para traer datos de la BD
-    const fetchFormularios = async () => {
-        try {
-            setLoading(true); // 👈 empieza la animación
-            const res = await fetch("http://localhost:4000/formularios");
-            const data = await res.json();
-            setFormularios(data);
-
-            // 👇 mantenemos el loading visible al menos 2–3 segundos
-            setTimeout(() => {
-                setLoading(false);
-            }, 3000);
-        } catch (error) {
-            console.error("❌ Error al traer formularios:", error);
-            setLoading(false);
-        }
-    };
-
-    // Llamar al backend cuando cargue la página
-    useEffect(() => {
-        fetchFormularios();
-    }, []);
-
-    return (
-        <div>
-            <Navbar />
-            <OptionsModal isOpen={isOpen} onClose={() => setIsOpen(false)} selectedId={selectedId} />
-
-            <div className="space-buttons">
-                <button onClick={handleClick}>
-                    <FontAwesomeIcon icon={faPlus} /> Nueva Requisición
-                </button>
-                <button onClick={fetchFormularios}>
-                    <FontAwesomeIcon icon={faSync} /> Actualizar
-                </button>
-            </div>
-
-            <div className="body">
-                <div className="header-container">
-                    <p className="header-name">Nombre</p>
-                    <p className="header-actions">Acciones</p>
-                </div>
-
-                <div className="table-container">
-                    {loading ? (
-                        <div className="loading-container">
-                            <div className="loading-cambios">
-                                <img
-                                    src="/coopidrogas_logo_mini.png"
-                                    className="LogoCambios"
-                                    alt="Logo de carga"
-                                />
-                                <p className="textLoading">Cargando formularios...</p>
-                            </div>
-                        </div>
-                    ) : formularios.length > 0 ? (
-                        formularios.map((form) => (
-                            <div key={form.id} className="container-formulario">
-                                <p className="tittle-formulario">
-                                    {form.nombre || "Sin nombre"}
-                                </p>
-                                <button
-                                    className="options-formulario"
-                                    onClick={() => {
-                                        console.log("CLICK: abrir modal", form.id);
-                                        setSelectedId(form.id);
-                                        setIsOpen(true);
-                                    }}
-                                >
-                                    <FontAwesomeIcon icon={faEllipsis} />
-                                </button>
-                            </div>
-                        ))
-                    ) : (
-                        <p>No hay formularios creados</p>
-                    )}
-                </div>
-            </div>
+  return (
+    <div className=" background-img">
+      <div className="login">
+        <div className="background-img-left">
+          <img src="/coopidrogas_sede.png" alt="Logo" className="logo" />
         </div>
-    );
+        <div className="login-right">
+          <div className="login-container">
+            <div className="login-header">
+              <img
+                src="/coopidrogas_logo_mini.png"
+                alt="Logo"
+                className="logoCoopiLogin"
+              />
+              <div className="login-text">
+                <h2 className="login-title">Inicio de sesión</h2>
+                <p className="login-subtitle">
+                  REQUISICIÓN DE COMPRA O SERVICIO
+                </p>
+              </div>
+            </div>
+            <div className="login-form">
+              <div className="inputAndIcon">
+                <FontAwesomeIcon icon={faUser} className="icon" />
+                <input className="inputLogin" placeholder="Usuario" autoComplete="on"/>
+              </div>
+              <div className="inputAndIcon">
+                <FontAwesomeIcon icon={faLock} className="icon" />
+                <input className="inputLogin" placeholder="Contraseña" autoComplete="on"/>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

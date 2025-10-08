@@ -1,3 +1,4 @@
 {
-    "CodeGPT.apiKey": "Gemini CLI"
+    "CodeGPT.apiKey": "Gemini CLI",
+    "editor.fontFamily": "'Century Gothic', Consolas, 'Courier New', monospace"
 }
