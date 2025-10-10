@@ -1,11 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import Navbar from "./components/navbar";
-import OptionsModal from "./components/optionsModal";
+import Navbar from "../components/navbar";
+import Slidebar from "../components/Slidebar"
+import OptionsModal from "../components/optionsModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faSync, faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
-import { iniciarProceso } from "./services/camunda";
+import { iniciarProceso } from "../services/camunda";
 
 export default function Dashboard() {
     const [selectedId, setSelectedId] = useState(null);
@@ -53,6 +54,7 @@ export default function Dashboard() {
     return (
         <div>
             <Navbar />
+            
             <OptionsModal isOpen={isOpen} onClose={() => setIsOpen(false)} selectedId={selectedId} />
 
             <div className="space-buttons">

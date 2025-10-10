@@ -71,9 +71,9 @@
   border-radius: 8px;
 }
 
-
 .login-header {
   text-align: left;
+  margin: 5px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -91,7 +91,7 @@
 
 .login-form {
   width: 90%;
-  height: 50%;
+  height: 100%;
   justify-content: center;
   align-items: center;
   text-align: center;
@@ -99,9 +99,18 @@
   flex-direction: column;
 }
 
+.campitosInputs {
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  margin-top: 15px;
+}
+
 .inputAndLabel {
   display: grid;
-
+  width: 100%;
 }
 
 .inputAndLabel label {
@@ -112,7 +121,7 @@
 }
 
 .inputAndIcon {
-  border:none;
+  border: none;
   display: flex;
   background-color: #e4e4e4;
   align-items: center;
@@ -124,9 +133,9 @@
 
 .inputLogin {
   border: 2px solid transparent;
-  width: 17rem;
+  width: 100%;
   height: 2.5em;
-  width: 50vh;
+  width: 100%;
   padding-left: 0.8em;
   border: none;
   outline: none;
@@ -141,7 +150,6 @@
   border: 2px solid #4a9dec;
   box-shadow: 0px 0px 0px 4px rgb(74, 157, 236, 20%);
   background-color: white;
-  
 }
 
 .inputLogin:-webkit-autofill {
@@ -166,12 +174,164 @@
 
 .containerIconAndInput {
   display: flex;
-  width: 95%;
   align-items: center;
 }
 
 .spaceIcons {
   padding: 5px;
+}
+
+.rememberAccount {
+  display: flex;
+  gap: 3px;
+  margin: 10px;
+  width: 100%;
+}
+
+.forgoutUser {
+  text-align: right;
+  width: 100%;
+  justify-content: right;
+  text-decoration: none;
+}
+
+.forgoutUser .LinkForgot {
+  text-decoration: none;
+  font-size: 13px;
+  color: #1d5da8;
+}
+
+.cyberpunk-checkbox {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #1d5da8;
+  border-radius: 5px;
+  background-color: transparent;
+  display: inline-block;
+  position: relative;
+  margin-right: 3px;
+  margin-left: 5px;
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+.cyberpunk-checkbox:before {
+  content: "";
+  background-color: #1d5da8;
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  transition: all 0.3s ease-in-out;
+}
+
+.cyberpunk-checkbox:checked:before {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.cyberpunk-checkbox-label {
+  font-size: 13px;
+  color: #1d5da8;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+}
+
+.buttonsLogin {
+  background-color: transparent;
+  height: 60px;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+.buttonsLogin button {
+  width: 100%;
+  height: 60px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  background-color: #1d5da8;
+  border-radius: 4px;
+  transition: 0.3s all;
+}
+
+.buttonsLogin button:hover {
+  background-color: #3498db;
+}
+
+.buttonsMicrosoft {
+  background-color: transparent;
+  height: 60px;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+.buttonsMicrosoft button {
+  width: 100%;
+  display: flex;
+  height: 60px;
+  border: none;
+  cursor: pointer;
+  color: #1d5da8;
+  font-size: 15px;
+  font-weight: bold;
+  background-color: transparent;
+  border: 5px 12px #1d5da8;
+  border-radius: 4px;
+  transition: 0.3s all;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  border: 2px solid #1d5da8;
+}
+
+.buttonsMicrosoft button:hover {
+  background-color: #1d5da8;
+  color: white;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: #777;
+  margin: 20px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #ccc;
+}
+
+.divider:not(:empty)::before {
+  margin-right: 0.75em;
+}
+.divider:not(:empty)::after {
+  margin-left: 0.75em;
+}
+
+.papaInputs {
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  margin: 40px 0 15px 0;
 }
 
 /* NAVBAR */
@@ -839,7 +999,7 @@ input[type="time"] {
 }
 
 /* El div dentro del label será el círculo */
-.camposTextualesUltimoStep label>div {
+.camposTextualesUltimoStep label > div {
   --clr: #1d5da8;
   height: 1.3em;
   width: 1.3em;
@@ -850,21 +1010,21 @@ input[type="time"] {
 }
 
 /* Cuando el checkbox está checked, se pinta */
-.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div {
+.camposTextualesUltimoStep input[type="checkbox"]:checked + label > div {
   background-color: var(--clr);
   border-radius: 0.5rem;
   animation: pulse 500ms ease-in-out;
 }
 
 /* El ✔️ */
-.camposTextualesUltimoStep label>div::after {
+.camposTextualesUltimoStep label > div::after {
   content: "";
   position: absolute;
   display: none;
 }
 
 /* Mostrar el ✔️ cuando está marcado */
-.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div::after {
+.camposTextualesUltimoStep input[type="checkbox"]:checked + label > div::after {
   display: block;
   left: 0.45em;
   top: 0.25em;
