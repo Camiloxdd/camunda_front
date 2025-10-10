@@ -22,7 +22,7 @@
   width: 80%;
   height: 80vh;
   background-color: white;
-  border-radius:  0 16 16 0px;
+  border-radius: 0 16 16 0px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: row;
@@ -30,7 +30,7 @@
 }
 
 .background-img-left {
-  width: 70%;
+  width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
@@ -57,31 +57,32 @@
 }
 
 .login-container {
-  width: 80%;
-  height: 70%;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 1rem; /* ajusta el espacio entre elementos */
+  gap: 1rem;
+  /* ajusta el espacio entre elementos */
   text-align: center;
-  background: radial-gradient(circle at top left,#e3f2fd , #ffffff,  #fbe9e7);
+  background: radial-gradient(circle at top left, #e3f2fd, #ffffff, #fbe9e7);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
 }
 
 
 .login-header {
-  text-align: center;
+  text-align: left;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: 20px;
 }
 
 .login-header .logoCoopiLogin {
-  width: 70px;
-  height: 70px;
+  width: 50px;
+  height: 50px;
 }
 
 .login-text {
@@ -89,24 +90,45 @@
 }
 
 .login-form {
+  width: 90%;
+  height: 50%;
   justify-content: center;
   align-items: center;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+.inputAndLabel {
+  display: grid;
+
+}
+
+.inputAndLabel label {
+  text-align: left;
+  font-size: 15px;
+  margin-left: 8px;
+  color: #1d5da8;
 }
 
 .inputAndIcon {
+  border:none;
   display: flex;
+  background-color: #e4e4e4;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  border-radius: 4px;
   padding: 10px;
+  width: 100%;
+  margin: 10px;
 }
 
 .inputLogin {
   border: 2px solid transparent;
-  width: 17em;
-  height: 3.0em;
+  width: 17rem;
+  height: 2.5em;
+  width: 50vh;
   padding-left: 0.8em;
+  border: none;
   outline: none;
   overflow: hidden;
   background-color: #e4e4e4;
@@ -114,11 +136,42 @@
   transition: all 0.5s;
 }
 
-.inputLogin:hover,
-.inputLogin:focus {
+.inptAndIcon:hover,
+.inptAndIcon:has(input:focus) {
   border: 2px solid #4a9dec;
-  box-shadow: 0px 0px 0px 7px rgb(74, 157, 236, 20%);
+  box-shadow: 0px 0px 0px 4px rgb(74, 157, 236, 20%);
   background-color: white;
+  
+}
+
+.inputLogin:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px #e4e4e4 inset !important;
+  -webkit-text-fill-color: black !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.eyeIcon {
+  cursor: pointer;
+  color: #1d5da8;
+  transition: color 0.3s;
+}
+
+.eyeIconDiv {
+  background-color: green;
+}
+
+.eyeIcon:hover {
+  color: #4a9dec;
+}
+
+.containerIconAndInput {
+  display: flex;
+  width: 95%;
+  align-items: center;
+}
+
+.spaceIcons {
+  padding: 5px;
 }
 
 /* NAVBAR */
@@ -457,6 +510,12 @@
   font-size: clamp(0.8rem, 2vw, 1rem);
 }
 
+.iconLogin {
+  color: #1d5da8;
+  font-size: 25px;
+  padding: 7px;
+}
+
 input[type="date"],
 input[type="time"] {
   color: #6f737a;
@@ -780,7 +839,7 @@ input[type="time"] {
 }
 
 /* El div dentro del label será el círculo */
-.camposTextualesUltimoStep label > div {
+.camposTextualesUltimoStep label>div {
   --clr: #1d5da8;
   height: 1.3em;
   width: 1.3em;
@@ -791,21 +850,21 @@ input[type="time"] {
 }
 
 /* Cuando el checkbox está checked, se pinta */
-.camposTextualesUltimoStep input[type="checkbox"]:checked + label > div {
+.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div {
   background-color: var(--clr);
   border-radius: 0.5rem;
   animation: pulse 500ms ease-in-out;
 }
 
 /* El ✔️ */
-.camposTextualesUltimoStep label > div::after {
+.camposTextualesUltimoStep label>div::after {
   content: "";
   position: absolute;
   display: none;
 }
 
 /* Mostrar el ✔️ cuando está marcado */
-.camposTextualesUltimoStep input[type="checkbox"]:checked + label > div::after {
+.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div::after {
   display: block;
   left: 0.45em;
   top: 0.25em;
