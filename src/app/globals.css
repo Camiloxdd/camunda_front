@@ -320,6 +320,7 @@
 .divider:not(:empty)::before {
   margin-right: 0.75em;
 }
+
 .divider:not(:empty)::after {
   margin-left: 0.75em;
 }
@@ -400,6 +401,35 @@
 
 .user-menu:hover {
   background: #ffd633;
+}
+
+.infoUser {
+  display: flex;
+  gap: 10px;
+}
+
+.nameAndRol {
+  color: #1d5da8;
+  justify-content: center;
+  align-items: left;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.imgUser {
+  width: 50px;
+  height: 50px;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  border-radius: 30px;
+  font-size: 25px;
+  color: #1d5da8;
+  border-width: 3px;
+  border-color: #1d5da8;
+  border-style: solid;
 }
 
 /* BOTONES SUPERIORES */
@@ -999,7 +1029,7 @@ input[type="time"] {
 }
 
 /* El div dentro del label será el círculo */
-.camposTextualesUltimoStep label > div {
+.camposTextualesUltimoStep label>div {
   --clr: #1d5da8;
   height: 1.3em;
   width: 1.3em;
@@ -1010,21 +1040,21 @@ input[type="time"] {
 }
 
 /* Cuando el checkbox está checked, se pinta */
-.camposTextualesUltimoStep input[type="checkbox"]:checked + label > div {
+.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div {
   background-color: var(--clr);
   border-radius: 0.5rem;
   animation: pulse 500ms ease-in-out;
 }
 
 /* El ✔️ */
-.camposTextualesUltimoStep label > div::after {
+.camposTextualesUltimoStep label>div::after {
   content: "";
   position: absolute;
   display: none;
 }
 
 /* Mostrar el ✔️ cuando está marcado */
-.camposTextualesUltimoStep input[type="checkbox"]:checked + label > div::after {
+.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div::after {
   display: block;
   left: 0.45em;
   top: 0.25em;
@@ -1822,6 +1852,96 @@ input[type="time"] {
 .iconModalTable {
   color: #1d5da8;
   font-size: 15px;
+}
+
+.containerOneDashboard {
+  display: flex;
+  border-radius: 8px;
+  height: 140px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.firstContainerDash {
+  background-color: #f3f3f3;
+  margin: 10px;
+  border-radius: 10px;
+  width: 100%;
+  display: flex;
+  gap: 500px;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.infoGeneralUserDash {
+  margin: 10px;
+  justify-content: center;
+  align-items: left;
+  color: #1d5da8;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.porcents {
+  display: flex;
+  width: 50%;
+  height: 90%;
+  gap: 30px;
+  justify-content: right;
+}
+
+.totalRequisiciones {
+  width: 40%;
+  color: #1d5da8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 30px;
+  border-radius: 8px;
+  border-width: 3px;
+  border-style: solid;
+  border-color: #1d5da8;
+}
+
+.porAprobarRequisiciones {
+  width: 40%;
+  color: #1d5da8;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 30px;
+  border-radius: 8px;
+  border-width: 3px;
+  border-style: solid;
+  border-color: #1d5da8;
+}
+
+.iconAprobarReq {
+  background-color: #b4d7ff;
+  font-size: 30px;
+  border-radius: 40px;
+  height: 70px;
+  width: 70px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  display: flex;
+}
+
+.iconTotalReq {
+  background-color: #b4d7ff;
+  font-size: 30px;
+  border-radius: 40px;
+  height: 70px;
+  width: 70px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  display: flex;
 }
 
 @keyframes spinVaried {

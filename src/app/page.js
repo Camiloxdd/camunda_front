@@ -2,14 +2,12 @@
 import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faLock,
-  faUser,
   faEye,
   faEyeSlash,
   faKey,
   faMailBulk,
 } from "@fortawesome/free-solid-svg-icons";
-import { faEmber, faMicrosoft } from "@fortawesome/free-brands-svg-icons";
+import { faMicrosoft } from "@fortawesome/free-brands-svg-icons";
 import Link from "next/link";
 import {useRouter} from "next/navigation"
 
