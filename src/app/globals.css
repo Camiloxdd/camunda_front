@@ -337,12 +337,18 @@
 
 /* NAVBAR */
 .navbar {
+  position: fixed;               
+  top: 0;                        
+  left: 0;
+  width: 100%;                  
+  z-index: 1000;                
   display: flex;
   align-items: center;
   justify-content: space-between;
   background-color: white;
   padding: clamp(0.5rem, 2vw, 1rem) clamp(1rem, 3vw, 2rem);
   border-bottom: 3px solid #1d5da8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
 }
 
 .nav-links .tittle {
@@ -1029,7 +1035,7 @@ input[type="time"] {
 }
 
 /* El div dentro del label será el círculo */
-.camposTextualesUltimoStep label>div {
+.camposTextualesUltimoStep label > div {
   --clr: #1d5da8;
   height: 1.3em;
   width: 1.3em;
@@ -1040,21 +1046,21 @@ input[type="time"] {
 }
 
 /* Cuando el checkbox está checked, se pinta */
-.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div {
+.camposTextualesUltimoStep input[type="checkbox"]:checked + label > div {
   background-color: var(--clr);
   border-radius: 0.5rem;
   animation: pulse 500ms ease-in-out;
 }
 
 /* El ✔️ */
-.camposTextualesUltimoStep label>div::after {
+.camposTextualesUltimoStep label > div::after {
   content: "";
   position: absolute;
   display: none;
 }
 
 /* Mostrar el ✔️ cuando está marcado */
-.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div::after {
+.camposTextualesUltimoStep input[type="checkbox"]:checked + label > div::after {
   display: block;
   left: 0.45em;
   top: 0.25em;
@@ -1942,6 +1948,101 @@ input[type="time"] {
   align-items: center;
   text-align: center;
   display: flex;
+}
+
+.secondContainerDash {
+  display: flex;
+  border-radius: 8px;
+  height: 100%;
+  width: 100%;
+}
+
+.containerTwoDash {
+  margin: 10px;
+  width: 100%;
+}
+
+.papaHeaderRequi {
+  background-color: #f3f3f3;
+  margin: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  color: #1d5da8;
+  display: flex;
+}
+
+.barraDeNavegacion{
+  width: 76%;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  text-align: center;
+}
+
+.headerListReq {
+  padding: 10px;
+}
+
+.listaReq {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 columnas por fila */
+  gap: 5px; /* Espaciado entre tarjetas */
+}
+
+.requisicion {
+  width: 95%;
+  margin-top: 10px;
+  padding: 20px;
+  display: flex;
+  gap: 30px;
+  background-color: #f3f3f3;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.infoIzquierda {
+  color: #1d5da8;
+}
+
+.infoDerecha {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  width: 39%;
+  font-size: 50px;
+  color: #1d5da8;
+  gap: 10px;
+}
+
+.buttonReqEdit {
+  background-color: #1d5da8;
+  color: white;
+  height: 30px;
+  width: 65px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s all;
+}
+
+.buttonReqEdit:hover {
+  height: 35px;
+  width: 70px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.subTittles {
+  font-weight: bold;
+}
+
+.subChiquitin {
+  font-weight: normal;
+}
+
+.dashboard-container-requisiciones{
+  margin-top: 90px;
 }
 
 @keyframes spinVaried {

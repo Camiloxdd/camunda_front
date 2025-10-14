@@ -1,7 +1,7 @@
 .sidebar-9 {
-  position: absolute;
+  position: fixed;
   z-index: 2;
-  top: 20px;
+  top: 100px;
   left: 10px;
   bottom: 26px;
   border-radius: 14px;
@@ -10,6 +10,7 @@
   background: #1d5da8;
   backdrop-filter: blur(10px);
   transition: width 0.45s;
+  height: 88%;
 }
 
 .sidebar-9 button {

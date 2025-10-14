@@ -1,0 +1,214 @@
+.headerUsers {
+  background-color: #f3f3f3;
+  padding: 10px;
+  width: 99%;
+  height: 100px;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  color: #1d5da8;
+  justify-content: center;
+  align-items: center;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.tablaGestionUsuarios {
+  background-color: #f3f3f3;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  margin-top: 15px;
+  width: 99%;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.tableGestUsers {
+  padding: 15px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  display: flex;
+}
+
+.tableGestUsers table {
+  width: 100%;
+  gap: 15px;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tableGestUsers thead {
+  height: 60px;
+  border-radius: 15px;
+  background-color: #1d5da8;
+  color: white;
+}
+
+.tableGestUsers tbody {
+  margin-top: 15px;
+  background-color: #e0e0e0;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  height: 50px;
+  color: black;
+}
+
+.tableGestUsers tbody input {
+  background-color: transparent;
+  border: none;
+  width: 90%;
+  height: 35px;
+  border-radius: 8px;
+}
+
+.tableGestUsers tbody input:focus {
+  outline: none;
+}
+
+.tableGestUsers button {
+  background-color: transparent;
+  gap: 20px;
+  cursor: pointer;
+  border: none;
+  transition: 0.3s all;
+}
+
+.tableGestUsers button:hover {
+  transform: scale(1.2);
+}
+
+.tableGestUsers button .iconEditUser {
+  color: #1d5da8;
+}
+
+.tableGestUsers button .iconDeleteUser {
+  color: red;
+}
+
+.spaceButtonsGestUsers {
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  height: 35px;
+  display: flex;
+}
+
+.papaContainerUserModal {
+  padding: 20px;
+}
+
+.headerUserModal {
+  color: #1d5da8;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.headerUserModal h2{
+    position: fixed;
+}
+
+.tittleModalHeaderUser{
+    width: 100%;
+    justify-content: center;
+    background-color: orange;
+    align-items: center;
+    text-align: center;
+    display: flex;
+}
+
+.buttonCloseModalUser{
+    display: flex;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    background-color: yellow;
+    margin-left: auto;
+}
+
+.inputsDatos {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  padding: 10px;
+  box-sizing: border-box;
+  background-color: #f3f3f3;
+  border-radius: 8px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+  margin-top: -30px;
+}
+
+.inputAndIconUserGest {
+  background-color: white;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.inputAndLabelUsersGestion {
+  justify-content: center;
+  align-items: left;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.inputAndLabelUsersGestion label {
+  color: #1d5da8;
+}
+
+.inputAndLabelUsersGestion input {
+  background-color: transparent;
+  border: none;
+  height: 35px;
+  border-radius: 10px;
+  width: 100%;
+}
+
+.inputAndLabelUsersGestion input:focus {
+  outline: none;
+}
+
+.selectsRoles {
+  background-color: #f3f3f3;
+  margin-top: 20px;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+}
+
+.superAdmin {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  color: #1d5da8;
+}
+
+.saveUsersReq{
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #1d5da8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    transition: 0.3s all;
+    cursor: pointer;
+}
+
+.saveUsersReq:hover{
+    transform: scale(1.1);
+}

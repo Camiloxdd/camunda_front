@@ -4,12 +4,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faHome,
     faLock,
+    faUser,
     faWrench,
     faCloud,
     faEnvelope,
     faCog,
     faBars,
     faTimes,
+    faFile,
 } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
 
@@ -20,8 +22,8 @@ export const Sidebar = ({ onToggle }) => {
     const navItems = [
         { icon: faHome, label: "Inicio", path: "/dashboard" },
         { icon: faLock, label: "Seguridad", path: "/listTables" },
-        { icon: faWrench, label: "Herramientas", path: "/herramientas" },
-        { icon: faCloud, label: "Nube", path: "/nube" },
+        { icon: faUser, label: "Usuarios", path: "/usuarios" },
+        { icon: faFile, label: "Requisiciones", path: "/requisiciones" },
         { icon: faEnvelope, label: "Correo", path: "/correo" },
         { icon: faCog, label: "Configuración", path: "/configuracion" },
     ];
