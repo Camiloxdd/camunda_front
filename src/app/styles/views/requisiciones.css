@@ -13,6 +13,32 @@
   flex-direction: column;
 }
 
+.headerUsers .headerInfoRequisiciones{
+  text-align: center;
+  position: fixed;
+}
+
+.buttonsRequisiciones{
+  width: 90%;
+  gap: 10px;
+  display: flex;
+  justify-content: right;
+}
+
+.buttonsRequisiciones button{
+  color: white;
+  background-color: #1d5da8;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  transition: 0.3s all;
+  cursor: pointer;
+}
+
+.buttonsRequisiciones button:hover{
+  transform: scale(1.1);
+}
+
 .tablaGestionUsuarios {
   background-color: #f3f3f3;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
@@ -86,6 +112,14 @@
   color: red;
 }
 
+.tableGestUsers button .iconDownloadExcel{
+    color: green;
+}
+
+.tableGestUsers button .iconDownloadPdf{
+    color: orange;
+}
+
 .spaceButtonsGestUsers {
   gap: 10px;
   justify-content: center;
@@ -108,26 +142,26 @@
   text-align: center;
 }
 
-.headerUserModal h2 {
-  position: fixed;
+.headerUserModal h2{
+    position: fixed;
 }
 
-.tittleModalHeaderUser {
-  width: 100%;
-  justify-content: center;
-  background-color: orange;
-  align-items: center;
-  text-align: center;
-  display: flex;
+.tittleModalHeaderUser{
+    width: 100%;
+    justify-content: center;
+    background-color: orange;
+    align-items: center;
+    text-align: center;
+    display: flex;
 }
 
-.buttonCloseModalUser {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  justify-content: center;
-  background-color: yellow;
-  margin-left: auto;
+.buttonCloseModalUser{
+    display: flex;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    background-color: yellow;
+    margin-left: auto;
 }
 
 .inputsDatos {
@@ -169,7 +203,7 @@
 .inputAndLabelUsersGestion input {
   background-color: transparent;
   border: none;
-  height: 45px;
+  height: 35px;
   border-radius: 10px;
   width: 100%;
 }
@@ -198,95 +232,27 @@
   color: #1d5da8;
 }
 
-.saveUsersReq {
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #1d5da8;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  transition: 0.3s all;
-  cursor: pointer;
-  border-color: transparent;
+.saveUsersReq{
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #1d5da8;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    transition: 0.3s all;
+    cursor: pointer;
 }
 
-.saveUsersReq:hover {
-  transform: scale(1.1);
+.saveUsersReq:hover{
+    transform: scale(1.1);
 }
 
-.custom-select-container {
-  position: relative;
-  width: 100%;
-  font-family: "Poppins", sans-serif;
-}
-
-.custom-select {
-  background-color: #fff;
-  border-radius: 12px;
-  height: 45px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: 0.3s ease;
-  padding: 10px;
-}
-
-.custom-select:hover {
-  border-color: #75b5ff;
-}
-
-.custom-select.open {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.arrow {
-  transition: transform 0.3s ease;
-  color: #333;
-}
-
-.arrow.rotate {
-  transform: rotate(180deg);
-}
-
-.custom-options {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: white;
-  border: 2px solid #1d5da8;
-  border-top: none;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  z-index: 100;
-}
-
-.option {
-  padding: 10px 14px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.option:hover {
-  background-color: #e0eeff;
-}
-
-.option.selected {
-  background-color: #a5d6d1;
-  color: white;
-}
-
-.infoHeaderUsers {
+.infoHeaderUsers{
   text-align: center;
   position: fixed;
 }
 
-.newUserButton {
+.newUserButton{
   width: 90%;
   justify-content: right;
   align-items: end;
@@ -294,7 +260,7 @@
   display: flex;
 }
 
-.newUserButton button {
+.newUserButton button{
   background-color: #1d5da8;
   padding: 10px;
   border-radius: 8;
@@ -304,11 +270,12 @@
   align-items: center;
   text-align: center;
   display: flex;
-  color: white;
+  color:  white;
   cursor: pointer;
   transition: 0.3s all;
 }
 
-.newUserButton button:hover {
+.newUserButton button:hover{
   transform: scale(1.1);
 }
+

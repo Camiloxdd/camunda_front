@@ -2,13 +2,17 @@
 import React, { useState } from "react";
 import Navbar from "../components/navbar";
 import { Sidebar } from "../components/Slidebar";
-import "../styles/views/usuarios.css";
+import "../styles/views/requisiciones.css";
 import {
   faBriefcase,
   faBuilding,
+  faFileExcel,
+  faFilePdf,
   faMailBulk,
   faPencil,
   faPhone,
+  faPlus,
+  faRefresh,
   faSave,
   faStore,
   faTrash,
@@ -16,14 +20,19 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import UserModal from "../components/userModal";
+import { useRouter } from "next/navigation";
+import WizardModal from "../components/modalNewReq";
 
 export default function Usuarios() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [openModal, setOpenModal] = useState(false);
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
 
   return (
     <div style={{ display: "flex" }}>
       <Navbar />
+      <WizardModal open={open} onClose={() => setOpen(false)} />
       <Sidebar onToggle={setIsSidebarOpen} />
       <div
         style={{
@@ -34,8 +43,18 @@ export default function Usuarios() {
         }}
       >
         <div className="headerUsers">
-          <h2>Gestion de Requisiciones</h2>
-          <p>Agrega, modifica o elimina la requisicion que sea necesaria.</p>
+          <div className="headerInfoRequisiciones">
+            <h2>Gestion de Requisiciones</h2>
+            <p>Agrega, modifica o elimina la requisicion que sea necesaria.</p>
+          </div>
+          <div className="buttonsRequisiciones">
+            <button>
+              <FontAwesomeIcon icon={faRefresh}/>
+            </button>
+            <button>
+              <FontAwesomeIcon icon={faPlus} onClick={()=> setOpen(true)}/>
+            </button>
+          </div>
         </div>
         <div className="tablaGestionUsuarios">
           <div className="tableGestUsers">
@@ -85,6 +104,20 @@ export default function Usuarios() {
                           className="iconDeleteUser"
                         />
                       </button>
+                      <span></span>
+                      <button>
+                        <FontAwesomeIcon
+                          icon={faFileExcel}
+                          className="iconDownloadExcel"
+                        />
+                      </button>
+                      <span></span>
+                      <button>
+                        <FontAwesomeIcon
+                          icon={faFilePdf}
+                          className="iconDownloadPdf"
+                        />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -95,93 +128,11 @@ export default function Usuarios() {
       </div>
       <UserModal open={openModal} onClose={() => setOpenModal(false)}>
         <div className="papaContainerUserModal">
-          <div className="infoGestionUser">
-            <div className="inputsDatos">
-              <div className="inputAndLabelUsersGestion">
-                <label>Nombre</label>
-                <div className="inputAndIconUserGest">
-                  <FontAwesomeIcon icon={faUser} className="icon" />
-                  <input type="text" />
-                </div>
-              </div>
-              <div className="inputAndLabelUsersGestion">
-                <label>Correo</label>
-                <div className="inputAndIconUserGest">
-                  <FontAwesomeIcon icon={faMailBulk} className="icon" />
-                  <input type="text" />
-                </div>
-              </div>
-              <div className="inputAndLabelUsersGestion">
-                <label>Cargo</label>
-                <div className="inputAndIconUserGest">
-                  <FontAwesomeIcon icon={faBriefcase} className="icon" />
-                  <input type="text" />
-                </div>
-              </div>
-              <div className="inputAndLabelUsersGestion">
-                <label>Telefono</label>
-                <div className="inputAndIconUserGest">
-                  <FontAwesomeIcon icon={faPhone} className="icon" />
-                  <input type="text" />
-                </div>
-              </div>
-              <div className="inputAndLabelUsersGestion">
-                <label>Area</label>
-                <div className="inputAndIconUserGest">
-                  <FontAwesomeIcon icon={faBuilding} className="icon" />
-                  <input type="text" />
-                </div>
-              </div>
-              <div className="inputAndLabelUsersGestion">
-                <label>Sede</label>
-                <div className="inputAndIconUserGest">
-                  <FontAwesomeIcon icon={faStore} className="icon" />
-                  <input type="text" />
-                </div>
-              </div>
-            </div>
-            <div className="selectsRoles">
-              <div className="superAdmin">
-                <div className="switch-container">
-                  <span>Super Administrador</span>
-                  <label className="switch">
-                    <input type="checkbox" />
-                    <span className="slider"></span>
-                  </label>
-                </div>
-              </div>
-              <div className="superAdmin">
-                <div className="switch-container">
-                  <span>Administrador</span>
-                  <label className="switch">
-                    <input type="checkbox" />
-                    <span className="slider"></span>
-                  </label>
-                </div>
-              </div>
-              <div className="superAdmin">
-                <div className="switch-container">
-                  <span>Solicitante</span>
-                  <label className="switch">
-                    <input type="checkbox" />
-                    <span className="slider"></span>
-                  </label>
-                </div>
-              </div>
-              <div className="superAdmin">
-                <div className="switch-container">
-                  <span>Comprador</span>
-                  <label className="switch">
-                    <input type="checkbox" />
-                    <span className="slider"></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-            <button className="saveUsersReq">
-                <p><FontAwesomeIcon icon={faSave}/> Guardar</p>
-            </button>
-          </div>
+          <button className="saveUsersReq">
+            <p>
+              <FontAwesomeIcon icon={faSave} /> Guardar
+            </p>
+          </button>
         </div>
       </UserModal>
     </div>

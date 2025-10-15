@@ -6,9 +6,11 @@ import "../styles/views/usuarios.css";
 import {
   faBriefcase,
   faBuilding,
+  faChevronDown,
   faMailBulk,
   faPencil,
   faPhone,
+  faPlus,
   faSave,
   faStore,
   faTrash,
@@ -20,6 +22,20 @@ import UserModal from "../components/userModal";
 export default function Usuarios() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [openModal, setOpenModal] = useState(false);
+  const [selected, setSelected] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+
+  const options = [
+    { value: "dicTYP", label: "Director Tecnologia y Proyectos" },
+    { value: "dicSST", label: "Director Seguridad y Salud en el Trabajo" },
+    { value: "dicCPR", label: "Director de Compras" },
+    { value: "dicCBD", label: "Director de Contabilidad" },
+  ];
+
+  const handleSelect = (value) => {
+    setSelected(value);
+    setIsOpen(false);
+  };
 
   return (
     <div style={{ display: "flex" }}>
@@ -34,15 +50,23 @@ export default function Usuarios() {
         }}
       >
         <div className="headerUsers">
-          <h2>Gestion de Usuarios</h2>
-          <p>Agrega, modifica o elimina el usuario que sea necesario.</p>
+          <div className="infoHeaderUsers">
+            <h2>Gestion de Usuarios</h2>
+            <p>Agrega, modifica o elimina el usuario que sea necesario.</p>
+          </div>
+          <div className="newUserButton">
+            <button onClick={() => setOpenModal(true)}>
+              <p>
+                <FontAwesomeIcon icon={faPlus} />
+              </p>
+            </button>
+          </div>
         </div>
         <div className="tablaGestionUsuarios">
           <div className="tableGestUsers">
             <table>
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Nombre</th>
                   <th>Correo</th>
                   <th>Cargo</th>
@@ -53,7 +77,6 @@ export default function Usuarios() {
               </thead>
               <tbody>
                 <tr>
-                  <td>1</td>
                   <td>
                     <input type="text" readOnly />
                   </td>
@@ -115,7 +138,38 @@ export default function Usuarios() {
                 <label>Cargo</label>
                 <div className="inputAndIconUserGest">
                   <FontAwesomeIcon icon={faBriefcase} className="icon" />
-                  <input type="text" />
+                  <div className="custom-select-container">
+                    <div
+                      className={`custom-select ${isOpen ? "open" : ""}`}
+                      onClick={() => setIsOpen(!isOpen)}
+                    >
+                      <span>
+                        {selected
+                          ? options.find((opt) => opt.value === selected)?.label
+                          : "Selecciona una categoría"}
+                      </span>
+                      <FontAwesomeIcon
+                        icon={faChevronDown}
+                        className={`arrow ${isOpen ? "rotate" : ""}`}
+                      />
+                    </div>
+
+                    {isOpen && (
+                      <ul className="custom-options">
+                        {options.map((opt) => (
+                          <li
+                            key={opt.value}
+                            className={`option ${
+                              selected === opt.value ? "selected" : ""
+                            }`}
+                            onClick={() => handleSelect(opt.value)}
+                          >
+                            {opt.label}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="inputAndLabelUsersGestion">
@@ -152,7 +206,7 @@ export default function Usuarios() {
               </div>
               <div className="superAdmin">
                 <div className="switch-container">
-                  <span>Administrador</span>
+                  <span>Aprobador</span>
                   <label className="switch">
                     <input type="checkbox" />
                     <span className="slider"></span>
@@ -179,7 +233,9 @@ export default function Usuarios() {
               </div>
             </div>
             <button className="saveUsersReq">
-                <p><FontAwesomeIcon icon={faSave}/> Guardar</p>
+              <p>
+                <FontAwesomeIcon icon={faSave} /> Guardar
+              </p>
             </button>
           </div>
         </div>

@@ -337,18 +337,18 @@
 
 /* NAVBAR */
 .navbar {
-  position: fixed;               
-  top: 0;                        
+  position: fixed;
+  top: 0;
   left: 0;
-  width: 100%;                  
-  z-index: 1000;                
+  width: 100%;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background-color: white;
   padding: clamp(0.5rem, 2vw, 1rem) clamp(1rem, 3vw, 2rem);
   border-bottom: 3px solid #1d5da8;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .nav-links .tittle {
@@ -594,7 +594,7 @@
   font-weight: bold;
   height: clamp(4rem, 10vw, 6rem);
   width: clamp(18rem, 70vw, 47rem);
-  margin: -50px auto;
+  margin: 30px auto;
   text-align: center;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
@@ -607,6 +607,7 @@
   background-color: #f2f2f2;
   padding: clamp(1rem, 3vw, 1.5rem);
   border-radius: 8px;
+  margin-top: -40px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
@@ -634,26 +635,61 @@
   font-size: clamp(0.9rem, 2vw, 1.1rem);
 }
 
-.tittleContent {
-  font-weight: bold;
-  color: #1d5da8;
-  margin-top: 20px;
-  text-align: center;
-  font-size: clamp(1.2rem, 3vw, 1.5rem);
+.papitoGugutata {
+  width: 100%;
 }
 
 .gugutata {
-  width: clamp(18rem, 70vw, 44rem);
+  width: 100%;
+}
+
+.headerGugutata {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  display: flex;
+  width: 100%;
+  padding: 10px;
+}
+
+.tittleContentGugutata {
+  color: #1d5da8;
 }
 
 .inputsContainers {
-  display: flex;
-  margin-top: clamp(1rem, 3vw, 2rem);
+  display: grid;
   justify-content: center;
-  gap: clamp(1rem, 5vw, 4rem);
+  align-items: center;
+  text-align: center;
   color: #1d5da8;
-  font-size: clamp(1rem, 2.5vw, 1.25rem);
   flex-wrap: wrap;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 10px;
+}
+
+.campoSolitoGugutata {
+  width: 100%;
+  height: 50%;
+}
+
+.campoSolitoGugutata label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  font-weight: bold;
+  color: #05060f99;
+  transition: color 0.3s ease;
+}
+
+.campoSolitoGugutata input {
+  width: clamp(10rem, 40vw, 15rem);
+  height: clamp(2.2rem, 5vw, 2.8rem);
+  border-radius: 0.5rem;
+  padding: 0 1rem;
+  border: 2px solid transparent;
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  transition: border-color 0.3s ease, background 0.2s ease;
 }
 
 .inputsContainers p {
@@ -691,6 +727,15 @@
 .completeInputs {
   background-color: white;
   border-radius: 8px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+}
+
+.completeInputs input {
+  height: 35px;
+  border: none;
+  background-color: transparent;
 }
 
 .campoAdicional {
@@ -698,6 +743,7 @@
   display: grid;
   text-align: left;
   align-items: center;
+  margin-top: 10px;
 }
 
 .icon {
@@ -1035,7 +1081,7 @@ input[type="time"] {
 }
 
 /* El div dentro del label será el círculo */
-.camposTextualesUltimoStep label > div {
+.camposTextualesUltimoStep label>div {
   --clr: #1d5da8;
   height: 1.3em;
   width: 1.3em;
@@ -1046,21 +1092,21 @@ input[type="time"] {
 }
 
 /* Cuando el checkbox está checked, se pinta */
-.camposTextualesUltimoStep input[type="checkbox"]:checked + label > div {
+.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div {
   background-color: var(--clr);
   border-radius: 0.5rem;
   animation: pulse 500ms ease-in-out;
 }
 
 /* El ✔️ */
-.camposTextualesUltimoStep label > div::after {
+.camposTextualesUltimoStep label>div::after {
   content: "";
   position: absolute;
   display: none;
 }
 
 /* Mostrar el ✔️ cuando está marcado */
-.camposTextualesUltimoStep input[type="checkbox"]:checked + label > div::after {
+.camposTextualesUltimoStep input[type="checkbox"]:checked+label>div::after {
   display: block;
   left: 0.45em;
   top: 0.25em;
@@ -1971,7 +2017,7 @@ input[type="time"] {
   display: flex;
 }
 
-.barraDeNavegacion{
+.barraDeNavegacion {
   width: 76%;
   justify-content: center;
   align-items: center;
@@ -1985,8 +2031,10 @@ input[type="time"] {
 
 .listaReq {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 4 columnas por fila */
-  gap: 5px; /* Espaciado entre tarjetas */
+  grid-template-columns: repeat(4, 1fr);
+  /* 4 columnas por fila */
+  gap: 5px;
+  /* Espaciado entre tarjetas */
 }
 
 .requisicion {
@@ -2041,7 +2089,7 @@ input[type="time"] {
   font-weight: normal;
 }
 
-.dashboard-container-requisiciones{
+.dashboard-container-requisiciones {
   margin-top: 90px;
 }
 

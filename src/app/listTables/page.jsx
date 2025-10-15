@@ -43,7 +43,7 @@ export default function listTables() {
     }, []);
 
     return (
-        <div className="dashboard-container" style={{ display: "flex" }}>
+        <div className="dashboard-container" style={{ display: "flex", marginTop: "100px"}}>
             {/* 👇 Se pasa el callback correcto al Sidebar */}
             <Sidebar onToggle={setIsSidebarOpen} />
 

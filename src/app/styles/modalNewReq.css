@@ -1,0 +1,241 @@
+.wizardModal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1500;
+}
+
+.wizardModal-container {
+  background: #fff;
+  border-radius: 16px;
+  width: 70%;
+  padding: 24px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  animation: wizardModal-scaleIn 0.3s ease;
+}
+
+.wizardModal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.containerModalNewReq {
+  display: flex;
+  gap: 10px;
+}
+
+.wizardModal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d5da8;
+}
+
+.wizardModal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #555;
+}
+
+.wizardModal-steps {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 45%;
+  margin-bottom: 20px;
+}
+
+.wizardModal-steps::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 15px;
+  bottom: 15px;
+  width: 2px;
+  background: #ddd;
+  z-index: 0;
+}
+
+.wizardModal-step {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.wizardModal-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 10px;
+  background: #1d5da8;
+  color: WHITE;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.wizardModal-step.active .wizardModal-circle {
+  background: white;
+  border-color: #1d5da8;
+  color: #1d5da8;
+}
+
+.wizardModal-stepContent h3 {
+  margin: 0;
+  font-size: 15px;
+  color: #222;
+}
+
+.wizardModal-stepContent p {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.wizardModal-body {
+  background: #f9f9f9;
+  padding: 14px;
+  height: 20%;
+  width: 80%;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  display: flex;
+}
+
+.elpapadepapas {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.wizardModal-panel h4 {
+  margin: 0 0 8px;
+  color: #333;
+}
+
+.wizardModal-footer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.wizardModal-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.wizardModal-prev {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #1d5da8;
+  background: white;
+  color: #1d5da8;
+}
+
+.wizardModal-next {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #1d5da8;
+  background: white;
+  color: #1d5da8;
+}
+
+.wizardModal-confirm {
+  border-width: 2px;
+  border-style: solid;
+  border-color: #1d5da8;
+  background: #1d5da8;
+  color: white;
+}
+
+.wizardModal-btn:hover {
+  opacity: 0.9;
+}
+
+.checkboxField {
+  display: flex;
+
+}
+
+.campoAdicionales {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 80px;
+  text-align: center;
+}
+
+.campoAdicionales input {
+  margin-left: -60px;
+  height: 20px;
+}
+
+.firsInfo {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 25px; /* separa las columnas */
+  width: 100%;
+  padding: 10px;
+}
+
+.firsInfo label {
+    font-weight: bold;
+  color: #05060f99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* 🔹 separa el texto del checkbox */
+  font-size: 14px;
+}
+
+.fileUploadContainer {
+  background-color: white;
+  border-radius: 8px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.hiddenFileInput {
+  display: none; /* oculta el input nativo */
+}
+
+.customFileButton {
+  color: white;
+  border: none;
+  width: 200px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+@keyframes wizardModal-scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
