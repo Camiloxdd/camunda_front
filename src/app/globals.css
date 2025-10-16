@@ -654,6 +654,7 @@
 
 .tittleContentGugutata {
   color: #1d5da8;
+  padding: 10px;
 }
 
 .inputsContainers {
@@ -727,13 +728,13 @@
 .completeInputs {
   background-color: white;
   border-radius: 8px;
-  height: 35px;
+  height: 100%;
   display: flex;
   align-items: center;
 }
 
 .completeInputs input {
-  height: 35px;
+  height: 45px;
   border: none;
   background-color: transparent;
 }

@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Sidebar } from "../components/Slidebar";
 import Navbar from "../components/navbar";
 import SearchBar from "../components/searchBar";
+import ApprovalModal from "../components/modalAprobations";
 import { faFile, faFileExcel } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -153,6 +154,12 @@ export default function dashboard() {
                   </button>
                 </div>
               </div>
+              <ApprovalModal
+                userRole="managerGeneral"
+                userArea="Dirección SST"
+                documentData={{ nombre: "Solicitud de compra de equipos" }}
+              />
+
             </div>
           </div>
         </div>

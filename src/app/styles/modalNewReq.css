@@ -187,20 +187,74 @@
 }
 
 .firsInfo {
-  display: grid;
+  display: flex;
   grid-template-columns: repeat(2, 1fr);
-  gap: 25px; /* separa las columnas */
+  gap: 25px;
+  /* separa las columnas */
   width: 100%;
   padding: 10px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
-.firsInfo label {
-    font-weight: bold;
+.firsInfo input {
+  width: 13px;
+  height: 13px;
+}
+
+.firsInfoTwo {
+  display: flex;
+  grid-template-columns: repeat(2, 1fr);
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.firsInfoTwo label {
+  font-weight: bold;
   color: #05060f99;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px; /* 🔹 separa el texto del checkbox */
+  font-size: 14px;
+}
+
+.firsInfoTwo input {
+  width: 13px;
+  height: 13px;
+  width: 100%;
+  background-color: red;
+  display: flex;
+}
+
+.textAreaCustom {
+  width: clamp(10rem, 40vw, 15rem);
+  height: 45%;
+  border-radius: 0.5rem;
+  padding: 0 1rem;
+  border: 2px solid transparent;
+  font-size: clamp(0.9rem, 2vw, 1rem);
+  transition: border-color 0.3s ease, background 0.2s ease;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  display: flex;
+}
+
+.textAreaCustom:focus {
+  outline: none;
+}
+
+.firsInfo label {
+  font-weight: bold;
+  color: #05060f99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  /* 🔹 separa el texto del checkbox */
   font-size: 14px;
 }
 
@@ -215,7 +269,8 @@
 }
 
 .hiddenFileInput {
-  display: none; /* oculta el input nativo */
+  display: none;
+  /* oculta el input nativo */
 }
 
 .customFileButton {
@@ -227,6 +282,210 @@
   font-weight: 500;
   transition: all 0.3s ease;
 }
+
+.productoNav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 10px;
+}
+
+.iconListFiles {
+  color: #1d5da8;
+  font-size: 18px;
+}
+
+.productoTab {
+  background: #eee;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: 0.5s;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  display: flex;
+  gap: 5px;
+}
+
+.productoTab.active {
+  background: white;
+  color: #1d5da8;
+  font-weight: bold;
+  transition: 0.5s all;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.productoTab.verTodos {
+  background: white;
+  color: black;
+  border-color: #1d5da8;
+  border-width: 2px;
+  border-style: solid;
+}
+
+.wizardModal-btn-remove {
+  color: red;
+  background-color: transparent;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s all;
+}
+
+.wizardModal-btn-remove:hover {
+  transform: scale(1.1);
+}
+
+.wizardModal-btn-add {
+  color: #1d5da8;
+  background-color: transparent;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s all;
+}
+
+.wizardModal-btn-add:hover {
+  transform: scale(1.1);
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+
+}
+
+.modalSelectProductos {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 300px;
+  max-height: 400px;
+  overflow-y: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.modalProductoItem {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #ddd;
+}
+
+.modalProductoItem:hover {
+  background: #f3f4f6;
+}
+
+.modalSelectProductos h3 {
+  color: #1d5da8;
+}
+
+.closeModalBtn {
+  background: #1d5da8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: 0.3s all;
+}
+
+.closeModalBtn:hover {
+  transform: scale(1.1);
+}
+
+.resumenSection {
+  max-height: 250px;
+  /* Ajusta según lo que quieras mostrar */
+  overflow-y: auto;
+  overflow-x: auto;
+  margin-bottom: 25px;
+  background: white;
+  padding: 15px 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.05);
+}
+
+.resumenSectionOne {
+  margin-bottom: 25px;
+  background: white;
+  padding: 15px 20px;
+  border-radius: 12px;
+  display: flex;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.05);
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.resumenSectionOne h2 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.resumenSectionOne ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.resumenSectionOne ul li {
+  margin-bottom: 6px;
+}
+
+.resumenSection h2 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.resumenSection ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.resumenSection ul li {
+  margin-bottom: 6px;
+}
+
+.tablaResumen {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  overflow-y: auto;
+}
+
+.tablaResumen th,
+.tablaResumen td {
+  border: 1px solid #ddd;
+  padding: 6px 10px;
+  text-align: center;
+}
+
+.tablaResumen th {
+  background-color: #f1f1f1;
+  color: #333;
+  font-weight: 600;
+}
+
 
 @keyframes wizardModal-scaleIn {
   from {

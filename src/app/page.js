@@ -9,14 +9,47 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { faMicrosoft } from "@fortawesome/free-brands-svg-icons";
 import Link from "next/link";
-import {useRouter} from "next/navigation"
+import { useRouter } from "next/navigation"
 
 export default function Dashboard() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [correo, setCorreo] = useState("");
+  const [contraseña, setContraseña] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const iniciarSesion = () =>{
+  const iniciarSesion = () => {
     router.push('/dashboard/')
+  }
+
+  async function handleLogIn(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`http://localhost:4000/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', 
+        body: JSON.stringify({ correo, contraseña })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || 'Login failed');
+        setLoading(false);
+        return;
+      }
+
+      router.push('/dashboard'); 
+    } catch (err) {
+      console.error(err);
+      setError('Error de conexión');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -55,6 +88,9 @@ export default function Dashboard() {
                       name="username"
                       className="inputLogin"
                       autoComplete="username"
+                      required
+                      value={correo}
+                      onChange={e => setCorreo(e.target.value)}
                     />
                   </div>
                 </div>
@@ -70,6 +106,9 @@ export default function Dashboard() {
                         type={showPassword ? "text" : "password"}
                         className="inputLogin"
                         autoComplete="current-password"
+                        required
+                        value={contraseña}
+                        onChange={e => setContraseña(e.target.value)}
                       />
                       <div className="spaceIcons">
                         <FontAwesomeIcon
@@ -91,12 +130,12 @@ export default function Dashboard() {
                 </div>
                 <div className="forgoutUser">
                   <p>
-                    <Link href={window} className="LinkForgot">¿Problemas para ingresar?</Link>
+                    <Link href={"/dashboard"} className="LinkForgot">¿Problemas para ingresar?</Link>
                   </p>
                 </div>
               </div>
               <div className="buttonsLogin">
-                <button onClick={iniciarSesion}>
+                <button onClick={handleLogIn}>
                   <p>Iniciar Sesion</p>
                 </button>
               </div>
