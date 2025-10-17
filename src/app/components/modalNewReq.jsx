@@ -58,32 +58,59 @@ export default function WizardModal({ open, onClose }) {
 
     console.log(formData)
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) setFileName(file.name);
-        else setFileName("");
-    };
-
-    const totalGeneral = formData.productos.reduce((acc, p) => {
-        const num = parseFloat(p.valorEstimado) || 0;
-        return acc + num;
-    }, 0);
-
     const handleSubmitFinal = async () => {
+        // Validar datos mínimos
+        if (!formData.solicitante.nombre || !formData.solicitante.fecha) {
+            alert("Por favor completa los datos del solicitante antes de guardar.");
+            return;
+        }
+
+        if (formData.productos.length === 0) {
+            alert("Agrega al menos un producto.");
+            return;
+        }
+
         try {
-            const res = await fetch("http://localhost:4000/api/solicitudes", {
+            const res = await fetch("http://localhost:4000/api/requisicion/create", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
             });
+
             if (!res.ok) throw new Error("Error al guardar");
-            alert("Solicitud creada con éxito");
+
+            alert("Solicitud creada con éxito ✅");
+            setFormData({
+                solicitante: {
+                    nombre: "",
+                    fecha: "",
+                    justificacion: "",
+                    area: "",
+                    sede: "",
+                    urgencia: "",
+                    presupuestada: false,
+                },
+                productos: [
+                    {
+                        nombre: "",
+                        cantidad: 1,
+                        descripcion: "",
+                        compraTecnologica: false,
+                        ergonomico: false,
+                        valorEstimado: "",
+                        centroCosto: "",
+                        cuentaContable: "",
+                        aprobaciones: [],
+                    },
+                ],
+            });
             onClose();
         } catch (err) {
             console.error(err);
-            alert("Hubo un error al guardar");
+            alert("Hubo un error al guardar ❌");
         }
     };
+
 
     useEffect(() => {
         if (productoActivo3 >= formData.productos.length) {
@@ -109,7 +136,7 @@ export default function WizardModal({ open, onClose }) {
                             "Datos del solicitante",
                             "Detalles del producto",
                             "Presupuesto",
-                            "Aprobaciones",
+                            "Resumen y Finalizacion",
                         ].map((titulo, index) => (
                             <div
                                 key={index}
@@ -564,7 +591,7 @@ export default function WizardModal({ open, onClose }) {
                                                         setMostrarModalProductos3(false);
                                                     }}
                                                 >
-                                                    💰 {prod.nombre || `Producto ${index + 1}`}
+                                                    <FontAwesomeIcon icon={faSackDollar} className="iconListFiles" /> {prod.nombre || `Producto ${index + 1}`}
                                                 </div>
                                             ))}
                                             <button
@@ -594,7 +621,14 @@ export default function WizardModal({ open, onClose }) {
                                             <li><strong>Sede:</strong> {formData.solicitante.sede || "—"}</li>
                                             <li><strong>Urgencia:</strong> {formData.solicitante.urgencia || "—"}</li>
                                             <li><strong>Justificación:</strong> {formData.solicitante.justificacion || "—"}</li>
-                                            <li><strong>Compra Presupuestada:</strong> {formData.solicitante.presupuestada || "—"}</li>
+                                            <p>
+                                                <strong>¿Está en presupuesto?:</strong>{" "}
+                                                {formData.solicitante.presupuestada ? (
+                                                    <span style={{ color: "green", fontWeight: "bold" }}>Si lo esta</span>
+                                                ) : (
+                                                    <span style={{ color: "red", fontWeight: "bold" }}>No lo esta</span>
+                                                )}
+                                            </p>
                                         </ul>
                                     </div>
 
@@ -686,7 +720,7 @@ export default function WizardModal({ open, onClose }) {
                     ) : (
                         <button
                             className="wizardModal-btn wizardModal-confirm"
-                            onClick={onClose}
+                            onClick={handleSubmitFinal}
                         >
                             Finalizar
                         </button>

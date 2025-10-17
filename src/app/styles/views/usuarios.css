@@ -32,9 +32,8 @@
 
 .tableGestUsers table {
   width: 100%;
-  gap: 15px;
   border-collapse: separate;
-  border-spacing: 0;
+  border-spacing: 0 8px; /* 👈 espacio entre filas */
   border-radius: 10px;
   overflow: hidden;
 }
@@ -46,12 +45,33 @@
   color: white;
 }
 
-.tableGestUsers tbody {
-  margin-top: 15px;
-  background-color: #e0e0e0;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  height: 50px;
-  color: black;
+.tableGestUsers tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+/* 👇 filas alternadas (efecto zebra) */
+.tableGestUsers tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+.tableGestUsers tbody tr:nth-child(even) {
+  background-color: #f0f0f0;
+}
+
+/* 👇 borde o línea separadora entre filas */
+.tableGestUsers tbody tr {
+  border-bottom: 1px solid #ccc;
+}
+
+/* 👇 efecto hover opcional */
+.tableGestUsers tbody tr:hover {
+  background-color: #e8f0ff;
+}
+
+.tableGestUsers tbody td {
+  padding: 10px 8px;
+
+  font-weight: bold;
 }
 
 .tableGestUsers tbody input {
@@ -59,7 +79,6 @@
   border: none;
   width: 90%;
   height: 35px;
-  border-radius: 8px;
 }
 
 .tableGestUsers tbody input:focus {

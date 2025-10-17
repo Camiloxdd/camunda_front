@@ -15,7 +15,7 @@ export default function Navbar() {
       .catch(() => setUser(null));
   }, []);
 
-    const getCargoNombre = (cargo) => {
+  const getCargoNombre = (cargo) => {
     switch (cargo) {
       case "managerGeneral":
         return "Gerente General";
@@ -25,6 +25,14 @@ export default function Navbar() {
         return "Gerente de Área";
       case "dicLeaderArea":
         return "Líder de Área";
+      case "CoordiDevWeb":
+        return "Coordinador Desarrollo Web"
+      case "analistaQA":
+        return "Analista Requerimientos y QA"
+      case "gerAdmin":
+        return "Gerente Administrativo"
+      case "gerGeneral":
+        return "Gerente General"
       default:
         return cargo || "Usuario";
     }
