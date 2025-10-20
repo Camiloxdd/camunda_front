@@ -21,11 +21,8 @@ export const Sidebar = ({ onToggle }) => {
 
     const navItems = [
         { icon: faHome, label: "Inicio", path: "/dashboard" },
-        { icon: faLock, label: "Seguridad", path: "/listTables" },
         { icon: faUser, label: "Usuarios", path: "/usuarios" },
         { icon: faFile, label: "Requisiciones", path: "/requisiciones" },
-        { icon: faEnvelope, label: "Correo", path: "/correo" },
-        { icon: faCog, label: "Configuración", path: "/configuracion" },
     ];
 
     const handleToggle = () => {

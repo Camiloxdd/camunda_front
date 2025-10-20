@@ -29,8 +29,6 @@ export default function WizardModal({ open, onClose }) {
     const [productoActivo3, setProductoActivo3] = useState(0);
     const [mostrarModalProductos3, setMostrarModalProductos3] = useState(false);
 
-
-
     const [formData, setFormData] = useState({
         solicitante: {
             nombre: "",
@@ -56,7 +54,45 @@ export default function WizardModal({ open, onClose }) {
         ],
     });
 
-    console.log(formData)
+
+    // === NUEVO: cuando se abre el modal, precargar nombre/área del usuario y fecha de hoy ===
+    useEffect(() => {
+        if (!open) return;
+
+        const today = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
+        // setear al menos la fecha hoy
+        setFormData(prev => ({
+            ...prev,
+            solicitante: {
+                ...prev.solicitante,
+                fecha: today,
+            }
+        }));
+
+        // intentar obtener datos del usuario desde el backend
+        (async () => {
+            try {
+                const res = await fetch("http://localhost:4000/api/auth/me", {
+                    credentials: "include",
+                });
+                if (!res.ok) return;
+                const user = await res.json();
+                setFormData(prev => ({
+                    ...prev,
+                    solicitante: {
+                        ...prev.solicitante,
+                        // sobrescribe nombre/area con lo que venga del servidor
+                        nombre: user.nombre || prev.solicitante.nombre,
+                        area: user.area || prev.solicitante.area,
+                        sede: user.sede || prev.solicitante.sede,
+                    }
+                }));
+
+            } catch (err) {
+                console.error("No se pudo obtener usuario para precarga:", err);
+            }
+        })();
+    }, [open]);
 
     const handleSubmitFinal = async () => {
         // Validar datos mínimos
@@ -89,6 +125,7 @@ export default function WizardModal({ open, onClose }) {
                     sede: "",
                     urgencia: "",
                     presupuestada: false,
+                    status: "pendiente"
                 },
                 productos: [
                     {
@@ -110,7 +147,6 @@ export default function WizardModal({ open, onClose }) {
             alert("Hubo un error al guardar ❌");
         }
     };
-
 
     useEffect(() => {
         if (productoActivo3 >= formData.productos.length) {

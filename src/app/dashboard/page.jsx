@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Sidebar } from "../components/Slidebar";
 import Navbar from "../components/navbar";
 import SearchBar from "../components/searchBar";
-import ApprovalModal from "../components/modalAprobations";
+import ApprovalModal from "../components/ApprovalModal";
 import { faFile, faFileExcel } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -11,26 +11,25 @@ export default function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [requisiciones, setRequisiciones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedReq, setSelectedReq] = useState(null); // para la modal
+
+  const fetchRequisiciones = async () => {
+    try {
+      const res = await fetch("http://localhost:4000/api/requisiciones/pendientes", {
+        credentials: "include", // necesario para enviar cookie JWT
+      });
+      if (!res.ok) throw new Error("Error al obtener requisiciones");
+      const data = await res.json();
+      console.log("📦 Requisiciones cargadas desde backend:", data);
+      setRequisiciones(Array.isArray(data) ? data : [data]);
+    } catch (err) {
+      console.error("❌ Error cargando requisiciones:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchRequisiciones = async () => {
-      try {
-        const res = await fetch("/api/requisiciones/pendientes", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-
-        if (!res.ok) throw new Error("Error al obtener las requisiciones");
-        const data = await res.json();
-        setRequisiciones(data);
-      } catch (error) {
-        console.error("❌ Error cargando requisiciones:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRequisiciones();
   }, []);
 
@@ -129,7 +128,10 @@ export default function Dashboard() {
 
                     <div className="infoDerecha">
                       <FontAwesomeIcon icon={faFileExcel} />
-                      <button className="buttonReqEdit">
+                      <button
+                        className="buttonReqEdit"
+                        onClick={() => setSelectedReq(req)} // abre modal
+                      >
                         <p>Aprobar</p>
                       </button>
                     </div>
@@ -139,6 +141,15 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* MODAL */}
+        {selectedReq && (
+          <ApprovalModal
+            requisicion={selectedReq}
+            onClose={() => setSelectedReq(null)}
+            onApproved={fetchRequisiciones} // refresca la lista al aprobar
+          />
+        )}
       </div>
     </div>
   );
