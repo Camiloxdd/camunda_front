@@ -24,7 +24,7 @@ const Modal = ({ open, onClose, title, children }) => {
       onClick={handleClose}
     >
       <div
-        className={`modal-container ${closing ? "slideDown" : "slideUp"}`}
+        className={`modal-container-user ${closing ? "slideDown" : "slideUp"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="headerUserModal">
@@ -33,7 +33,7 @@ const Modal = ({ open, onClose, title, children }) => {
               X
             </button>
         </div>
-        <div className="modal-content">{children}</div>
+        <div className="modal-content-user">{children}</div>
       </div>
     </div>
   );

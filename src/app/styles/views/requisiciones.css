@@ -279,3 +279,86 @@
   transform: scale(1.1);
 }
 
+.tablaGestionUsuarios {
+  background-color: #f3f3f3;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  margin-top: 15px;
+  width: 99%;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.tableGestUsers {
+  padding: 15px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  display: flex;
+}
+
+.tableGestUsers table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px; /* 👈 espacio entre filas */
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tableGestUsers thead {
+  height: 60px;
+  border-radius: 15px;
+  background-color: #1d5da8;
+  color: white;
+}
+
+.tableGestUsers tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+/* 👇 filas alternadas (efecto zebra) */
+.tableGestUsers tbody tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+
+.tableGestUsers tbody tr:nth-child(even) {
+  background-color: #f0f0f0;
+}
+
+/* 👇 borde o línea separadora entre filas */
+.tableGestUsers tbody tr {
+  border-bottom: 1px solid #ccc;
+}
+
+/* 👇 efecto hover opcional */
+.tableGestUsers tbody tr:hover {
+  background-color: #e8f0ff;
+}
+
+.tableGestUsers tbody td {
+  padding: 10px 8px;
+
+  font-weight: bold;
+}
+
+.tableGestUsers tbody input {
+  background-color: transparent;
+  border: none;
+  width: 90%;
+  height: 35px;
+}
+
+.tableGestUsers tbody input:focus {
+  outline: none;
+}
+
+.tableGestUsers button {
+  background-color: transparent;
+  gap: 20px;
+  cursor: pointer;
+  border: none;
+  transition: 0.3s all;
+}
+
+.tableGestUsers button:hover {
+  transform: scale(1.2);
+}

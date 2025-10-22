@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
+import { AuthProvider } from "../context/AuthContext";
 import Navbar from "../components/navbar";
 import { Sidebar } from "../components/Slidebar";
 import "../styles/views/usuarios.css";
@@ -20,7 +22,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import UserModal from "../components/userModal";
 
-export default function Usuarios() {
+function UsuariosInner() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [selectedCargo, setSelectedCargo] = useState("");
@@ -34,7 +36,6 @@ export default function Usuarios() {
   const [error, setError] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
 
-
   const options = [
     { value: "dicTYP", label: "Director Tecnologia y Proyectos" },
     { value: "dicSST", label: "Director SST" },
@@ -43,15 +44,15 @@ export default function Usuarios() {
     { value: "gerAdmin", label: "Gerente Administrativo" },
     { value: "gerGeneral", label: "Gerente General" },
     { value: "analistaQA", label: "Analista Requerimientos y QA" },
-    { value: "CoordiDevWeb", label: "Coordinador Desarrollo Web" }
+    { value: "CoordiDevWeb", label: "Coordinador Desarrollo Web" },
   ];
 
   const optionsArea = [
     { value: "TyP", label: "Tecnologia y Proyectos" },
     { value: "SST", label: "Seguridad y Salud en el Trabajo" },
     { value: "GerenciaAdmin", label: "Gerencia Adminsitrativa" },
-    { value: "GerenciaGeneral", label: "Gerencia General" }
-  ]
+    { value: "GerenciaGeneral", label: "Gerencia General" },
+  ];
 
   const optionsSede = [
     { value: "cota", label: "Cota" },
@@ -61,7 +62,6 @@ export default function Usuarios() {
     { value: "pereira", label: "Pereira" },
     { value: "cali", label: "Cali" },
   ];
-
 
   const handleSelectCargo = (value) => {
     setSelectedCargo(value);
@@ -90,7 +90,6 @@ export default function Usuarios() {
     setIsOpenSede(false);
   };
 
-
   const getCargoNombre = (cargo) => {
     switch (cargo) {
       case "managerGeneral":
@@ -106,17 +105,17 @@ export default function Usuarios() {
       case "dicLeaderAreaSST":
         return "Director / Líder de SST";
       case "CoordiDevWeb":
-        return "Coordinador Desarrollo Web"
+        return "Coordinador Desarrollo Web";
       case "analistaQA":
-        return "Analista Requerimientos y QA"
+        return "Analista Requerimientos y QA";
       case "gerAdmin":
-        return "Gerente Administrativo"
+        return "Gerente Administrativo";
       case "gerGeneral":
-        return "Gerente General"
+        return "Gerente General";
       case "dicTYP":
-        return "Director Tecnologia y Proyectos"
+        return "Director Tecnologia y Proyectos";
       case "gerTyC":
-        return "Gerente Tecnologia y Proyectos"
+        return "Gerente Tecnologia y Proyectos";
       default:
         return cargo || "Usuario";
     }
@@ -127,21 +126,20 @@ export default function Usuarios() {
       case "cota":
         return "Cota";
     }
-  }
+  };
 
   const getAreaNombre = (area) => {
     switch (area) {
       case "TyP":
-        return "Tecnologia y Proyectos"
+        return "Tecnologia y Proyectos";
       case "SST":
-        return "Seguridad y Salud en el Trabajo"
+        return "Seguridad y Salud en el Trabajo";
       case "GerenciaAdmin":
-        return "Gerencia Adminsitrativa"
+        return "Gerencia Adminsitrativa";
       case "GerenciaGeneral":
-        return "Gerencia General"
-      
+        return "Gerencia General";
     }
-  }
+  };
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -155,7 +153,7 @@ export default function Usuarios() {
     aprobador: false,
     solicitante: false,
     comprador: false,
-  })
+  });
 
   const handleEditUser = (user) => {
     setEditingUser(user);
@@ -180,7 +178,6 @@ export default function Usuarios() {
     setOpenModal(true);
   };
 
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -195,7 +192,9 @@ export default function Usuarios() {
 
   const fetchUsuarios = async () => {
     try {
-      const res = await fetch("http://localhost:4000/api/user/list", { credentials: "include" });
+      const res = await fetch("http://localhost:4000/api/user/list", {
+        credentials: "include",
+      });
       if (!res.ok) throw new Error("Error al obtener usuarios");
       const data = await res.json();
       setUserList(Array.isArray(data) ? data : [data]);
@@ -209,7 +208,6 @@ export default function Usuarios() {
   useEffect(() => {
     fetchUsuarios();
   }, []);
-
 
   const handleSaveUser = async () => {
     setLoading(true);
@@ -235,7 +233,11 @@ export default function Usuarios() {
 
       if (!res.ok) throw new Error("Error al guardar el usuario");
 
-      alert(editingUser ? "✅ Usuario actualizado correctamente" : "✅ Usuario creado correctamente");
+      toast.success(
+        editingUser
+          ? "✅ Usuario actualizado correctamente"
+          : "✅ Usuario creado correctamente"
+      );
 
       await fetchUsuarios();
       setOpenModal(false);
@@ -243,7 +245,7 @@ export default function Usuarios() {
     } catch (err) {
       console.error(err);
       setError(err.message);
-      alert(`❌ ${err.message}`);
+      toast.error(`❌ ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -264,14 +266,13 @@ export default function Usuarios() {
 
       if (!res.ok) throw new Error("Error al eliminar el usuario");
 
-      alert("🗑️ Usuario eliminado correctamente");
+      toast.success("🗑️ Usuario eliminado correctamente");
       await fetchUsuarios();
     } catch (err) {
       console.error(err);
-      alert(`❌ ${err.message}`);
+      toast.error(`❌ ${err.message}`);
     }
   };
-
 
   return (
     <div style={{ display: "flex" }}>
@@ -360,7 +361,7 @@ export default function Usuarios() {
                         {[
                           user.aprobador && "Aprobador",
                           user.solicitante && "Solicitante",
-                          user.comprador && "Comprador"
+                          user.comprador && "Comprador",
                         ]
                           .filter(Boolean)
                           .join(", ") || "Sin rol"}
@@ -369,10 +370,16 @@ export default function Usuarios() {
                       <td>
                         <div className="spaceButtonsGestUsers">
                           <button onClick={() => handleEditUser(user)}>
-                            <FontAwesomeIcon icon={faPencil} className="iconEditUser" />
+                            <FontAwesomeIcon
+                              icon={faPencil}
+                              className="iconEditUser"
+                            />
                           </button>
                           <button onClick={() => handleDeleteUser(user.id)}>
-                            <FontAwesomeIcon icon={faTrash} className="iconDeleteUser" />
+                            <FontAwesomeIcon
+                              icon={faTrash}
+                              className="iconDeleteUser"
+                            />
                           </button>
                         </div>
                       </td>
@@ -390,23 +397,26 @@ export default function Usuarios() {
           </div>
         </div>
       </div>
-      <UserModal open={openModal} onClose={() => {
-        setOpenModal(false);
-        setEditingUser(null);
-        setFormData({
-          nombre: "",
-          correo: "",
-          cargo: "",
-          telefono: "",
-          sede: "",
-          area: "",
-          contraseña: "",
-          super_admin: false,
-          aprobador: false,
-          solicitante: false,
-          comprador: false,
-        });
-      }}>
+      <UserModal
+        open={openModal}
+        onClose={() => {
+          setOpenModal(false);
+          setEditingUser(null);
+          setFormData({
+            nombre: "",
+            correo: "",
+            cargo: "",
+            telefono: "",
+            sede: "",
+            area: "",
+            contraseña: "",
+            super_admin: false,
+            aprobador: false,
+            solicitante: false,
+            comprador: false,
+          });
+        }}
+      >
         <div className="papaContainerUserModal">
           <div className="infoGestionUser">
             <div className="inputsDatos">
@@ -459,8 +469,9 @@ export default function Usuarios() {
                         {options.map((opt) => (
                           <li
                             key={opt.value}
-                            className={`option ${selectedCargo === opt.value ? "selected" : ""
-                              }`}
+                            className={`option ${
+                              selectedCargo === opt.value ? "selected" : ""
+                            }`}
                             onClick={() => handleSelectCargo(opt.value)}
                           >
                             {opt.label}
@@ -520,8 +531,9 @@ export default function Usuarios() {
                         {optionsSede.map((opt) => (
                           <li
                             key={opt.value}
-                            className={`option ${selectedSede === opt.value ? "selected" : ""
-                              }`}
+                            className={`option ${
+                              selectedSede === opt.value ? "selected" : ""
+                            }`}
                             onClick={() => handleSelectSede(opt.value)}
                           >
                             {opt.label}
@@ -557,8 +569,9 @@ export default function Usuarios() {
                         {optionsArea.map((opt) => (
                           <li
                             key={opt.value}
-                            className={`option ${selectedArea === opt.value ? "selected" : ""
-                              }`}
+                            className={`option ${
+                              selectedArea === opt.value ? "selected" : ""
+                            }`}
                             onClick={() => handleSelectArea(opt.value)}
                           >
                             {opt.label}
@@ -640,5 +653,13 @@ export default function Usuarios() {
         </div>
       </UserModal>
     </div>
+  );
+}
+
+export default function Usuarios() {
+  return (
+    <AuthProvider>
+      <UsuariosInner />
+    </AuthProvider>
   );
 }

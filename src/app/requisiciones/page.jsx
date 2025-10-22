@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import Navbar from "../components/navbar";
 import { Sidebar } from "../components/Slidebar";
 import "../styles/views/requisiciones.css";
@@ -14,14 +15,17 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import WizardModal from "../components/modalNewReq";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 
-export default function RequisicionesPage() {
+function RequisicionesInner() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [requisiciones, setRequisiciones] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(null); // {requisicion} o null
+  const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
-  const [openCreate, setOpenCreate] = useState(false);
+  const [modalInitialData, setModalInitialData] = useState(null);
+
+  const { role, permissions } = useAuth();
 
   const fetchAll = async () => {
     try {
@@ -45,35 +49,51 @@ export default function RequisicionesPage() {
     fetchAll();
   }, []);
 
-  const downloadBlob = async (url, filename) => {
-    try {
-      const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Error al descargar");
-      const blob = await res.blob();
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error(err);
-      alert("Error en la descarga");
+  // Reemplaza downloadBlob por una versión con fallback
+  const downloadBlobTryUrls = async (urls = [], filename) => {
+    let lastError = null;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { credentials: "include" });
+        if (!res.ok) {
+          // Si es 404, intentamos la siguiente URL; para otros códigos abortamos y mostramos error
+          if (res.status === 404) {
+            lastError = new Error(`404 Not Found: ${url}`);
+            continue;
+          }
+          throw new Error(`HTTP ${res.status} (${url})`);
+        }
+        const blob = await res.blob();
+        const link = document.createElement("a");
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        return; // éxito
+      } catch (err) {
+        console.warn("Descarga fallida para", url, err.message || err);
+        lastError = err;
+        // Intentamos siguiente URL en la lista
+      }
     }
+    console.error("Todas las descargas fallaron:", lastError);
+    toast.error("Error en la descarga");
   };
 
+  // Probar primero el endpoint de formularios (plantilla). Si no existe, intentar el endpoint de requisición.
   const handleExcel = (id) => {
-    downloadBlob(
-      `http://localhost:4000/api/requisiciones/${id}/excel`,
-      `requisicion_${id}.xlsx`
-    );
+    const urls = [
+      `http://localhost:4000/requisiciones/${id}/excel`,
+    ];
+    downloadBlobTryUrls(urls, `requisicion_${id}.xlsx`);
   };
 
-  const handleWord = (id) => {
-    downloadBlob(
-      `http://localhost:4000/api/requisiciones/${id}/word`,
-      `requisicion_${id}.doc`
-    );
+  const handleDescargarPDF = async (id) => {
+    const urls = [
+      `http://localhost:4000/requisiciones/${id}/pdf`,
+    ];
+    downloadBlobTryUrls(urls, `requisicion_${id}.pdf`);
   };
 
   const handleDelete = async (id) => {
@@ -90,7 +110,7 @@ export default function RequisicionesPage() {
       await fetchAll();
     } catch (err) {
       console.error(err);
-      alert("No se pudo eliminar");
+      toast.error("No se pudo eliminar");
     }
   };
 
@@ -99,19 +119,16 @@ export default function RequisicionesPage() {
     try {
       const res = await fetch(
         `http://localhost:4000/api/requisiciones/${req.requisicion_id}`,
-        {
-          credentials: "include",
-        }
+        { credentials: "include" }
       );
       if (!res.ok) throw new Error("Error");
       const data = await res.json();
-      setEditing({
-        id: req.requisicion_id,
-        ...data.requisicion,
-      });
+      // abrir modal en modo edición (solo steps 2 y 3)
+      setModalInitialData(data);
+      setOpen(true);
     } catch (err) {
       console.error(err);
-      alert("No se pudo obtener detalles");
+      toast.error("No se pudo obtener detalles");
     }
   };
 
@@ -140,14 +157,20 @@ export default function RequisicionesPage() {
       await fetchAll();
     } catch (err) {
       console.error(err);
-      alert("No se pudo actualizar");
+      toast.error("No se pudo actualizar");
     }
   };
 
   return (
     <div style={{ display: "flex" }}>
       <Navbar />
-      <WizardModal open={open} onClose={() => setOpen(false)} />
+      <WizardModal
+        open={open}
+        onClose={() => { setOpen(false); setModalInitialData(null); }}
+        onCreated={fetchAll}
+        initialData={modalInitialData}
+        startStep={modalInitialData ? 2 : undefined}
+      />
       <Sidebar onToggle={setIsSidebarOpen} />
       <div
         style={{
@@ -166,9 +189,11 @@ export default function RequisicionesPage() {
             <button onClick={fetchAll}>
               <FontAwesomeIcon icon={faRefresh} />
             </button>
-            <button onClick={()=> setOpen(true)}>
-              <FontAwesomeIcon icon={faPlus} />
-            </button>
+            {permissions?.canCreateRequisition && (
+              <button onClick={() => setOpen(true)}>
+                <FontAwesomeIcon icon={faPlus} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -179,12 +204,12 @@ export default function RequisicionesPage() {
                 <tr>
                   <th>ID</th>
                   <th>Solicitante</th>
-                  <th>Fecha</th>
+                  <th>Fecha de creación</th>
                   <th>Justificación</th>
                   <th>Área</th>
                   <th>Sede</th>
                   <th>Valor total</th>
-                  <th>Status</th> 
+                  <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -213,15 +238,15 @@ export default function RequisicionesPage() {
                       <td>
                         <button
                           title="Excel"
-                          onClick={() => r.status === "aprobada" && handleExcel(r.requisicion_id)}
-                          disabled={r.status !== "aprobada"}
+                          onClick={() => r.status === "Totalmente Aprobada" && handleExcel(r.requisicion_id)}
+                          disabled={r.status !== "Totalmente Aprobada"}
                         >
                           <FontAwesomeIcon icon={faFileExcel} />
                         </button>
                         <button
                           title="Word"
-                          onClick={() => r.status === "aprobada" && handleWord(r.requisicion_id)}
-                          disabled={r.status !== "aprobada"}
+                          onClick={() => r.status === "Totalmente Aprobada" && handleDescargarPDF(r.requisicion_id)}
+                          disabled={r.status !== "Totalmente Aprobada"}
                           style={{ marginLeft: 8 }}
                         >
                           <FontAwesomeIcon icon={faFilePdf} />
@@ -231,14 +256,14 @@ export default function RequisicionesPage() {
                           onClick={() => handleEditOpen(r)}
                           style={{ marginLeft: 8 }}
                         >
-                          <FontAwesomeIcon icon={faPencil} />
+                          <FontAwesomeIcon icon={faPencil} style={{ color: "orange" }} />
                         </button>
                         <button
                           title="Eliminar"
                           onClick={() => handleDelete(r.requisicion_id)}
                           style={{ marginLeft: 8 }}
                         >
-                          <FontAwesomeIcon icon={faTrash} />
+                          <FontAwesomeIcon icon={faTrash} style={{ color: "red" }} />
                         </button>
                       </td>
                     </tr>
@@ -289,20 +314,8 @@ export default function RequisicionesPage() {
                       ...editing,
                       nombre_solicitante: e.target.value,
                     })
-                  }
-                />
-              </label>
-              <label>
-                Fecha
-                <input
-                  type="date"
-                  value={
-                    editing.fecha
                       ? new Date(editing.fecha).toISOString().slice(0, 10)
                       : ""
-                  }
-                  onChange={(e) =>
-                    setEditing({ ...editing, fecha: e.target.value })
                   }
                 />
               </label>
@@ -310,9 +323,19 @@ export default function RequisicionesPage() {
                 Justificación
                 <input
                   value={editing.justificacion || ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
                     setEditing({ ...editing, justificacion: e.target.value })
-                  }
+                  }}
+                />
+              </label>
+              <label>
+                Fecha
+                <input
+                  type="date"
+                  value={editing.fecha || ""}
+                  onChange={(e) => {
+                    setEditing({ ...editing, fecha: e.target.value })
+                  }}
                 />
               </label>
               <label>
@@ -336,6 +359,20 @@ export default function RequisicionesPage() {
                   onChange={(e) => setEditing({ ...editing, urgencia: e.target.value })}
                 />
               </label>
+              <label>
+                Sede
+                <input
+                  value={editing.sede || ""}
+                  onChange={(e) => setEditing({ ...editing, sede: e.target.value })}
+                />
+              </label>
+              <label>
+                Urgencia
+                <input
+                  value={editing.urgencia || ""}
+                  onChange={(e) => setEditing({ ...editing, urgencia: e.target.value })} ange={(e) => setEditing({ ...editing, area: e.target.value })}
+                />
+              </label>
             </div>
             <div
               style={{
@@ -352,5 +389,13 @@ export default function RequisicionesPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function RequisicionesPage() {
+  return (
+    <AuthProvider>
+      <RequisicionesInner />
+    </AuthProvider>
   );
 }

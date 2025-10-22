@@ -1,5 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import "../styles/views/ApprovalModal.css";
 
 export default function ApprovalModal({ requisicion, onClose, onApproved }) {
     const [detalles, setDetalles] = useState(null);
@@ -71,6 +73,9 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
         try {
             setSaving(true);
 
+            // Mostrar feedback inmediato
+            toast.info("Guardando aprobaciones...", { autoClose: 2000 });
+
             // Enviar SOLO decisiones sobre productos editables (para no sobreescribir otros)
             const body = {
                 decisiones: (detalles.productos || [])
@@ -93,12 +98,12 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
             if (!res.ok) throw new Error("Error al guardar aprobaciones");
             const data = await res.json();
-            alert(data.message);
+            toast.success(data.message || "Aprobaciones registradas");
             onApproved();
             onClose();
         } catch (err) {
             console.error("❌ Error al guardar:", err);
-            alert("No se pudo guardar las aprobaciones.");
+            toast.error("No se pudo guardar las aprobaciones");
         } finally {
             setSaving(false);
         }
@@ -120,10 +125,12 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
     return (
         <div className="modal-overlay">
             <div className="modal-content">
-                <h2>Requisición #{info.id}</h2>
-                <button onClick={onClose} className="close-button">
-                    ✖
-                </button>
+                <div className="modal-header">
+                    <h2>Requisición #{info.id}</h2>
+                    <button onClick={onClose} className="close-button">
+                        X
+                    </button>
+                </div>
 
                 <div className="modal-body">
                     <div className="info-requisicion">
@@ -136,8 +143,8 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
                     <div className="tabla-productos">
                         <h3>Productos asociados</h3>
-                        <table>
-                            <thead>
+                        <table className="tablaResumen">
+                            <thead >
                                 <tr>
                                     <th>Aprobar</th>
                                     <th>Nombre</th>
@@ -183,56 +190,10 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
                 <div className="modal-actions">
                     <button onClick={handleGuardar} disabled={saving} className="btn-approve">
-                        {saving ? "Guardando..." : "Guardar aprobaciones"}
+                        {saving ? "Aprobando..." : "Aprobar"}
                     </button>
                 </div>
             </div>
-
-            <style jsx>{`
-        .modal-overlay {
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.4);
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 1000;
-        }
-        .modal-content {
-          background: white;
-          padding: 20px;
-          border-radius: 16px;
-          width: 85%;
-          max-height: 90vh;
-          overflow-y: auto;
-          position: relative;
-        }
-        .close-button {
-          position: absolute;
-          top: 10px;
-          right: 10px;
-          border: none;
-          background: none;
-          font-size: 20px;
-          cursor: pointer;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        th, td {
-          border: 1px solid #ddd;
-          padding: 8px;
-          text-align: left;
-        }
-        .btn-approve {
-          background: #28a745;
-          color: white;
-          padding: 8px 16px;
-          border: none;
-          border-radius: 8px;
-        }
-      `}</style>
         </div>
     );
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import "../styles/modalNewReq.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -18,56 +19,109 @@ import {
     faFile,
     faTrash,
     faSackDollar,
+    faClock,
 } from "@fortawesome/free-solid-svg-icons";
 import TextareaAutosize from "react-textarea-autosize";
+import SaveAnimation from "./animationCreateRequisicion";
+import { faDailymotion } from "@fortawesome/free-brands-svg-icons";
 
-export default function WizardModal({ open, onClose }) {
+const initialForm = {
+    solicitante: {
+        nombre: "",
+        fecha: "",
+        fechaRequeridoEntrega: "",
+        tiempoAproximadoGestion: "",
+        justificacion: "",
+        area: "",
+        sede: "",
+        urgencia: "",
+        presupuestada: false,
+        status: "pendiente"
+    },
+    productos: [
+        {
+            nombre: "",
+            cantidad: 1,
+            descripcion: "",
+            compraTecnologica: false,
+            ergonomico: false,
+            valorEstimado: "",
+            centroCosto: "",
+            cuentaContable: "",
+            aprobaciones: [],
+        },
+    ],
+};
+
+export default function WizardModal({ open, onClose, onCreated, initialData, startStep }) {
     const [step, setStep] = useState(1);
     const [fileName, setFileName] = useState("");
     const [productoActivo, setProductoActivo] = useState(0);
     const [mostrarModalProductos, setMostrarModalProductos] = useState(false);
     const [productoActivo3, setProductoActivo3] = useState(0);
+    const [showAnimation, setShowAnimation] = useState(false);
     const [mostrarModalProductos3, setMostrarModalProductos3] = useState(false);
+    const [formData, setFormData] = useState(initialForm);
 
-    const [formData, setFormData] = useState({
-        solicitante: {
-            nombre: "",
-            fecha: "",
-            justificacion: "",
-            area: "",
-            sede: "",
-            urgencia: "",
-            presupuestada: false,
-        },
-        productos: [
-            {
-                nombre: "",
-                cantidad: 1,
-                descripcion: "",
-                compraTecnologica: false,
-                ergonomico: false,
-                valorEstimado: "",
-                centroCosto: "",
-                cuentaContable: "",
-                aprobaciones: [],
-            },
-        ],
-    });
+    const isEditMode = Boolean(initialData && initialData.requisicion);
+    // aplicar restricciones de pasos sólo en modo edición
+    const minStep = isEditMode ? (startStep ?? 2) : 1;
+    const maxStep = isEditMode ? 3 : 4;
 
-
-    // === NUEVO: cuando se abre el modal, precargar nombre/área del usuario y fecha de hoy ===
+    // === NUEVO: precarga cuando se abre en modo edición o en creación ===
     useEffect(() => {
         if (!open) return;
 
         const today = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
-        // setear al menos la fecha hoy
-        setFormData(prev => ({
-            ...prev,
-            solicitante: {
-                ...prev.solicitante,
-                fecha: today,
-            }
-        }));
+
+        if (isEditMode) {
+            // construir formData a partir de initialData
+            const req = initialData.requisicion;
+            const productosBack = initialData.productos || [];
+            const mappedProductos = (productosBack || []).map((p) => ({
+                id: p.id,
+                nombre: p.nombre || "",
+                cantidad: p.cantidad ?? 1,
+                descripcion: p.descripcion || "",
+                compraTecnologica: Boolean(p.compra_tecnologica),
+                ergonomico: Boolean(p.ergonomico),
+                valorEstimado: p.valor_estimado ?? "",
+                centroCosto: p.centro_costo || "",
+                cuentaContable: p.cuenta_contable || "",
+                aprobaciones: [], // opcional
+                fileName: "",
+            }));
+
+            setFormData({
+                solicitante: {
+                    nombre: req.nombre_solicitante || "",
+                    fecha: req.fecha ? req.fecha.slice(0, 10) : today,
+                    fechaRequeridoEntrega: req.fecha_requerido_entrega ? req.fecha_requerido_entrega.slice(0, 10) : "",
+                    tiempoAproximadoGestion: req.tiempo_aproximado_gestion || "",
+                    justificacion: req.justificacion || "",
+                    area: req.area || "",
+                    sede: req.sede || "",
+                    urgencia: req.urgencia || "",
+                    presupuestada: Boolean(req.presupuestada),
+                    status: req.status || "pendiente"
+                },
+                productos: mappedProductos.length ? mappedProductos : [...initialForm.productos]
+            });
+            setStep(startStep ?? 2);
+        } else {
+            // modo creación: resetear
+            const resetForm = JSON.parse(JSON.stringify(initialForm));
+            resetForm.solicitante.fecha = today;
+            setFormData(resetForm);
+            setStep(1);
+        }
+
+        setProductoActivo(0);
+        setProductoActivo3(0);
+        setMostrarModalProductos(false);
+        setMostrarModalProductos3(false);
+        setShowAnimation(false);
+        setFileName("");
 
         // intentar obtener datos del usuario desde el backend
         (async () => {
@@ -77,74 +131,110 @@ export default function WizardModal({ open, onClose }) {
                 });
                 if (!res.ok) return;
                 const user = await res.json();
-                setFormData(prev => ({
-                    ...prev,
-                    solicitante: {
-                        ...prev.solicitante,
-                        // sobrescribe nombre/area con lo que venga del servidor
-                        nombre: user.nombre || prev.solicitante.nombre,
-                        area: user.area || prev.solicitante.area,
-                        sede: user.sede || prev.solicitante.sede,
+                // si no estamos en modo edición, aplicar precarga; si sí, no sobrescribir nombre/area salvo que falten
+                setFormData(prev => {
+                    if (isEditMode) {
+                        return {
+                            ...prev,
+                            solicitante: {
+                                ...prev.solicitante,
+                                nombre: prev.solicitante.nombre || user.nombre || "",
+                                area: prev.solicitante.area || user.area || "",
+                                sede: prev.solicitante.sede || user.sede || "",
+                            }
+                        };
                     }
-                }));
+                    return {
+                        ...prev,
+                        solicitante: {
+                            ...prev.solicitante,
+                            nombre: user.nombre || prev.solicitante.nombre,
+                            area: user.area || prev.solicitante.area,
+                            sede: user.sede || prev.solicitante.sede,
+                        }
+                    };
+                });
 
             } catch (err) {
                 console.error("No se pudo obtener usuario para precarga:", err);
             }
         })();
-    }, [open]);
+    }, [open, initialData, startStep]);
 
     const handleSubmitFinal = async () => {
         // Validar datos mínimos
         if (!formData.solicitante.nombre || !formData.solicitante.fecha) {
-            alert("Por favor completa los datos del solicitante antes de guardar.");
+            toast.error("Por favor completa los datos del solicitante antes de guardar.");
             return;
         }
 
         if (formData.productos.length === 0) {
-            alert("Agrega al menos un producto.");
+            toast.error("Agrega al menos un producto.");
             return;
         }
 
         try {
-            const res = await fetch("http://localhost:4000/api/requisicion/create", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
+            if (isEditMode) {
+                // editar metadata
+                const id = initialData.requisicion.id;
+                const metaBody = {
+                    nombre_solicitante: formData.solicitante.nombre,
+                    fecha: formData.solicitante.fecha,
+                    fecha_requerido_entrega: formData.solicitante.fechaRequeridoEntrega,
+                    tiempo_aproximado_gestion: formData.solicitante.tiempoAproximadoGestion,
+                    justificacion: formData.solicitante.justificacion,
+                    area: formData.solicitante.area,
+                    sede: formData.solicitante.sede,
+                    urgencia: formData.solicitante.urgencia,
+                    presupuestada: formData.solicitante.presupuestada,
+                };
+                const metaRes = await fetch(`http://localhost:4000/api/requisiciones/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify(metaBody),
+                });
+                if (!metaRes.ok) throw new Error("Error actualizando requisición");
 
-            if (!res.ok) throw new Error("Error al guardar");
+                // actualizar productos (reemplazar)
+                const productosPayload = formData.productos.map((p) => ({
+                    nombre: p.nombre,
+                    cantidad: Number(p.cantidad) || 1,
+                    descripcion: p.descripcion,
+                    compraTecnologica: p.compraTecnologica ? 1 : 0,
+                    ergonomico: p.ergonomico ? 1 : 0,
+                    valorEstimado: Number(p.valorEstimado) || 0,
+                    centroCosto: p.centroCosto || '',
+                    cuentaContable: p.cuentaContable || '',
+                }));
 
-            alert("Solicitud creada con éxito ✅");
-            setFormData({
-                solicitante: {
-                    nombre: "",
-                    fecha: "",
-                    justificacion: "",
-                    area: "",
-                    sede: "",
-                    urgencia: "",
-                    presupuestada: false,
-                    status: "pendiente"
-                },
-                productos: [
-                    {
-                        nombre: "",
-                        cantidad: 1,
-                        descripcion: "",
-                        compraTecnologica: false,
-                        ergonomico: false,
-                        valorEstimado: "",
-                        centroCosto: "",
-                        cuentaContable: "",
-                        aprobaciones: [],
-                    },
-                ],
-            });
-            onClose();
+                const prodRes = await fetch(`http://localhost:4000/api/requisiciones/${id}/productos`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ productos: productosPayload }),
+                });
+                if (!prodRes.ok) throw new Error("Error actualizando productos");
+
+                if (typeof onCreated === "function") onCreated();
+                toast.success("Requisición actualizada correctamente");
+                onClose();
+            } else {
+                // crear nueva requisición (flow existente)
+                const res = await fetch("http://localhost:4000/api/requisicion/create", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData),
+                });
+                if (!res.ok) throw new Error("Error al guardar");
+                if (typeof onCreated === "function") onCreated();
+                // animación como antes
+                console.log("datos de la requisicion", formData);
+                setShowAnimation(true);
+            }
         } catch (err) {
             console.error(err);
-            alert("Hubo un error al guardar ❌");
+            toast.error("Hubo un error al guardar ❌");
         }
     };
 
@@ -155,6 +245,19 @@ export default function WizardModal({ open, onClose }) {
     }, [formData.productos.length]);
 
     if (!open) return null;
+
+    const getAreaNombre = (area) => {
+        switch (area) {
+            case "TyP":
+                return "Tecnologia y Proyectos";
+            case "SST":
+                return "Seguridad y Salud en el Trabajo";
+            case "GerenciaAdmin":
+                return "Gerencia Adminitrativa";
+            case "GerenciaGeneral":
+                return "Gerencia General";
+        }
+    };
 
     return (
         <div className="wizardModal-overlay">
@@ -187,8 +290,7 @@ export default function WizardModal({ open, onClose }) {
                                         {step === index + 1
                                             ? "En progreso"
                                             : step > index + 1
-                                                ? "Completado"
-                                                : "Pendiente"}
+                                        }
                                     </p>
                                 </div>
                             </div>
@@ -204,7 +306,7 @@ export default function WizardModal({ open, onClose }) {
                                 </h1>
                                 <div className="inputsContainers">
                                     <div className="campoAdicional">
-                                        <label>Nombre del solicitante</label>
+                                        <label>Nombre del solicitante<label className="obligatorio">*</label></label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faUser} className="icon" />
                                             <input type="text" placeholder="Ej. Juan Pérez" value={formData.solicitante.nombre}
@@ -220,7 +322,7 @@ export default function WizardModal({ open, onClose }) {
                                         </div>
                                     </div>
                                     <div className="campoAdicional">
-                                        <label>Fecha de solicitud</label>
+                                        <label>Fecha de solicitud<label className="obligatorio">*</label></label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faCalendar} className="icon" />
                                             <input type="date" value={formData.solicitante.fecha}
@@ -236,23 +338,43 @@ export default function WizardModal({ open, onClose }) {
                                         </div>
                                     </div>
                                     <div className="campoAdicional">
-                                        <label>Justificación de la compra</label>
+                                        <label>Fecha requerido de entrega<label className="obligatorio">*</label></label>
                                         <div className="completeInputs">
-                                            <FontAwesomeIcon icon={faBalanceScale} className="icon" />
-                                            <input type="text" placeholder="Motivo de la solicitud" value={formData.solicitante.justificacion}
+                                            <FontAwesomeIcon icon={faCalendar} className="icon" />
+                                            <input type="date" value={formData.solicitante.fechaRequeridoEntrega}
                                                 onChange={(e) =>
                                                     setFormData({
                                                         ...formData,
                                                         solicitante: {
                                                             ...formData.solicitante,
-                                                            justificacion: e.target.value,
+                                                            fechaRequeridoEntrega: e.target.value,
                                                         },
                                                     })
                                                 } />
                                         </div>
                                     </div>
                                     <div className="campoAdicional">
-                                        <label>Área</label>
+                                        <label>Tiempo aproximado de gestion (SLA)<label className="obligatorio">*</label></label>
+                                        <div className="completeInputs">
+                                            <FontAwesomeIcon
+                                                icon={faCalendar}
+                                                className="icon"
+                                            />
+                                            <input type="text" placeholder="(cantidad) dias habiles"
+                                                value={formData.solicitante.tiempoAproximadoGestion}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        solicitante: {
+                                                            ...formData.solicitante,
+                                                            tiempoAproximadoGestion: e.target.value,
+                                                        },
+                                                    })
+                                                } />
+                                        </div>
+                                    </div>
+                                    <div className="campoAdicional">
+                                        <label>Área<label className="obligatorio">*</label></label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faClipboard} className="icon" />
                                             <input type="text" placeholder="Ej. Compras" value={formData.solicitante.area}
@@ -268,7 +390,7 @@ export default function WizardModal({ open, onClose }) {
                                         </div>
                                     </div>
                                     <div className="campoAdicional">
-                                        <label>Sede</label>
+                                        <label>Sede<label className="obligatorio">*</label></label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faBuilding} className="icon" />
                                             <input type="text" placeholder="Ej. Cundinamarca" value={formData.solicitante.sede}
@@ -284,7 +406,7 @@ export default function WizardModal({ open, onClose }) {
                                         </div>
                                     </div>
                                     <div className="campoAdicional">
-                                        <label>Urgencia</label>
+                                        <label>Urgencia<label className="obligatorio">*</label></label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon
                                                 icon={faExclamationTriangle}
@@ -303,10 +425,26 @@ export default function WizardModal({ open, onClose }) {
                                                 } />
                                         </div>
                                     </div>
+                                    <div className="campoAdicional">
+                                        <label>Justificación de la compra</label>
+                                        <div className="completeInputs">
+                                            <FontAwesomeIcon icon={faBalanceScale} className="icon" />
+                                            <input type="text" placeholder="SOLO si la urgencia es Alta" value={formData.solicitante.justificacion}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        solicitante: {
+                                                            ...formData.solicitante,
+                                                            justificacion: e.target.value,
+                                                        },
+                                                    })
+                                                } />
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="firsInfo">
                                     <label>
-                                        ¿Está en presupuesto?
+                                        ¿Está en presupuesto?<label className="obligatorio">*</label>
                                         <input
                                             type="checkbox"
                                             checked={formData.solicitante.presupuestada}
@@ -390,7 +528,7 @@ export default function WizardModal({ open, onClose }) {
                                 <div className="productoItem">
                                     <div className="inputsContainers">
                                         <div className="campoAdicional">
-                                            <label>Producto / Servicio</label>
+                                            <label>Producto / Servicio<label className="obligatorio">*</label></label>
                                             <div className="completeInputs">
                                                 <FontAwesomeIcon icon={faCubes} className="icon" />
                                                 <input
@@ -406,7 +544,7 @@ export default function WizardModal({ open, onClose }) {
                                             </div>
                                         </div>
                                         <div className="campoAdicional">
-                                            <label>Cantidad</label>
+                                            <label>Cantidad<label className="obligatorio">*</label></label>
                                             <div className="completeInputs">
                                                 <FontAwesomeIcon icon={faListOl} className="icon" />
                                                 <input
@@ -422,7 +560,7 @@ export default function WizardModal({ open, onClose }) {
                                             </div>
                                         </div>
                                         <div className="campoAdicional">
-                                            <label>Descripción</label>
+                                            <label>Descripción<label className="obligatorio">*</label></label>
                                             <div className="completeInputs">
                                                 <FontAwesomeIcon icon={faClipboard} className="icon" />
                                                 <TextareaAutosize
@@ -439,7 +577,7 @@ export default function WizardModal({ open, onClose }) {
                                         </div>
                                         <div className="firsInfoTwo">
                                             <label>
-                                                ¿Es un producto Tecnologico?
+                                                ¿Es un producto Tecnologico?<label className="obligatorio">*</label>
                                                 <input
                                                     type="checkbox"
                                                     checked={formData.productos[productoActivo].compraTecnologica}
@@ -451,7 +589,7 @@ export default function WizardModal({ open, onClose }) {
                                                 />
                                             </label>
                                             <label>
-                                                ¿Es un producto Ergonomico?
+                                                ¿Es un producto Ergonomico?<label className="obligatorio">*</label>
                                                 <input
                                                     type="checkbox"
                                                     checked={formData.productos[productoActivo].ergonomico}
@@ -534,7 +672,7 @@ export default function WizardModal({ open, onClose }) {
                                 <div className="productoItem">
                                     <div className="inputsContainers">
                                         <div className="campoAdicional">
-                                            <label>Valor estimado</label>
+                                            <label>Valor estimado<label className="obligatorio">*</label></label>
                                             <div className="completeInputs">
                                                 <FontAwesomeIcon icon={faMoneyBill} className="icon" />
                                                 <input
@@ -580,7 +718,7 @@ export default function WizardModal({ open, onClose }) {
                                         </div>
 
                                         <div className="campoAdicional">
-                                            <label>Centro de costo / Orden interna</label>
+                                            <label>Centro de costo / Orden interna<label className="obligatorio">*</label></label>
                                             <div className="completeInputs">
                                                 <FontAwesomeIcon icon={faClipboard} className="icon" />
                                                 <input
@@ -597,7 +735,7 @@ export default function WizardModal({ open, onClose }) {
                                         </div>
 
                                         <div className="campoAdicional">
-                                            <label>Cuenta contable o código de material</label>
+                                            <label>Cuenta contable o código de material<label className="obligatorio">*</label></label>
                                             <div className="completeInputs">
                                                 <FontAwesomeIcon icon={faMoneyBill} className="icon" />
                                                 <input
@@ -732,24 +870,34 @@ export default function WizardModal({ open, onClose }) {
                                 </div>
                             </div>
                         )}
-
+                        {showAnimation && (
+                            <SaveAnimation
+                                autoPlay={true}
+                                onFinish={() => {
+                                    setShowAnimation(false);
+                                    onClose();
+                                }}
+                            />
+                        )}
                     </div>
                 </div>
 
                 {/* === NAVEGACIÓN === */}
                 <div className="wizardModal-footer">
-                    {step > 1 && (
+                    {step > minStep && (
                         <button
                             className="wizardModal-btn wizardModal-prev"
-                            onClick={() => setStep(step - 1)}
+                            onClick={() => setStep(Math.max(minStep, step - 1))}
+                            disabled={showAnimation}
                         >
                             ← Anterior
                         </button>
                     )}
-                    {step < 4 ? (
+                    {step < maxStep ? (
                         <button
                             className="wizardModal-btn wizardModal-next"
-                            onClick={() => setStep(step + 1)}
+                            onClick={() => setStep(Math.min(maxStep, step + 1))}
+                            disabled={showAnimation}
                         >
                             Siguiente →
                         </button>
@@ -757,12 +905,14 @@ export default function WizardModal({ open, onClose }) {
                         <button
                             className="wizardModal-btn wizardModal-confirm"
                             onClick={handleSubmitFinal}
+                            disabled={showAnimation}
                         >
                             Finalizar
                         </button>
                     )}
                 </div>
             </div>
+
         </div>
     );
 }

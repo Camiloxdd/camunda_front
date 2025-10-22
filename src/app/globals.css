@@ -747,6 +747,25 @@
   margin-top: 10px;
 }
 
+.campoAdicional label {
+  display: flex;
+}
+
+.campoAdicional .obligatorio {
+  color: red;
+  margin-left: 5px;
+}
+
+.firsInfo .obligatorio {
+  color: red;
+  margin-left: 5px;
+}
+
+.firsInfoTwo .obligatorio {
+  color: red;
+  margin-left: 5px;
+}
+
 .icon {
   color: #1d5da8;
   margin-left: 15px;
@@ -1653,6 +1672,8 @@ input[type="time"] {
   align-items: center;
   justify-content: center;
   gap: 10px;
+  height: 200px;
+  width: 100%;
 }
 
 .loading-cambios .LogoCambios {
@@ -1666,109 +1687,58 @@ input[type="time"] {
   color: #032c59;
 }
 
-.loading-container-wizzard {
+.loading-container {
+  display: grid;
+  background-color: yellow;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Ensure loading covers entire .listaReq grid (span all columns) */
+.listaReq>.loading-container {
+  grid-column: 1 / -1;
+  /* ocupa desde la primera hasta la última columna */
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+  /* ajusta según altura deseada */
+  background-color: transparent;
+  /* opcional: evitar color de fondo si no quieres amarillo */
+}
+
+/* Ajuste para loading interno (mantener estilos anteriores) */
+.listaReq>.loading-container .loading-cambios {
+  /* centrar y permitir que el spinner/texto se vea correctamente */
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  background-color: rgba(255, 255, 255, 0.8);
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 9999;
 }
 
-.spinner-wizzard {
-  border: 8px solid #f3f3f3;
-  border-top: 8px solid #3498db;
-  border-radius: 50%;
-  width: 60px;
-  height: 60px;
-  animation: spin 1s linear infinite;
+@keyframes spinVaried {
+  0% {
+    transform: rotate(0deg);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+
+  40% {
+    transform: rotate(200deg);
+    animation-timing-function: ease-out;
+  }
+
+  70% {
+    transform: rotate(270deg);
+    animation-timing-function: ease-in;
+  }
+
+  100% {
+    transform: rotate(360deg);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
 }
 
-.loading-container-wizzard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
-
-.circular-loader {
-  position: relative;
-  width: 140px;
-  height: 140px;
-}
-
-.logo-loader {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 70px;
-  /* tamaño del logo */
-  height: 70px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  /* por si quieres que quede redondo */
-}
-
-.progress-ring {
-  transform: rotate(-90deg);
-  /* para que empiece arriba */
-}
-
-.progress-ring__background {
-  stroke: #e6e6e6;
-}
-
-.progress-ring__circle {
-  stroke-linecap: round;
-}
-
-.loading-text {
-  margin-top: 15px;
-  font-size: 16px;
-  font-weight: bold;
-  color: #032c59;
-}
-
-/* Fondo semitransparente detrás del modal */
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-/* Contenedor del modal */
-.modalContent {
-  background-color: #ffffff;
-  border-radius: 8px;
-  width: 80%;
-  max-width: 900px;
-  padding: 25px 35px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  position: relative;
-  animation: slideDown 0.3s ease;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-/* Cuando se va a cerrar */
-.modalContent.closing {
-  animation: slideUp 0.3s ease forwards;
-}
-
-/* Entrada del modal */
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -2033,13 +2003,11 @@ input[type="time"] {
 .listaReq {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  /* 4 columnas por fila */
-  gap: 5px;
-  /* Espaciado entre tarjetas */
+  gap: 30px;
+  padding: 20px;
 }
 
 .requisicion {
-  width: 95%;
   margin-top: 10px;
   padding: 20px;
   display: flex;
@@ -2094,36 +2062,102 @@ input[type="time"] {
   margin-top: 90px;
 }
 
-@keyframes spinVaried {
-  0% {
-    transform: rotate(0deg);
-    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
-  }
-
-  40% {
-    transform: rotate(200deg);
-    animation-timing-function: ease-out;
-  }
-
-  70% {
-    transform: rotate(270deg);
-    animation-timing-function: ease-in;
-  }
-
-  100% {
-    transform: rotate(360deg);
-    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
-  }
+.resumenSectionOne {
+  text-align: center;
+  background: #f3f3f3;
+  border-radius: 12px;
+  justify-content: center;
+  align-items: center;
+  gap: 250px;
+  margin-bottom: 25px;
+  padding: 15px 20px;
+  display: flex;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-25px);
-  }
+.info-requisiciones {
+  margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  text-align: left;
+}
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.info-requisiciones strong {
+  color: #1d5da8;
+}
+
+.info-requisiciones {
+  color: #1d5da8;
+  margin: 5px 0;
+  text-decoration: transparent;
+}
+
+.info-requisiciones ul {
+  list-style: none;
+}
+
+.totalesComprador {
+  margin-bottom: 20px;
+  padding: 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #1d5da8;
+  text-align: right;
+}
+
+.totalesComprador ul {
+  list-style: none;
+}
+
+.tabla-productos h4 {
+  text-align: left;
+  color: #1d5da8;
+  margin-bottom: 15px;
+}
+
+.tittleContentComprador {
+  font-weight: bold;
+  color: #1d5da8;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.modalOverlayVerifiRequi {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.buttonsVerifiRequi {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.buttonsVerifiRequi button {
+  padding: 10px;
+  border: none;
+  background-color: #1d5da8;
+  color: white;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.buttonsVerifiRequi button:hover {
+  transform: scale(1.05);
+  border: 2px solid #1d5da8;
+  background-color: white;
+  color: #1d5da8;
 }

@@ -1,19 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 import { faUser } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Navbar() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    fetch("http://localhost:4000/api/auth/me", {
-      credentials: "include",
-    })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setUser(data))
-      .catch(() => setUser(null));
-  }, []);
+  const { user } = useAuth();
 
   const getCargoNombre = (cargo) => {
     switch (cargo) {
@@ -33,6 +26,14 @@ export default function Navbar() {
         return "Gerente Administrativo"
       case "gerGeneral":
         return "Gerente General"
+      case "dicTYP":
+        return "Director Tecnología y Proyectos"
+      case "gerTyC":
+        return "Gerente Tecnología y Proyectos"
+      case "dicSST":
+        return "Director Seguridad y Salud en el Trabajo";
+      case "gerSST":
+        return "Gerente Seguridad y Salud en el Trabajo";
       default:
         return cargo || "Usuario";
     }
@@ -41,7 +42,6 @@ export default function Navbar() {
   return (
     <nav className="navbar">
       <img src="/coopidrogas_logo_mini.png" alt="Logo" className="logo" />
-
       <div className="nav-links">
         <div className="infoUser">
           <div className="nameAndRol">
@@ -62,6 +62,7 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+      
     </nav>
   );
 }
