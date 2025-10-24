@@ -36,7 +36,7 @@ export async function endFirstStepStartTwoStep(variables) {
         const tareas = tareasData.items || [];
 
         const coincidencias = tareas.filter(
-            t => t.elementId === "Activity_0s4zd0u" && t.state === "CREATED"
+            t => t.elementId === "Activity_1wt5a91" && t.state === "CREATED"
         );
         const primerPaso = coincidencias.at(-1);
 
@@ -70,7 +70,6 @@ export async function endFirstStepStartTwoStep(variables) {
 
 export async function endTwoStepStartThreeStep(variables) {
     try {
-        // 1️⃣ Buscar la tarea "Activity_0re7x0w"
         let tareasRes = await fetch(`${API_BASE}/tasks/search`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -81,309 +80,88 @@ export async function endTwoStepStartThreeStep(variables) {
         let tareas = tareasData.items || [];
 
         const coincidenciaUno = tareas
-            .filter(t => t.elementId === "Activity_0re7x0w" && t.state === "CREATED")
+            .filter(t => t.elementId === "Activity_1nws0d8" && t.state === "CREATED")
             .at(-1);
 
         if (!coincidenciaUno) {
-            console.error("⚠️ No hay tareas en Activity_0re7x0w");
+            console.error("⚠️ No hay tareas en Activity_1nws0d8");
             return;
         }
 
         const userTaskKeyUno = coincidenciaUno.userTaskKey;
-        const processInstanceKey = coincidenciaUno.processInstanceKey;
 
-        // 2️⃣ Completar primera tarea
         const completeUno = await fetch(`${API_BASE}/tasks/${userTaskKeyUno}/complete`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                variables: {
-                    siExiste: variables.siExiste,
-                    purchaseTecnology: variables.purchaseTecnology,
-                    sstAprobacion: variables.sstAprobacion,
-                    vobo: variables.vobo,
-                    purchaseAprobated: variables.purchaseAprobated,
-                    esMayor: variables.esMayor,
-                    purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
-                    purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
-                    filas: variables.filas,
-                }
-            })
+            body: JSON.stringify({ variables })
         });
 
-        if (!completeUno.ok) throw new Error("No se pudo completar la primera tarea");
+        if (!completeUno.ok) throw new Error("No se pudo completar la tarea");
 
-        console.log("✅ Primera tarea completada (Activity_0re7x0w)");
-
-        // 3️⃣ Esperar un momento a que se generen las del multi-instance
-        await delay(5000);
-
-        //MULTI-INSTANCIA
-        let tareasResTwo = await fetch(`${API_BASE}/tasks/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({})
-        });
-
-        let tareasDataTwo = await tareasResTwo.json();
-        console.log("Tareas recibidas tras multi-instance:", tareasDataTwo);
-
-        // 🔹 Filtrar solo las del multi-instance con el mismo processInstanceKey
-        const coincidenciasMulti = tareasDataTwo.items
-            .filter(t =>
-                t.elementId === "Activity_0170y1s" &&
-                t.state === "CREATED" &&
-                t.processInstanceKey === processInstanceKey
-            );
-
-        if (coincidenciasMulti.length === 0) {
-            console.error("⚠️ No hay tareas activas en el multi-instance");
-            return;
-        }
-
-        console.log("✅ Tareas multi-instance encontradas:", coincidenciasMulti.map(t => t.userTaskKey));
-
-        // 5️⃣ Completar todas las tareas encontradas
-        await Promise.all(
-            coincidenciasMulti.map(tareaTwo =>
-                fetch(`${API_BASE}/tasks/${tareaTwo.userTaskKey}/complete`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        variables: {
-                            siExiste: variables.siExiste,
-                            purchaseTecnology: variables.purchaseTecnology,
-                            sstAprobacion: variables.sstAprobacion,
-                            vobo: variables.vobo,
-                            purchaseAprobated: variables.purchaseAprobated,
-                            esMayor: variables.esMayor,
-                            purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
-                            purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
-                            filas: variables.filas,
-                        }
-                    })
-                })
-            )
-        );
-
-        console.log("✅ Todas las tareas del multi-instance completadas");
+        console.log("✅ Tarea completada con éxito (Activity_1nws0d8)");
     } catch (err) {
         console.error("❌ Error en endTwoStepStartThreeStep:", err);
     }
 }
 
-export async function startThreeStep(variables) {
+
+export async function startThreeStep(variables, options = {}) {
     try {
+        const { role, processInstanceKey } = options || {};
 
-        // ============ DIRECTOR ============
-        let tareasResDirector = await fetch(`${API_BASE}/tasks/search`, {
+        // Mapea cargos/roles a elementId(s) en el proceso BPMN
+        const roleToElementId = {
+            // Ajusta estas claves según tus cargos reales
+            gerAdmin: "Activity_00mm8pt",
+            gerGeneral: "Activity_1fpwffg",
+            dicTYP: "Activity_08exhj3",
+            gerTyC: "Activity_1msgoom",
+            dicSST: "Activity_08exhj3",
+            gerSST: "Activity_1msgoom",
+            analistaQA: "Activity_1l9e8gd",
+            analistaQA: "Activity_076dv9c",
+        };
+
+        const elementIdForRole = role ? roleToElementId[role] : null;
+
+        // Buscar tareas (backend devuelve todas las tareas; filtramos localmente)
+        const tareasRes = await fetch(`${API_BASE}/tasks/search`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({})
         });
 
-        let tareasDataDirector = await tareasResDirector.json();
-        console.log("📌 Tareas recibidas (Director):", tareasDataDirector);
+        const tareasData = await tareasRes.json();
+        const tareas = tareasData.items || [];
 
-        // 🔹 Filtrar por elementId y estado, sin quemar el processInstanceKey
-        const coincidenciasDirector = tareasDataDirector.items
-            .filter(t =>
-                t.elementId === "Activity_1q9ps8g" && // ID real del userTask Director
-                t.state === "CREATED"
-            );
+        // Filtrar por estado CREATED, por processInstanceKey (si viene) y por elementId (si se pudo mapear)
+        const coincidencias = tareas.filter(t =>
+            t.state === "CREATED" &&
+            (processInstanceKey ? String(t.processInstanceKey) === String(processInstanceKey) : true) &&
+            (elementIdForRole ? t.elementId === elementIdForRole : true)
+        );
 
-        if (coincidenciasDirector.length === 0) {
-            console.error("⚠️ No hay tareas activas del Director");
+        if (coincidencias.length === 0) {
+            console.log("⚠️ No se encontraron userTasks para completar (startThreeStep) - revisar role/processInstanceKey");
             return;
         }
 
-        console.log("✅ Tareas de Director encontradas:", coincidenciasDirector.map(t => ({
-            userTaskKey: t.userTaskKey,
-            processInstanceKey: t.processInstanceKey
-        })));
+        console.log("✅ UserTasks a completar (startThreeStep):", coincidencias.map(t => ({ userTaskKey: t.userTaskKey, elementId: t.elementId, processInstanceKey: t.processInstanceKey })));
 
         await Promise.all(
-            coincidenciasDirector.map(tareaDir =>
-                fetch(`${API_BASE}/tasks/${tareaDir.userTaskKey}/complete`, {
+            coincidencias.map(tarea =>
+                fetch(`${API_BASE}/tasks/${tarea.userTaskKey}/complete`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        variables: {
-                            siExiste: variables.siExiste,
-                            purchaseTecnology: variables.purchaseTecnology,
-                            sstAprobacion: variables.sstAprobacion,
-                            vobo: variables.vobo,
-                            purchaseAprobated: variables.purchaseAprobated,
-                            esMayor: variables.esMayor,
-                            purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
-                            purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
-                            filas: variables.filas,
-                        }
-                    })
+                    body: JSON.stringify({ variables })
                 })
             )
         );
 
-        console.log("🎉 Todas las tareas de Director fueron completadas");
-
-        await delay(5000);
-
-        // ============ GERENTE DE ÁREA ============
-        let tareasResGerenteArea = await fetch(`${API_BASE}/tasks/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({})
-        });
-
-        let tareasDataGerenteArea = await tareasResGerenteArea.json();
-        console.log("📌 Tareas recibidas (GerenteArea):", tareasDataGerenteArea);
-
-        const coincidenciasGerenteArea = tareasDataGerenteArea.items
-            .filter(t =>
-                t.elementId === "Activity_0c2xslp" && // ID real del userTask Gerente
-                t.state === "CREATED"
-            );
-
-        if (coincidenciasGerenteArea.length === 0) {
-            console.error("⚠️ No hay tareas activas del GerenteArea");
-            return;
-        }
-
-        console.log("✅ Tareas de GerenteArea encontradas:", coincidenciasGerenteArea.map(t => ({
-            userTaskKey: t.userTaskKey,
-            processInstanceKey: t.processInstanceKey
-        })));
-
-        await Promise.all(
-            coincidenciasGerenteArea.map(tareaGerenteArea =>
-                fetch(`${API_BASE}/tasks/${tareaGerenteArea.userTaskKey}/complete`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        variables: {
-                            siExiste: variables.siExiste,
-                            purchaseTecnology: variables.purchaseTecnology,
-                            sstAprobacion: variables.sstAprobacion,
-                            vobo: variables.vobo,
-                            purchaseAprobated: variables.purchaseAprobated,
-                            esMayor: variables.esMayor,
-                            purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
-                            purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
-                            filas: variables.filas,
-                        }
-                    })
-                })
-            )
-        );
-
-        console.log("🎉 Todas las tareas de GerenteArea fueron completadas");
-
-        await delay(6000);
-
-                // ============ GERENTE DE ÁREA ============
-        let tareasResGerenteAreaFinal = await fetch(`${API_BASE}/tasks/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({})
-        });
-
-        let tareasDataGerenteAreaFinal = await tareasResGerenteAreaFinal.json();
-        console.log("📌 Tareas recibidas (GerenteArea):", tareasDataGerenteAreaFinal);
-
-        const FinalcoincidenciasGerenteArea = tareasDataGerenteAreaFinal.items
-            .filter(t =>
-                t.elementId === "Activity_1gfg2b4" && // ID real del userTask Gerente
-                t.state === "CREATED"
-            );
-
-        if (FinalcoincidenciasGerenteArea.length === 0) {
-            console.error("⚠️ No hay tareas activas del GerenteArea");
-            return;
-        }
-
-        console.log("✅ Tareas de GerenteArea encontradas:", FinalcoincidenciasGerenteArea.map(t => ({
-            userTaskKey: t.userTaskKey,
-            processInstanceKey: t.processInstanceKey
-        })));
-
-        await Promise.all(
-            FinalcoincidenciasGerenteArea.map(tareaGerenteAreaFinal =>
-                fetch(`${API_BASE}/tasks/${tareaGerenteAreaFinal.userTaskKey}/complete`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        variables: {
-                            siExiste: variables.siExiste,
-                            purchaseTecnology: variables.purchaseTecnology,
-                            sstAprobacion: variables.sstAprobacion,
-                            vobo: variables.vobo,
-                            purchaseAprobated: variables.purchaseAprobated,
-                            esMayor: variables.esMayor,
-                            purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
-                            purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
-                            filas: variables.filas,
-                        }
-                    })
-                })
-            )
-        );
-
-        console.log("🎉 Todas las tareas de GerenteArea fueron completadas");
-
-        await delay(5000);
-
-                // ============ GERENTE DE ÁREA ============
-        let tareasResGerenteAreaFinalisima = await fetch(`${API_BASE}/tasks/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({})
-        });
-
-        let tareasDataGerenteAreaFinalisima = await tareasResGerenteAreaFinalisima.json();
-        console.log("📌 Tareas recibidas (GerenteArea):", tareasDataGerenteAreaFinal);
-
-        const FinalisimacoincidenciasGerenteArea = tareasDataGerenteAreaFinalisima.items
-            .filter(t =>
-                t.elementId === "Activity_03zql95" && // ID real del userTask Gerente
-                t.state === "CREATED"
-            );
-
-        if (FinalisimacoincidenciasGerenteArea.length === 0) {
-            console.error("⚠️ No hay tareas activas del GerenteArea");
-            return;
-        }
-
-        console.log("✅ Tareas de GerenteArea encontradas:", FinalisimacoincidenciasGerenteArea.map(t => ({
-            userTaskKey: t.userTaskKey,
-            processInstanceKey: t.processInstanceKey
-        })));
-
-        await Promise.all(
-            FinalisimacoincidenciasGerenteArea.map(tareaGerenteAreaFinalisima =>
-                fetch(`${API_BASE}/tasks/${tareaGerenteAreaFinalisima.userTaskKey}/complete`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        variables: {
-                            siExiste: variables.siExiste,
-                            purchaseTecnology: variables.purchaseTecnology,
-                            sstAprobacion: variables.sstAprobacion,
-                            vobo: variables.vobo,
-                            purchaseAprobated: variables.purchaseAprobated,
-                            esMayor: variables.esMayor,
-                            purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
-                            purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
-                            filas: variables.filas,
-                        }
-                    })
-                })
-            )
-        );
-
-        console.log("🎉 Todas las tareas de GerenteArea fueron completadas");
-
+        console.log("🎉 Tareas completadas por rol/proceso (startThreeStep).");
     } catch (err) {
         console.error("❌ Error en startThreeStep:", err);
+        throw err;
     }
 }
 
@@ -483,6 +261,62 @@ export async function EndFourStep(variables) {
         }
     } catch (err) {
         console.error("❌ Error en EndFourStep:", err);
+    }
+}
+
+
+export async function approvePendingSingle(variables, options = {}) {
+    try {
+        const { processInstanceKey } = options || {};
+        const aprobacionesIds = ["Activity_08exhj3", "Activity_1msgoom", "Activity_00mm8pt", "Activity_1fpwffg"]; // ajustar ids según proceso
+
+        const tareasRes = await fetch(`${API_BASE}/tasks/search`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                siExiste: variables.siExiste,
+                purchaseTecnology: variables.purchaseTecnology,
+                sstAprobacion: variables.sstAprobacion,
+                vobo: variables.vobo,
+                purchaseAprobated: variables.purchaseAprobated,
+                esMayor: variables.esMayor,
+                purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
+                purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
+                filas: variables.filas,
+            })
+        });
+
+        const tareasData = await tareasRes.json();
+        const tareas = tareasData.items || [];
+
+        const coincidencias = tareas.filter(
+            t =>
+                aprobacionesIds.includes(t.elementId) &&
+                t.state === "CREATED" &&
+                (processInstanceKey ? String(t.processInstanceKey) === String(processInstanceKey) : true)
+        );
+
+        if (coincidencias.length === 0) {
+            console.log("⏳ No hay tareas de aprobación pendientes (one-step) para el proceso indicado.");
+            return;
+        }
+
+        console.log("✅ Tareas pendientes encontradas (one-step):", coincidencias.map(t => ({ userTaskKey: t.userTaskKey, elementId: t.elementId })));
+
+        await Promise.all(
+            coincidencias.map(tarea =>
+                fetch(`${API_BASE}/tasks/${tarea.userTaskKey}/complete`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ variables })
+                })
+            )
+        );
+
+        console.log("🎉 Todas las tareas pendientes fueron completadas (one-step).");
+    } catch (err) {
+        console.error("❌ Error en approvePendingSingle:", err);
+        throw err;
     }
 }
 

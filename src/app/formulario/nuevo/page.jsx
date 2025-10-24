@@ -31,6 +31,12 @@ export default function NuevoFormulario() {
 
   const router = useRouter();
 
+  // reemplazamos la lectura directa de filas[0].valor por una función que calcule el total
+  function calcularTotalProductos() {
+    // suma segura de todos los valores (si valor no es número se interpreta como 0)
+    return filas.reduce((acum, f) => acum + (Number(f.valor) || 0), 0);
+  }
+
   function calcularRango(monto) {
     return monto > 1423000;
   }
@@ -59,7 +65,7 @@ export default function NuevoFormulario() {
 
   const handleClickTwo = async () => {
     try {
-      const monto = Number(filas[0].valor);
+      const monto = calcularTotalProductos();
       const esMayor = calcularRango(monto);
 
       const siExiste = filas.some((f) => f.siExiste);
@@ -91,7 +97,7 @@ export default function NuevoFormulario() {
 
   const handleClickThree = async () => {
     try {
-      const monto = Number(filas[0].valor);
+      const monto = calcularTotalProductos();
       const esMayor = calcularRango(monto);
 
       const siExiste = filas.some((f) => f.siExiste);
@@ -122,7 +128,7 @@ export default function NuevoFormulario() {
 
   const handleClickFour = async () => {
     try {
-      const monto = Number(filas[0].valor);
+      const monto = calcularTotalProductos();
       const esMayor = calcularRango(monto);
 
       const siExiste = filas.some((f) => f.siExiste);
@@ -245,7 +251,7 @@ export default function NuevoFormulario() {
     });
   };
 
-  const monto = Number(filas[0]?.valor || 0);
+  const monto = calcularTotalProductos();
   const rango = rangoInputs(monto);
 
   const enviarFormulario = async () => {

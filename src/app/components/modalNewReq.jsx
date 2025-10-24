@@ -24,6 +24,7 @@ import {
 import TextareaAutosize from "react-textarea-autosize";
 import SaveAnimation from "./animationCreateRequisicion";
 import { faDailymotion } from "@fortawesome/free-brands-svg-icons";
+import { endFirstStepStartTwoStep, endTwoStepStartThreeStep } from "../services/camunda";
 
 const initialForm = {
     solicitante: {
@@ -174,6 +175,35 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         }
 
         try {
+            // --- NUEVO: antes de guardar, enviar payload final con esMayor ---
+            const requisicionId = initialData?.requisicion?.id;
+            const ergonomicos = formData.productos.some((p) => Boolean(p.ergonomico));
+            const tecnologicos = formData.productos.some((p) => Boolean(p.compraTecnologica));
+            const compraPresupuestada = Boolean(formData.solicitante.presupuestada);
+
+            const esMayor = requisicionId
+                ? await checkRequisicionValorTotalFromDB(requisicionId)
+                : calcularRango();
+
+            const formularioenJSON = JSON.stringify(formData);
+
+            const finalPayload = {
+                siExiste: ergonomicos,
+                purchaseTecnology: tecnologicos,
+                purchaseAprobated: compraPresupuestada,
+                esMayor,
+                filas: formularioenJSON,
+            };
+
+            // enviar al servicio que procesa el paso final
+            try {
+                await endTwoStepStartThreeStep(finalPayload);
+            } catch (err) {
+                console.error("Error enviando payload final:", err);
+                // No bloqueamos el guardado por este error, pero se puede mostrar alerta opcional
+            }
+            // --- fin nuevo ---
+
             if (isEditMode) {
                 // editar metadata
                 const id = initialData.requisicion.id;
@@ -243,6 +273,87 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             setProductoActivo3(0);
         }
     }, [formData.productos.length]);
+
+    const handleNext = async () => {
+        const next = Math.min(maxStep, step + 1);
+        if (next === step) return;
+        const ok = await handleBeforeEnterStep(step, next);
+        if (ok) setStep(next);
+    };
+
+    const handlePrev = () => {
+        const prev = Math.max(minStep, step - 1);
+        setStep(prev);
+    };
+
+    // ====== MOVE/ADD: Umbral y funciones de cálculo ANTES de usarlas en handleBeforeEnterStep ======
+    // Umbral: 10 salarios mínimos (valor dado por el usuario)
+    const SALARIO_MINIMO = 1423000;
+    const SALARIOS_UMBRAL = 10;
+    const UMBRAL_10_SM = SALARIO_MINIMO * SALARIOS_UMBRAL;
+
+    // Calcula el total estimado sumando (valorEstimado * cantidad) de cada producto
+    const getTotalEstimado = () => {
+        return formData.productos.reduce((sum, p) => {
+            const valor = parseFloat(p.valorEstimado) || 0;
+            const cantidad = parseInt(p.cantidad, 10) || 1;
+            return sum + valor * cantidad;
+        }, 0);
+    };
+
+    // Retorna booleano si supera 10 salarios mínimos (mantiene la firma original parcialmente)
+    const calcularRango = (valor_) => {
+        const total = getTotalEstimado();
+        if (valor_ === "total") return total;
+        return total > UMBRAL_10_SM;
+    };
+
+    // --- NUEVO: consulta sencilla a la tabla/endpoint requisiciones para verificar valor_total ---
+    const DB_UMBRAL_SIMPLE = 1423000;
+    async function checkRequisicionValorTotalFromDB(id) {
+        try {
+            if (!id) return false;
+            const res = await fetch(`http://localhost:4000/api/requisiciones/${id}`, {
+                credentials: "include",
+            });
+            if (!res.ok) {
+                console.error("No se pudo obtener la requisición desde el backend");
+                return false;
+            }
+            const data = await res.json();
+            // soporta campos comunes: valor_total o valorTotal o valor
+            const valor = parseFloat(data.valor_total ?? data.valorTotal ?? data.valor ?? 0) || 0;
+            return valor > DB_UMBRAL_SIMPLE;
+        } catch (err) {
+            console.error("Error consultando requisición:", err);
+            return false;
+        }
+    }
+    // --- fin nuevo ---
+
+    const handleBeforeEnterStep = async (currentStep, nextStep) => {
+        try {
+            // obtener id de requisicion si existe
+            // const requisicionId = initialData?.requisicion?.id;
+
+            if (currentStep === 1 && nextStep === 2) {
+                const payload = {
+                    bienvenida: "Inicio del proceso de compras"
+                }
+                await endFirstStepStartTwoStep(payload);
+            }
+
+            // Eliminado: envío para paso 4 aquí.
+            // Ahora el envío final se hace en handleSubmitFinal (al hacer click en Finalizar).
+
+        } catch (err) {
+            console.error("Error al cambiar de paso:", err);
+            toast.error("No se pudo avanzar al siguiente paso.");
+            return false;
+        }
+        return true;
+    };
+
 
     if (!open) return null;
 
@@ -825,16 +936,21 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             </li>
                                             <li>
                                                 <strong>Valor total estimado:</strong>{" "}
-                                                {formData.productos
-                                                    .reduce(
-                                                        (sum, p) => sum + (parseFloat(p.valorEstimado) || 0),
-                                                        0
-                                                    )
-                                                    .toLocaleString("es-CO", {
-                                                        style: "currency",
-                                                        currency: "COP",
-                                                        minimumFractionDigits: 0,
-                                                    })}
+                                                {getTotalEstimado().toLocaleString("es-CO", {
+                                                    style: "currency",
+                                                    currency: "COP",
+                                                    minimumFractionDigits: 0,
+                                                })}
+                                                {/* Indicador si supera 10 salarios mínimos */}
+                                                {getTotalEstimado() > UMBRAL_10_SM ? (
+                                                    <span style={{ color: "red", fontWeight: "bold", marginLeft: 8 }}>
+                                                        — Supera 10 salarios mínimos
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ color: "green", fontWeight: "bold", marginLeft: 8 }}>
+                                                        — No supera 10 salarios mínimos
+                                                    </span>
+                                                )}
                                             </li>
                                         </ul>
                                     </div>
@@ -890,7 +1006,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     {step > minStep && (
                         <button
                             className="wizardModal-btn wizardModal-prev"
-                            onClick={() => setStep(Math.max(minStep, step - 1))}
+                            onClick={handlePrev}
                             disabled={showAnimation}
                         >
                             ← Anterior
@@ -899,7 +1015,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     {step < maxStep ? (
                         <button
                             className="wizardModal-btn wizardModal-next"
-                            onClick={() => setStep(Math.min(maxStep, step + 1))}
+                            onClick={handleNext}
                             disabled={showAnimation}
                         >
                             Siguiente →

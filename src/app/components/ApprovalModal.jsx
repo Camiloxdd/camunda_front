@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import "../styles/views/ApprovalModal.css";
+import { approvePendingSingle, startThreeStep } from "../services/camunda";
 
 export default function ApprovalModal({ requisicion, onClose, onApproved }) {
     const [detalles, setDetalles] = useState(null);
@@ -69,7 +70,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
         }));
     };
 
-    const handleGuardar = async () => {
+        const handleGuardar = async () => {
         try {
             setSaving(true);
             toast.info("Guardando aprobaciones...", { autoClose: 2000 });
@@ -114,6 +115,57 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
             if (!res.ok) throw new Error("Error al guardar aprobaciones");
             const data = await res.json();
             toast.success(data.message || "Aprobaciones registradas");
+
+            // --- NUEVA LÓGICA: dependiendo del monto total, usar una u otra llamada a Camunda ---
+            try {
+                const salarioMinimo = Number(process.env.NEXT_PUBLIC_SALARIO_MINIMO) || 1160000;
+                const montoTotal = Number(info.valor_total || detalles.requisicion?.valor_total || 0);
+                const esMayor = montoTotal >= salarioMinimo * 10;
+
+                // filas con el detalle por producto (se envía también para trazabilidad)
+                const filas = (detalles.productos || []).map(p => ({
+                    id: p.id,
+                    cantidad: p.cantidad,
+                    valor_estimado: p.valor_estimado,
+                    compra_tecnologica: !!p.compra_tecnologica,
+                    ergonomico: !!p.ergonomico,
+                    presupuestada: !!p.presupuestada,
+                }));
+
+                // variables booleanas que el proceso Camunda espera
+                const camundaVars = {
+                    filas,
+                    siExiste: filas.length > 0,
+                    purchaseTecnology: filas.some(f => f.compra_tecnologica && f.aprobado),
+                    sstAprobacion: filas.some(f => f.ergonomico && f.aprobado),
+                    purchaseAprobated: filas.some(f => f.presupuestada),
+                    esMayor,
+
+                };
+
+                // intentar obtener processInstanceKey (intenta varios nombres por si cambia el back)
+                const processInstanceKey =
+                    detalles.requisicion?.processInstanceKey ||
+                    detalles.requisicion?.process_instance_key ||
+                    detalles.requisicion?.process_key ||
+                    null;
+
+                const currentRole = detalles.currentUser?.cargo || null;
+
+                if (!esMayor) {
+                    // caso < 10 salarios mínimos -> 1 petición para aprobar pendientes (filtrada por processInstanceKey si existe)
+                    await approvePendingSingle(camundaVars, { processInstanceKey });
+                    toast.info("Se solicitó aprobación de tareas pendientes (flujo simplificado).");
+                } else {
+                    // caso >= 10 salarios mínimos -> completar SOLO las userTask del rol/proceso actual
+                    await startThreeStep(camundaVars, { role: currentRole, processInstanceKey });
+                    toast.info("Se completó la userTask correspondiente a tu rol en Camunda.");
+                }
+            } catch (err) {
+                console.error("❌ Error al llamar a Camunda:", err);
+                toast.warn("No se completaron las tareas en Camunda automáticamente.");
+            }
+
             onApproved();
             onClose();
         } catch (err) {
@@ -177,7 +229,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                                         <tr
                                             key={p.id}
                                             style={{
-                                                backgroundColor: !editable ? "#f5f5f5" : "transparent",
+                                                backgroundColor: !editable ? "#ddddddff" : "transparent",
                                                 color: !editable ? "#666" : "inherit",
                                             }}
                                         >

@@ -18,8 +18,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import WizardModal from "../components/modalNewReq";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import TimeLap from "../components/timeLap";
+import { iniciarProceso } from "../services/camunda";
 
-function RequisicionesInner({children}) {
+function RequisicionesInner({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [requisiciones, setRequisiciones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -162,7 +163,7 @@ function RequisicionesInner({children}) {
     setTimelineOpen(true);
   };
 
-    const getCargoNombre = (cargo) => {
+  const getCargoNombre = (cargo) => {
     switch (cargo) {
       case "managerGeneral":
         return "Gerente General";
@@ -213,6 +214,21 @@ function RequisicionesInner({children}) {
     }
   };
 
+  const handleStartProcessCamunda = async () => {
+    try{
+      await iniciarProceso({
+        bienvenida: "Se empezo el flujo de requisicion",
+      })
+    }catch (error){
+      console.log("Error al iniciar el proceso: ", error)
+    }
+  }
+
+  const abrirModalNuevaReq = () => {
+    handleStartProcessCamunda();
+    setOpen(true);
+  }
+
 
   return (
     <div style={{ display: "flex" }}>
@@ -244,7 +260,7 @@ function RequisicionesInner({children}) {
               <FontAwesomeIcon icon={faRefresh} />
             </button>
             {permissions?.canCreateRequisition && (
-              <button onClick={() => setOpen(true)}>
+              <button onClick={abrirModalNuevaReq}>
                 <FontAwesomeIcon icon={faPlus} />
               </button>
             )}
@@ -295,14 +311,14 @@ function RequisicionesInner({children}) {
                           onClick={() => openTimeline(r.requisicion_id)}
                           style={{ marginLeft: 8, color: "#1d5da8" }}
                           className="iconTimeLone"
-                       >
+                        >
                           <FontAwesomeIcon icon={faTimeline} />
-                       </button>
+                        </button>
                         <button
                           title="Word"
                           onClick={() => r.status === "Totalmente Aprobada" && handleDescargarPDF(r.requisicion_id)}
                           disabled={r.status !== "Totalmente Aprobada"}
-                          style={{ marginLeft: 8,  }}
+                          style={{ marginLeft: 8, }}
                           className="iconPdf"
                         >
                           <FontAwesomeIcon icon={faFilePdf} />

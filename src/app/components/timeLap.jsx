@@ -174,7 +174,6 @@ export default function TimeLap({ open, onClose, requisicionId }) {
             <div>
                 <div className="containerInfoTime">
                     <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
-                        <div><strong>Valor</strong><div>{Number(valorRequisicion || 0).toLocaleString("es-CO")}</div></div>
                         <div><strong>Aprobadas</strong><div>{approvedCount}/{totalApprovals}</div></div>
                         <div><strong>Pendientes</strong><div>{pendientesCount}</div></div>
                     </div>
