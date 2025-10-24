@@ -72,18 +72,33 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
     const handleGuardar = async () => {
         try {
             setSaving(true);
-
-            // Mostrar feedback inmediato
             toast.info("Guardando aprobaciones...", { autoClose: 2000 });
 
-            // Enviar SOLO decisiones sobre productos editables (para no sobreescribir otros)
+            const nowIso = new Date().toISOString();
             const body = {
                 decisiones: (detalles.productos || [])
                     .filter((p) => isEditableForUser(p))
-                    .map((p) => ({
-                        id: p.id,
-                        aprobado: !!decisiones[p.id],
-                    })),
+                    .map((p) => {
+                        const currentlyApproved = !!decisiones[p.id];
+                        const previouslyApproved =
+                            p.aprobado === "aprobado" || p.aprobado === 1 || p.aprobado === true;
+                        let fecha_aprobado = null;
+                        if (currentlyApproved) {
+                            if (previouslyApproved) {
+                                fecha_aprobado = p.fecha_aprobado || nowIso;
+                            } else {
+                                fecha_aprobado = nowIso;
+                            }
+                        } else {
+                            fecha_aprobado = null;
+                        }
+
+                        return {
+                            id: p.id,
+                            aprobado: currentlyApproved,
+                            fecha_aprobado,
+                        };
+                    }),
             };
 
             const res = await fetch(

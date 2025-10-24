@@ -1,0 +1,194 @@
+.boxStyle {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 70%;
+}
+
+.headerTimeLap {
+    color: #1d5da8;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.infoHeader {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+}
+
+.spaceButtonTime {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    display: flex;
+}
+
+.spaceButtonTime button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    background-color: #1d5da8;
+    border-radius: 30px;
+    height: 35px;
+    width: 35px;
+    padding: 10px;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    display: flex;
+    color: white;
+    font-weight: bold;
+    transition: 0.3s all;
+}
+
+.spaceButtonTime button:hover {
+    background-color: #155a9c;
+    transform: scale(1.1);
+}
+
+.containerInfoTime {
+    margin-bottom: 12px;
+    background-color: #f5f5f5;
+    margin: 10px;
+    padding: 20px;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    color: #155a9c;
+
+}
+
+.listaAprobaciones {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    background-color: #f3f3f3;
+    margin: 10px;
+    padding: 20px;
+}
+
+.listaAprobaciones ul {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.listaAprobaciones li {
+    height: 100%;
+    color: #155a9c;
+}
+
+.timeline-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.timeline-node {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    min-width: 80px;
+}
+
+.timeline-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #fff;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+    transition: all 0.4s ease;
+}
+
+.timeline-circle.aprobado {
+    background-color: #2ea44f;
+    color: white;
+}
+
+.timeline-circle.activo {
+    background-color: #d0d4da;
+    color: white;
+    animation: pulse 1.8s infinite;
+}
+
+.timeline-circle.pendiente {
+    background-color: #d0d4da;
+    color: #fff;
+}
+
+.timeline-line {
+    position: absolute;
+    top: 13px;
+    height: 4px;
+    width: 100%;
+    transform: translateX(50%);
+    z-index: 1;
+    border-radius: 2px;
+}
+
+.timeline-line.linea-aprobada {
+    background: linear-gradient(90deg, #2ea44f 0%, #1d5da8 100%);
+    box-shadow: 0 0 6px rgba(29, 93, 168, 0.4);
+}
+
+.timeline-line.linea-pendiente {
+    background: #e0e4eb;
+}
+
+.timeline-info {
+    text-align: center;
+    margin-top: 8px;
+}
+
+.timeline-nombre {
+    font-weight: 600;
+    font-size: 13px;
+    color: #333;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.timeline-nombre.text-green {
+    color: #2ea44f;
+}
+
+.timeline-fecha {
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* ✅ Animación para el aprobador activo */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(29, 93, 168, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 8px rgba(29, 93, 168, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(29, 93, 168, 0);
+    }
+}

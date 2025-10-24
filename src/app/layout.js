@@ -1,5 +1,6 @@
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
+import timeLap from "./components/timeLap";
 config.autoAddCss = false;
 
 import "./globals.css";

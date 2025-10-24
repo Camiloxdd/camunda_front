@@ -259,6 +259,13 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         }
     };
 
+    const getSedeNombre = (sede) => {
+        switch (sede) {
+            case "cota":
+                return "Cota";
+        }
+    };
+
     return (
         <div className="wizardModal-overlay">
             <div className="wizardModal-container">
@@ -374,35 +381,31 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         </div>
                                     </div>
                                     <div className="campoAdicional">
-                                        <label>Área<label className="obligatorio">*</label></label>
+                                        <label>
+                                            Área <label className="obligatorio">*</label>
+                                        </label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faClipboard} className="icon" />
-                                            <input type="text" placeholder="Ej. Compras" value={formData.solicitante.area}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        solicitante: {
-                                                            ...formData.solicitante,
-                                                            area: e.target.value,
-                                                        },
-                                                    })
-                                                } />
+                                            <input
+                                                type="text"
+                                                placeholder="Ej. Compras"
+                                                value={getAreaNombre(formData.solicitante.area) || ""}
+                                                readOnly
+                                            />
                                         </div>
                                     </div>
                                     <div className="campoAdicional">
-                                        <label>Sede<label className="obligatorio">*</label></label>
+                                        <label>
+                                            Sede <label className="obligatorio">*</label>
+                                        </label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faBuilding} className="icon" />
-                                            <input type="text" placeholder="Ej. Cundinamarca" value={formData.solicitante.sede}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        solicitante: {
-                                                            ...formData.solicitante,
-                                                            sede: e.target.value,
-                                                        },
-                                                    })
-                                                } />
+                                            <input
+                                                type="text"
+                                                placeholder="Ej. Cundinamarca"
+                                                value={getSedeNombre(formData.solicitante.sede) || ""}
+                                                readOnly
+                                            />
                                         </div>
                                     </div>
                                     <div className="campoAdicional">

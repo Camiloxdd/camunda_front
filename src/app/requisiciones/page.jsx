@@ -12,18 +12,22 @@ import {
   faPlus,
   faRefresh,
   faFilePdf,
+  faTimeline,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import WizardModal from "../components/modalNewReq";
 import { AuthProvider, useAuth } from "../context/AuthContext";
+import TimeLap from "../components/timeLap";
 
-function RequisicionesInner() {
+function RequisicionesInner({children}) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [requisiciones, setRequisiciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
   const [modalInitialData, setModalInitialData] = useState(null);
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [timelineReqId, setTimelineReqId] = useState(null);
 
   const { role, permissions } = useAuth();
 
@@ -79,14 +83,6 @@ function RequisicionesInner() {
     }
     console.error("Todas las descargas fallaron:", lastError);
     toast.error("Error en la descarga");
-  };
-
-  // Probar primero el endpoint de formularios (plantilla). Si no existe, intentar el endpoint de requisición.
-  const handleExcel = (id) => {
-    const urls = [
-      `http://localhost:4000/requisiciones/${id}/excel`,
-    ];
-    downloadBlobTryUrls(urls, `requisicion_${id}.xlsx`);
   };
 
   const handleDescargarPDF = async (id) => {
@@ -161,8 +157,66 @@ function RequisicionesInner() {
     }
   };
 
+  const openTimeline = (id) => {
+    setTimelineReqId(id);
+    setTimelineOpen(true);
+  };
+
+    const getCargoNombre = (cargo) => {
+    switch (cargo) {
+      case "managerGeneral":
+        return "Gerente General";
+      case "managerAdmin":
+        return "Gerente Administrativo";
+      case "managerAreaTyc":
+        return "Gerente de Área Tecnologia y Proyectos";
+      case "managerAreaSST":
+        return "Gerente de Área SST";
+      case "dicLeaderAreaTyC":
+        return "Director / Líder de Área Tec y Proyectos";
+      case "dicLeaderAreaSST":
+        return "Director / Líder de SST";
+      case "CoordiDevWeb":
+        return "Coordinador Desarrollo Web";
+      case "analistaQA":
+        return "Analista Requerimientos y QA";
+      case "gerAdmin":
+        return "Gerente Administrativo";
+      case "gerGeneral":
+        return "Gerente General";
+      case "dicTYP":
+        return "Director Tecnologia y Proyectos";
+      case "gerTyC":
+        return "Gerente Tecnologia y Proyectos";
+      default:
+        return cargo || "Usuario";
+    }
+  };
+
+  const getSedeNombre = (sede) => {
+    switch (sede) {
+      case "cota":
+        return "Cota";
+    }
+  };
+
+  const getAreaNombre = (area) => {
+    switch (area) {
+      case "TyP":
+        return "Tecnologia y Proyectos";
+      case "SST":
+        return "Seguridad y Salud en el Trabajo";
+      case "GerenciaAdmin":
+        return "Gerencia Adminsitrativa";
+      case "GerenciaGeneral":
+        return "Gerencia General";
+    }
+  };
+
+
   return (
     <div style={{ display: "flex" }}>
+      <TimeLap open={timelineOpen} onClose={() => setTimelineOpen(false)} requisicionId={timelineReqId} />
       <Navbar />
       <WizardModal
         open={open}
@@ -228,26 +282,28 @@ function RequisicionesInner() {
                       <td>{r.requisicion_id}</td>
                       <td>{r.nombre_solicitante}</td>
                       <td>{new Date(r.fecha).toLocaleDateString()}</td>
-                      <td>{r.justificacion}</td>
-                      <td>{r.area}</td>
-                      <td>{r.sede}</td>
+                      <td>{r.justificacion || "No tiene."}</td>
+                      <td>{getAreaNombre(r.area)}</td>
+                      <td>{getSedeNombre(r.sede)}</td>
                       <td>{r.valor_total?.toLocaleString("es-CO")}</td>
                       <td style={{ textTransform: "capitalize", fontWeight: 600 }}>
                         {r.status}
                       </td>
                       <td>
                         <button
-                          title="Excel"
-                          onClick={() => r.status === "Totalmente Aprobada" && handleExcel(r.requisicion_id)}
-                          disabled={r.status !== "Totalmente Aprobada"}
-                        >
-                          <FontAwesomeIcon icon={faFileExcel} />
-                        </button>
+                          title="Ver flujo"
+                          onClick={() => openTimeline(r.requisicion_id)}
+                          style={{ marginLeft: 8, color: "#1d5da8" }}
+                          className="iconTimeLone"
+                       >
+                          <FontAwesomeIcon icon={faTimeline} />
+                       </button>
                         <button
                           title="Word"
                           onClick={() => r.status === "Totalmente Aprobada" && handleDescargarPDF(r.requisicion_id)}
                           disabled={r.status !== "Totalmente Aprobada"}
-                          style={{ marginLeft: 8 }}
+                          style={{ marginLeft: 8,  }}
+                          className="iconPdf"
                         >
                           <FontAwesomeIcon icon={faFilePdf} />
                         </button>
@@ -256,7 +312,7 @@ function RequisicionesInner() {
                           onClick={() => handleEditOpen(r)}
                           style={{ marginLeft: 8 }}
                         >
-                          <FontAwesomeIcon icon={faPencil} style={{ color: "orange" }} />
+                          <FontAwesomeIcon icon={faPencil} style={{ color: "#1d5da8" }} />
                         </button>
                         <button
                           title="Eliminar"

@@ -362,3 +362,11 @@
 .tableGestUsers button:hover {
   transform: scale(1.2);
 }
+
+.iconPdf:disabled{
+  color: rgb(190, 190, 190);
+}
+
+.iconPdf{
+  color: orange;
+}
