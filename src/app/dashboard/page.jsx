@@ -17,7 +17,11 @@ function DashboardInner() {
   const [selectedReq, setSelectedReq] = useState(null); // para la modal de aprobador
   const [verifyModalReq, setVerifyModalReq] = useState(null); // para comprador: detalles a mostrar en modal
   const [verifyLoading, setVerifyLoading] = useState(false);
-  const { permissions } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+  const { permissions, user } = useAuth();
+  const [statusFilter, setStatusFilter] = useState("todas");
+
+
 
   // IDs para prevenir toasts duplicados
   const sessionToastIdRef = useRef("session-started");
@@ -39,24 +43,87 @@ function DashboardInner() {
     return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
   };
 
+  const requisicionesFiltradas = requisiciones.filter((req) => {
+    // 🔸 1. Filtro por texto (búsqueda en tiempo real)
+    const matchesSearch = !searchQuery.trim()
+      ? true
+      : String(req.requisicion_id || "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+
+    // 🔸 2. Filtro por estado
+    const estado = String(req.status || req.estado_aprobacion || "").toLowerCase();
+    const matchesStatus =
+      statusFilter === "todas" ? true : estado === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
+
+
+
   const fetchRequisiciones = async () => {
     try {
       setLoading(true);
-      // Si el usuario es aprobador, pedimos las pendientes (mismo endpoint que usa aprobador)
-      if (permissions?.isAprobador) {
-        const res = await fetch("http://localhost:4000/api/requisiciones/pendientes", { credentials: "include" });
-        if (!res.ok) throw new Error("Error al obtener requisiciones pendientes");
+
+      if (permissions?.isAprobador && user?.nombre) {
+        const res = await fetch(
+          `http://localhost:4000/api/requisiciones/aprobador/${encodeURIComponent(user.nombre)}`,
+          { credentials: "include" }
+        );
+        if (!res.ok) throw new Error("Error al obtener requisiciones del aprobador");
         const data = await res.json();
-        setRequisiciones(Array.isArray(data) ? data : [data]);
-      } else if (permissions?.isComprador) {
-        // Comprador: mostrar únicamente requisiciones con status 'aprobada'
+        const lista = Array.isArray(data) ? data : [data];
+
+        // 🧠 Añadir estado de aprobación según el orden (del timeLap)
+        const completadas = await Promise.all(
+          lista.map(async (req) => {
+            try {
+              const r = await fetch(
+                `http://localhost:4000/api/requisiciones/${req.requisicion_id}/aprobacion`,
+                { credentials: "include" }
+              );
+              if (!r.ok) return { ...req, puedeAprobar: false };
+
+              const info = await r.json();
+              const { approvers, nextOrder } = info || {};
+              if (!approvers) return { ...req, puedeAprobar: false };
+
+              // Encontrar si este usuario está dentro del flujo
+              const actual = approvers.find(
+                (a) =>
+                  a.nombre_aprobador?.toLowerCase() === user.nombre.toLowerCase() ||
+                  a.rol_aprobador?.toLowerCase() === user.rol?.toLowerCase()
+              );
+
+              // ✅ Puede aprobar si está visible o es su turno (nextOrder)
+              const puedeAprobar = actual?.visible === true || actual?.orden === nextOrder;
+
+              return { ...req, puedeAprobar };
+            } catch {
+              return { ...req, puedeAprobar: false };
+            }
+          })
+        );
+
+        setRequisiciones(completadas);
+      }
+      else if (permissions?.isComprador) {
         const res = await fetch("http://localhost:4000/api/requisiciones", { credentials: "include" });
-        if (!res.ok) throw new Error("Error al obtener requisiciones");
         const data = await res.json();
-        const lista = (Array.isArray(data) ? data : [data]).filter((r) => (r.status || r.estado) === "aprobada");
+        const lista = (Array.isArray(data) ? data : [data]).filter(
+          (r) => (r.status || r.estado) === "aprobada" || (r.status || r.estado) === "devuelta"
+        );
         setRequisiciones(lista);
-      } else {
-        // Otros roles: no mostrar lista, dejar vacío (pero dashboard visible)
+      }
+      else if (user?.nombre) {
+        const res = await fetch("http://localhost:4000/api/requisiciones", { credentials: "include" });
+        const data = await res.json();
+        const lista = (Array.isArray(data) ? data : [data]).filter(
+          (r) => r.nombre_solicitante?.toLowerCase() === user.nombre.toLowerCase()
+        );
+        setRequisiciones(lista);
+      }
+      else {
         setRequisiciones([]);
       }
     } catch (err) {
@@ -66,9 +133,13 @@ function DashboardInner() {
     }
   };
 
+
+
+
   useEffect(() => {
-    fetchRequisiciones();
-  }, [permissions]); // refrescar cuando cambien permisos / user
+    if (permissions) fetchRequisiciones();
+  }, [permissions, user]);
+  // refrescar cuando cambien permisos / user
 
   // Polling para notificaciones (nuevas, devueltas, aprobadas)
   useEffect(() => {
@@ -326,7 +397,7 @@ function DashboardInner() {
                   <p>
                     {permissions?.isAprobador ? "Requisiciones por Aprobar" :
                       permissions?.isComprador ? "Requisiciones para Verificar" :
-                        "Requisiciones"}
+                        "Requisiciones creadas"}
                   </p>
                   <h2>
                     {permissions?.isAprobador
@@ -349,7 +420,7 @@ function DashboardInner() {
                 <h2>
                   {permissions?.isAprobador ? "Lista de Requisiciones por Aprobar" :
                     permissions?.isComprador ? "Requisiciones Aprobadas (para Verificar)" :
-                      "Requisiciones"}
+                      "Estado de las requisiciones tuyas."}
                 </h2>
                 <p>
                   {permissions?.isAprobador ? "Selecciona la requisición que deseas aprobar." :
@@ -358,7 +429,20 @@ function DashboardInner() {
                 </p>
               </div>
               <div className="barraDeNavegacion">
-                <SearchBar />
+                <SearchBar
+                  placeholder="Buscar por ID de requisición..."
+                  onQueryChange={setSearchQuery}
+                />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="selectDashboard"
+                >
+                  <option value="todas">Todas</option>
+                  <option value="pendiente">Pendiente</option>
+                  <option value="rechazada">Rechazada</option>
+                  <option value="aprobada">Aprobada</option>
+                </select>
               </div>
             </div>
 
@@ -374,7 +458,7 @@ function DashboardInner() {
                     <p className="textLoading">Cargando requisiciones...</p>
                   </div>
                 </div>
-              ) : requisiciones.length === 0 ? (
+              ) : requisicionesFiltradas.length === 0 ? (
                 <div className="loading-container">
                   <div className="loading-cambios">
                     <p>
@@ -385,10 +469,10 @@ function DashboardInner() {
                   </div>
                 </div>
               ) : (
-                requisiciones.map((req) => (
+                requisicionesFiltradas.map((req) => (
                   <div key={req.requisicion_id} className="requisicion">
                     <div className="infoIzquierda">
-                      <h3 className="tittleHeaderRequeri">{req.justificacion}</h3>
+                      <h3 className="tittleHeaderRequeri">Requisición #{req.requisicion_id}</h3>
                       <p className="subTittles">
                         Creador:{" "}
                         <span className="subChiquitin">{req.nombre_solicitante}</span>
@@ -417,12 +501,21 @@ function DashboardInner() {
                     <div className="infoDerecha">
                       <FontAwesomeIcon icon={faFileExcel} />
                       {permissions?.isAprobador ? (
-                        <button
-                          className="buttonReqEdit"
-                          onClick={() => setSelectedReq(req)} // abre modal aprobador
-                        >
-                          <p>Aprobar</p>
-                        </button>
+                        req.puedeAprobar ? (
+                          <button
+                            className="buttonReqEdit"
+                            onClick={() => setSelectedReq(req)} // abre modal aprobador
+                          >
+                            <p>Revisar</p>
+                          </button>
+                        ) : (
+                          <button
+                            className="buttonReqDisabled"
+                            disabled
+                          >
+                            Faltan aprobaciones previas
+                          </button>
+                        )
                       ) : permissions?.isComprador ? (
                         <button
                           className="buttonReqEdit"
@@ -431,6 +524,7 @@ function DashboardInner() {
                           <p>Verificar</p>
                         </button>
                       ) : null}
+
                     </div>
                   </div>
                 ))
@@ -492,7 +586,7 @@ function DashboardInner() {
                           <td style={{ padding: 6 }}>{p.nombre || p.productoOServicio || "—"}</td>
                           <td style={{ padding: 6 }}>{p.cantidad || "—"}</td>
                           <td style={{ padding: 6 }}>{/* valor estimado */}
-                          {formatCOP(p.valor_estimado ?? p.valorEstimado)}
+                            {formatCOP(p.valor_estimado ?? p.valorEstimado)}
                           </td>
                           <td style={{ padding: 6 }}>{(p.compra_tecnologica || p.compraTecnologica) ? "Sí" : "No"}</td>
                           <td style={{ padding: 6 }}>{(p.ergonomico) ? "Sí" : "No"}</td>

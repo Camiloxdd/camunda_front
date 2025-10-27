@@ -64,7 +64,11 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [mostrarModalProductos3, setMostrarModalProductos3] = useState(false);
     const [formData, setFormData] = useState(initialForm);
 
-    const isEditMode = Boolean(initialData && initialData.requisicion);
+    // soportar respuesta plana o anidada: initialData.requisicion || initialData (detalle)
+    const isEditMode = Boolean(
+        initialData &&
+            (initialData.requisicion || initialData.requisicion_id || initialData.id)
+    );
     // aplicar restricciones de pasos sólo en modo edición
     const minStep = isEditMode ? (startStep ?? 2) : 1;
     const maxStep = isEditMode ? 3 : 4;
@@ -76,28 +80,89 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         const today = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
 
         if (isEditMode) {
-            // construir formData a partir de initialData
-            const req = initialData.requisicion;
-            const productosBack = initialData.productos || [];
-            const mappedProductos = (productosBack || []).map((p) => ({
-                id: p.id,
-                nombre: p.nombre || "",
-                cantidad: p.cantidad ?? 1,
-                descripcion: p.descripcion || "",
-                // normalizar valores que pueden venir como 0/"0"/1/"1"/true/false
-                compraTecnologica: !!Number(p.compra_tecnologica),
-                ergonomico: !!Number(p.ergonomico),
-                valorEstimado: p.valor_estimado ?? "",
-                centroCosto: p.centro_costo || "",
-                cuentaContable: p.cuenta_contable || "",
-                aprobaciones: [], // opcional
-                fileName: "",
-            }));
+            // construir formData a partir de initialData (soporta distintas formas y tablas)
+            const req = initialData.requisicion ?? initialData;
+
+            // combinar todas las fuentes posibles de productos (incluye aprobados y rechazados)
+            const rawList = []
+                .concat(
+                    initialData.productos || [],
+                    initialData.productos_list || [],
+                    initialData.items || [],
+                    initialData.productos_aprobados || [],
+                    initialData.productos_rechazados || [],
+                    initialData.approved_products || [],
+                    initialData.rejected_products || [],
+                    initialData.requisicion_productos || []
+                )
+                .filter(Boolean);
+
+            // deduplicar incluyendo el ESTADO de aprobación en la clave
+            // (así no descartamos una fila "rechazado" cuando ya existe una "aprobado" del mismo producto)
+            const seen = new Set();
+            const productosBack = [];
+            rawList.forEach((p) => {
+                const idPart = String(p.id ?? p.producto_id ?? p.nombre ?? p.name ?? "");
+                const estadoPart = String(p.aprobado ?? p.estado ?? p.status ?? p.estado_aprobacion ?? "").trim();
+                const valorPart = String(p.valor_estimado ?? p.valorEstimado ?? p.valor ?? "").trim();
+                const cantidadPart = String(p.cantidad ?? p.qty ?? "").trim();
+                const key = `${idPart}::${estadoPart}::${cantidadPart}::${valorPart}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    productosBack.push(p);
+                }
+            });
+
+            // helper local para formatear COP
+            const formatCurrencyLocal = (num) =>
+                new Intl.NumberFormat("es-CO", {
+                    style: "currency",
+                    currency: "COP",
+                    minimumFractionDigits: 0,
+                }).format(Number(num) || 0);
+
+            const mappedProductos = (productosBack || []).map((p) => {
+                const rawValor = p.valor_estimado ?? p.valorEstimado ?? p.valor ?? "";
+                let valorEstimadoFormatted = "";
+                if (rawValor !== null && rawValor !== undefined && rawValor !== "") {
+                    const num = Number(rawValor);
+                    valorEstimadoFormatted = !isNaN(num) ? formatCurrencyLocal(num) : String(rawValor);
+                }
+
+                // Normalizar aprobaciones: primero lista explícita, luego campo único (aprobado/estado/status)
+                let aprobacionesNormalized = [];
+                if (Array.isArray(p.aprobaciones) && p.aprobaciones.length) {
+                    aprobacionesNormalized = p.aprobaciones.map(a => (typeof a === "string" ? { status: a } : { status: a.status ?? a.estado ?? a }));
+                } else if (Array.isArray(p.aprobado) && p.aprobado.length) {
+                    aprobacionesNormalized = p.aprobado.map(a => (typeof a === "string" ? { status: a } : { status: a.status ?? a.estado ?? a }));
+                } else {
+                    const raw = p.aprobaciones ?? p.aprobado ?? p.estado ?? p.status ?? p.estado_aprobacion ?? null;
+                    if (raw !== null && raw !== undefined && String(raw).trim() !== "") {
+                        aprobacionesNormalized = [{ status: String(raw) }];
+                    }
+                }
+
+                return {
+                    id: p.id ?? p.producto_id ?? null,
+                    nombre: p.nombre ?? p.name ?? "",
+                    cantidad: p.cantidad ?? p.qty ?? 1,
+                    descripcion: p.descripcion ?? p.description ?? "",
+                    compraTecnologica: Boolean(p.compra_tecnologica ?? p.compraTecnologica ?? (p.compra_tecnologica_numeric ?? 0)),
+                    ergonomico: Boolean(p.ergonomico ?? p.ergonomico_numeric ?? false),
+                    valorEstimado: valorEstimadoFormatted,
+                    centroCosto: p.centro_costo ?? p.centroCosto ?? p.centro ?? "",
+                    cuentaContable: p.cuenta_contable ?? p.cuentaContable ?? p.cuenta ?? "",
+                    aprobaciones: aprobacionesNormalized,
+                    // conservar el estado crudo venido de la BD (si existe) para decisiones posteriores
+                    aprobadoRaw: p.aprobado ?? p.aprobado_estado ?? p.estado ?? p.status ?? null,
+                    fileName: p.fileName ?? "",
+                };
+            });
 
             setFormData({
                 solicitante: {
-                    nombre: req.nombre_solicitante || "",
-                    fecha: req.fecha ? req.fecha.slice(0, 10) : today,
+                    nombre: req.nombre_solicitante ?? req.nombre ?? "",
+                    fecha: req.fecha ? String(req.fecha).slice(0, 10) : today,
                     fechaRequeridoEntrega: req.fecha_requerido_entrega ? req.fecha_requerido_entrega.slice(0, 10) : "",
                     tiempoAproximadoGestion: req.tiempo_aproximado_gestion || "",
                     justificacion: req.justificacion || "",
@@ -189,8 +254,30 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     // --- fin utilidades ---
 
     // Calcula el total estimado sumando (valorEstimado * cantidad) de cada producto
-    const getTotalEstimado = () => {
+    // getTotalEstimado(onlyApproved = false):
+    // - onlyApproved = true => incluir producto sólo si:
+    //      * tiene aprobaciones explícitas y al menos una contiene "aprob" (aprobado),
+    //      * o si no tiene información de aprobación (pendiente) se incluye por defecto.
+    //    Esto evita contar productos que fueron explícitamente rechazados o que tienen aprobaciones sin ninguna aprobada.
+    const getTotalEstimado = (onlyApproved = false) => {
         return formData.productos.reduce((sum, p) => {
+            // lógica de filtrado si pedimos sólo aprobados
+            if (onlyApproved) {
+                const aprobaciones = p.aprobaciones || [];
+                // si existe lista de aprobaciones -> require al menos una aprobada
+                if (Array.isArray(aprobaciones) && aprobaciones.length > 0) {
+                    const tieneAprob = aprobaciones.some(a => {
+                        const raw = String(a?.status ?? a ?? "").toLowerCase();
+                        return raw.includes("aprob"); // 'aprobado', 'aprob', etc.
+                    });
+                    if (!tieneAprob) return sum; // todas las aprobaciones son no-aprobadas -> excluir
+                } else if (p.aprobadoRaw != null && String(p.aprobadoRaw).trim() !== "") {
+                    // si hay campo crudo aprobadoRaw -> incluir sólo si contiene 'aprob'
+                    if (!String(p.aprobadoRaw).toLowerCase().includes("aprob")) return sum;
+                }
+                // si no hay info de aprobación explícita, incluimos (se considera pendiente)
+            }
+
             const valor = parseCurrency(p.valorEstimado) || 0;
             const cantidad = parseInt(p.cantidad, 10) || 1;
             return sum + valor * cantidad;
@@ -389,7 +476,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
 
     // ====== MOVE/ADD: Umbral y funciones de cálculo ANTES de usarlas en handleBeforeEnterStep ======
     // Umbral: 10 salarios mínimos (valor dado por el usuario)
-    
+
     // --- fin nuevo ---
 
     const handleBeforeEnterStep = async (currentStep, nextStep) => {
@@ -619,7 +706,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 </div>
                                 <div className="firsInfo">
                                     <label>
-                                        ¿Está en presupuesto?<label className="obligatorio">*</label>
+                                        <label className="obligatorio">*</label><p>¿Está en presupuesto?</p>
                                         <input
                                             type="checkbox"
                                             checked={formData.solicitante.presupuestada}
@@ -1010,9 +1097,10 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             </li>
                                             <li>
                                                 <strong>Valor total estimado:</strong>{" "}
-                                                {formatCurrency(getTotalEstimado())}
-                                                {/* Indicador si supera 10 salarios mínimos */}
-                                                {getTotalEstimado() > UMBRAL_10_SM ? (
+                                                {/* Mostrar total considerando sólo productos aprobados cuando existan aprobaciones */}
+                                                {formatCurrency(getTotalEstimado(true))}
+                                                {/* Indicador si supera 10 salarios mínimos (sobre total filtrado) */}
+                                                {getTotalEstimado(true) > UMBRAL_10_SM ? (
                                                     <span style={{ color: "red", fontWeight: "bold", marginLeft: 8 }}>
                                                         — Supera 10 salarios mínimos
                                                     </span>
@@ -1021,7 +1109,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                         — No supera 10 salarios mínimos
                                                     </span>
                                                 )}
-                                            </li>
+                                             </li>
                                         </ul>
                                     </div>
                                 </div>

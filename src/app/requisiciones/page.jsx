@@ -103,6 +103,7 @@ function RequisicionesInner({ children }) {
           credentials: "include",
         }
       );
+      toast.success("Formulario eliminado");
       if (!res.ok) throw new Error("Error al eliminar");
       await fetchAll();
     } catch (err) {
@@ -215,11 +216,11 @@ function RequisicionesInner({ children }) {
   };
 
   const handleStartProcessCamunda = async () => {
-    try{
+    try {
       await iniciarProceso({
         bienvenida: "Se empezo el flujo de requisicion",
       })
-    }catch (error){
+    } catch (error) {
       console.log("Error al iniciar el proceso: ", error)
     }
   }
@@ -272,13 +273,12 @@ function RequisicionesInner({ children }) {
             <table>
               <thead>
                 <tr>
-                  <th>ID</th>
+                  <th>ID / Nombre</th>
                   <th>Solicitante</th>
-                  <th>Fecha de creación</th>
-                  <th>Justificación</th>
+                  <th>Fecha de solicitud</th>
                   <th>Área</th>
-                  <th>Sede</th>
                   <th>Valor total</th>
+                  <th>Urgencia de la compra</th>
                   <th>Estado</th>
                   <th>Acciones</th>
                 </tr>
@@ -295,13 +295,12 @@ function RequisicionesInner({ children }) {
                 ) : (
                   requisiciones.map((r) => (
                     <tr key={r.requisicion_id}>
-                      <td>{r.requisicion_id}</td>
+                      <td>Requisición #{r.requisicion_id}</td>
                       <td>{r.nombre_solicitante}</td>
                       <td>{new Date(r.fecha).toLocaleDateString()}</td>
-                      <td>{r.justificacion || "No tiene."}</td>
                       <td>{getAreaNombre(r.area)}</td>
-                      <td>{getSedeNombre(r.sede)}</td>
                       <td>{r.valor_total?.toLocaleString("es-CO")}</td>
+                      <td>{r.urgencia}</td>
                       <td style={{ textTransform: "capitalize", fontWeight: 600 }}>
                         {r.status}
                       </td>
@@ -316,27 +315,30 @@ function RequisicionesInner({ children }) {
                         </button>
                         <button
                           title="Word"
-                          onClick={() => r.status === "Totalmente Aprobada" && handleDescargarPDF(r.requisicion_id)}
-                          disabled={r.status !== "Totalmente Aprobada"}
+                          onClick={() => handleDescargarPDF(r.requisicion_id)}
                           style={{ marginLeft: 8, }}
                           className="iconPdf"
                         >
                           <FontAwesomeIcon icon={faFilePdf} />
                         </button>
-                        <button
-                          title="Editar"
-                          onClick={() => handleEditOpen(r)}
-                          style={{ marginLeft: 8 }}
-                        >
-                          <FontAwesomeIcon icon={faPencil} style={{ color: "#1d5da8" }} />
-                        </button>
-                        <button
-                          title="Eliminar"
-                          onClick={() => handleDelete(r.requisicion_id)}
-                          style={{ marginLeft: 8 }}
-                        >
-                          <FontAwesomeIcon icon={faTrash} style={{ color: "red" }} />
-                        </button>
+                        {permissions?.canCreateRequisition && (
+                          <button
+                            title="Editar"
+                            onClick={() => handleEditOpen(r)}
+                            style={{ marginLeft: 8 }}
+                          >
+                            <FontAwesomeIcon icon={faPencil} style={{ color: "#1d5da8" }} />
+                          </button>
+                        )}
+                        {permissions?.canCreateRequisition && (
+                          <button
+                            title="Eliminar"
+                            onClick={() => handleDelete(r.requisicion_id)}
+                            style={{ marginLeft: 8 }}
+                          >
+                            <FontAwesomeIcon icon={faTrash} style={{ color: "red" }} />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))

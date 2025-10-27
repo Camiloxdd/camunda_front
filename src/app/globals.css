@@ -758,7 +758,6 @@
 
 .firsInfo .obligatorio {
   color: red;
-  margin-left: 5px;
 }
 
 .firsInfoTwo .obligatorio {
@@ -2160,4 +2159,22 @@ input[type="time"] {
   border: 2px solid #1d5da8;
   background-color: white;
   color: #1d5da8;
+}
+
+.buttonReqDisabled {
+  border-color: #1d5da8;
+  border-width: 2px;
+  border-radius: 8px;
+  cursor: not-allowed;
+  padding: 10px;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.selectDashboard{
+  margin-left: 20px;
+  padding: 10px;
+  border-color: #1d5da8;
+  border-radius: 8px;
+  border-width: 2px;
 }

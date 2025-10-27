@@ -63,9 +63,9 @@ export default function Dashboard() {
             <div className="login-form">
               <div className="login-header">
                 <div className="login-text">
-                  <p className="login-subtitle">Bienvenido a</p>
+                  <p className="login-subtitle">Bienvenido a la</p>
                   <h2 className="login-title">
-                    REQUISICIÓN DE COMPRA O SERVICIO
+                    SOLICITUD DE REQUISICIÓN
                   </h2>
                 </div>
                 <img
@@ -130,7 +130,7 @@ export default function Dashboard() {
                 </div>
                 <div className="forgoutUser">
                   <p>
-                    <Link href={"/dashboard"} className="LinkForgot">¿Problemas para ingresar?</Link>
+                    <Link href={"/dashboard"} className="LinkForgot">¿No puedes ingresar?</Link>
                   </p>
                 </div>
               </div>

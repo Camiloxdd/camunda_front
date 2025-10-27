@@ -196,11 +196,16 @@
   justify-content: center;
   align-items: center;
   text-align: center;
+  font-size: 30px;
+}
+
+.firsInfo p{
+  font-size: 18px;
 }
 
 .firsInfo input {
-  width: 13px;
-  height: 13px;
+  width: 18px;
+  height: 18 px;
 }
 
 .firsInfoTwo {

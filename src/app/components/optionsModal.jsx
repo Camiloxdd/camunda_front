@@ -14,7 +14,7 @@ export default function OptionsModal({ isOpen, onClose, selectedId }) {
             await fetch(`http://localhost:4000/formularios/${selectedId}`, {
                 method: "DELETE",
             });
-            alert("Formulario eliminado ✅");
+            toast.success("Formulario eliminado");
             onClose();
             router.refresh(); 
         } catch (err) {

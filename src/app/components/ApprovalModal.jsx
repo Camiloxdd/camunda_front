@@ -70,7 +70,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
         }));
     };
 
-        const handleGuardar = async () => {
+    const handleGuardar = async () => {
         try {
             setSaving(true);
             toast.info("Guardando aprobaciones...", { autoClose: 2000 });
@@ -176,6 +176,60 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
         }
     };
 
+    const handleRechazar = async () => {
+        try {
+            setSaving(true);
+            toast.info("Registrando rechazo...", { autoClose: 2000 });
+
+            const nowIso = new Date().toISOString();
+
+            // preparar decisiones: FORZAR rechazado (aprobado: false) para todos los productos que el usuario puede editar
+            const decisionesParaEnviar = (detalles.productos || [])
+                .filter((p) => isEditableForUser(p))
+                .map((p) => ({
+                    id: p.id,
+                    aprobado: false,
+                    fecha_aprobado: null,
+                }));
+
+            // actualizar estado local para que los checkboxes se desmarquen inmediatamente
+            setDecisiones((prev) => {
+                const copy = { ...prev };
+                (detalles.productos || []).forEach((p) => {
+                    if (isEditableForUser(p)) copy[p.id] = false;
+                });
+                return copy;
+            });
+
+            const body = {
+                decisiones: decisionesParaEnviar,
+                action: "reject", // marca la intención de rechazo
+            };
+
+            const res = await fetch(
+                `http://localhost:4000/api/requisiciones/${requisicion.requisicion_id}/aprobar-items`,
+                {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify(body),
+                }
+            );
+
+            if (!res.ok) throw new Error("Error al registrar rechazo");
+            const data = await res.json();
+            toast.success(data.message || "Rechazo registrado");
+
+            onApproved();
+            onClose();
+        } catch (err) {
+            console.error("❌ Error al registrar rechazo:", err);
+            toast.error("No se pudo registrar el rechazo");
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const formatCOP = (val) => {
         if (val == null || val === "") return "—";
         const n = Number(val);
@@ -212,7 +266,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                         <p><strong>Fecha:</strong> {new Date(info.fecha).toLocaleDateString("es-ES")}</p>
                         <p><strong>Área:</strong> {info.area}</p>
                         <p><strong>Justificación:</strong> {info.justificacion}</p>
-                        <p><strong>Valor total:</strong> ${info.valor_total?.toLocaleString("es-CO")}</p>
                         <p><strong>Valor total:</strong> {formatCOP(info.valor_total)}</p>
                     </div>
 
@@ -266,6 +319,9 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                 <div className="modal-actions">
                     <button onClick={handleGuardar} disabled={saving} className="btn-approve">
                         {saving ? "Aprobando..." : "Aprobar"}
+                    </button>
+                    <button onClick={handleRechazar} disabled={saving} className="btn-approve" style={{ marginLeft: 8 }}>
+                        {saving ? "Procesando..." : "Rechazar"}
                     </button>
                 </div>
             </div>
