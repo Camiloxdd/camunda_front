@@ -126,6 +126,22 @@ export default function TimeLap({ open, onClose, requisicionId }) {
 
         const percent = totalApprovals ? Math.round((approvedCount / totalApprovals) * 100) : 0;
 
+        // calcular días entre la primera y la última aprobación (si hay fechas)
+        const computeApprovalDurationDays = (aprobaciones = []) => {
+            if (!Array.isArray(aprobaciones)) return null;
+            const timestamps = aprobaciones
+                .map(a => a && a.fecha_aprobacion ? new Date(a.fecha_aprobacion).getTime() : null)
+                .filter(Boolean)
+                .sort((a, b) => a - b);
+            if (timestamps.length < 2) return timestamps.length === 1 ? 0 : null;
+            const diffMs = timestamps[timestamps.length - 1] - timestamps[0];
+            const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+            return days;
+        };
+
+        const approvalDays = computeApprovalDurationDays(approvers);
+        const fullyApproved = totalApprovals && approvedCount === totalApprovals && approvalDays !== null;
+
         const Timeline = ({ aprobaciones }) => {
             return (
                 <div className="timeline-container">
@@ -173,9 +189,18 @@ export default function TimeLap({ open, onClose, requisicionId }) {
         return (
             <div>
                 <div className="containerInfoTime">
-                    <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
-                        <div><strong>Aprobadas</strong><div>{approvedCount}/{totalApprovals}</div></div>
-                        <div><strong>Pendientes</strong><div>{pendientesCount}</div></div>
+                    <div style={{ display: "flex", gap: 12, marginBottom: 8, alignItems: "center" }}>
+                        <div>
+                            <strong>Aprobadas</strong>
+                            <div>
+                                {approvedCount}/{totalApprovals}
+                                {fullyApproved ? <span style={{ marginLeft: 8, color: "#333", fontSize: 12 }}>• Demoró {approvalDays} {approvalDays === 1 ? "día" : "días"}</span> : null}
+                            </div>
+                        </div>
+                        <div>
+                            <strong>Pendientes</strong>
+                            <div>{pendientesCount}</div>
+                        </div>
                     </div>
 
                 </div>

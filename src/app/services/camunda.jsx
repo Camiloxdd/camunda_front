@@ -320,3 +320,48 @@ export async function approvePendingSingle(variables, options = {}) {
     }
 }
 
+export async function approveBuyerTask(variables = {}, options = {}) {
+    try {
+        const { processInstanceKey } = options || {};
+
+        // Buscar tareas desde el backend
+        const tareasRes = await fetch(`${API_BASE}/tasks/search`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}) // no enviamos filtros por defecto; backend devuelve listado de user-tasks
+        });
+
+        const tareasData = await tareasRes.json();
+        const tareas = tareasData.items || [];
+
+        // Filtrar sólo las userTasks del comprador (elementId especificado) y que estén en estado CREATED
+        const coincidencias = tareas.filter(t =>
+            t.elementId === "Activity_19kdsft" &&
+            t.state === "CREATED" &&
+            (processInstanceKey ? String(t.processInstanceKey) === String(processInstanceKey) : true)
+        );
+
+        if (coincidencias.length === 0) {
+            console.log("⏳ No se encontraron userTasks 'Activity_19kdsft' en estado CREATED para aprobar.");
+            return;
+        }
+
+        console.log("✅ UserTasks de comprador encontradas:", coincidencias.map(t => ({ userTaskKey: t.userTaskKey, processInstanceKey: t.processInstanceKey })));
+
+        await Promise.all(
+            coincidencias.map(tarea =>
+                fetch(`${API_BASE}/tasks/${tarea.userTaskKey}/complete`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ variables })
+                })
+            )
+        );
+
+        console.log("🎉 UserTask(s) 'Activity_19kdsft' aprobada(s) correctamente.");
+    } catch (err) {
+        console.error("❌ Error en approveBuyerTask:", err);
+        throw err;
+    }
+}
+

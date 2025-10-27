@@ -84,8 +84,9 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 nombre: p.nombre || "",
                 cantidad: p.cantidad ?? 1,
                 descripcion: p.descripcion || "",
-                compraTecnologica: Boolean(p.compra_tecnologica),
-                ergonomico: Boolean(p.ergonomico),
+                // normalizar valores que pueden venir como 0/"0"/1/"1"/true/false
+                compraTecnologica: !!Number(p.compra_tecnologica),
+                ergonomico: !!Number(p.ergonomico),
                 valorEstimado: p.valor_estimado ?? "",
                 centroCosto: p.centro_costo || "",
                 cuentaContable: p.cuenta_contable || "",
@@ -162,140 +163,35 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         })();
     }, [open, initialData, startStep]);
 
-    const handleSubmitFinal = async () => {
-        // Validar datos mínimos
-        if (!formData.solicitante.nombre || !formData.solicitante.fecha) {
-            toast.error("Por favor completa los datos del solicitante antes de guardar.");
-            return;
-        }
-
-        if (formData.productos.length === 0) {
-            toast.error("Agrega al menos un producto.");
-            return;
-        }
-
-        try {
-            // --- NUEVO: antes de guardar, enviar payload final con esMayor ---
-            const requisicionId = initialData?.requisicion?.id;
-            const ergonomicos = formData.productos.some((p) => Boolean(p.ergonomico));
-            const tecnologicos = formData.productos.some((p) => Boolean(p.compraTecnologica));
-            const compraPresupuestada = Boolean(formData.solicitante.presupuestada);
-
-            const esMayor = requisicionId
-                ? await checkRequisicionValorTotalFromDB(requisicionId)
-                : calcularRango();
-
-            const formularioenJSON = JSON.stringify(formData);
-
-            const finalPayload = {
-                siExiste: ergonomicos,
-                purchaseTecnology: tecnologicos,
-                purchaseAprobated: compraPresupuestada,
-                esMayor,
-                filas: formularioenJSON,
-            };
-
-            // enviar al servicio que procesa el paso final
-            try {
-                await endTwoStepStartThreeStep(finalPayload);
-            } catch (err) {
-                console.error("Error enviando payload final:", err);
-                // No bloqueamos el guardado por este error, pero se puede mostrar alerta opcional
-            }
-            // --- fin nuevo ---
-
-            if (isEditMode) {
-                // editar metadata
-                const id = initialData.requisicion.id;
-                const metaBody = {
-                    nombre_solicitante: formData.solicitante.nombre,
-                    fecha: formData.solicitante.fecha,
-                    fecha_requerido_entrega: formData.solicitante.fechaRequeridoEntrega,
-                    tiempo_aproximado_gestion: formData.solicitante.tiempoAproximadoGestion,
-                    justificacion: formData.solicitante.justificacion,
-                    area: formData.solicitante.area,
-                    sede: formData.solicitante.sede,
-                    urgencia: formData.solicitante.urgencia,
-                    presupuestada: formData.solicitante.presupuestada,
-                };
-                const metaRes = await fetch(`http://localhost:4000/api/requisiciones/${id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify(metaBody),
-                });
-                if (!metaRes.ok) throw new Error("Error actualizando requisición");
-
-                // actualizar productos (reemplazar)
-                const productosPayload = formData.productos.map((p) => ({
-                    nombre: p.nombre,
-                    cantidad: Number(p.cantidad) || 1,
-                    descripcion: p.descripcion,
-                    compraTecnologica: p.compraTecnologica ? 1 : 0,
-                    ergonomico: p.ergonomico ? 1 : 0,
-                    valorEstimado: Number(p.valorEstimado) || 0,
-                    centroCosto: p.centroCosto || '',
-                    cuentaContable: p.cuentaContable || '',
-                }));
-
-                const prodRes = await fetch(`http://localhost:4000/api/requisiciones/${id}/productos`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ productos: productosPayload }),
-                });
-                if (!prodRes.ok) throw new Error("Error actualizando productos");
-
-                if (typeof onCreated === "function") onCreated();
-                toast.success("Requisición actualizada correctamente");
-                onClose();
-            } else {
-                // crear nueva requisición (flow existente)
-                const res = await fetch("http://localhost:4000/api/requisicion/create", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(formData),
-                });
-                if (!res.ok) throw new Error("Error al guardar");
-                if (typeof onCreated === "function") onCreated();
-                // animación como antes
-                console.log("datos de la requisicion", formData);
-                setShowAnimation(true);
-            }
-        } catch (err) {
-            console.error(err);
-            toast.error("Hubo un error al guardar ❌");
-        }
-    };
-
-    useEffect(() => {
-        if (productoActivo3 >= formData.productos.length) {
-            setProductoActivo3(0);
-        }
-    }, [formData.productos.length]);
-
-    const handleNext = async () => {
-        const next = Math.min(maxStep, step + 1);
-        if (next === step) return;
-        const ok = await handleBeforeEnterStep(step, next);
-        if (ok) setStep(next);
-    };
-
-    const handlePrev = () => {
-        const prev = Math.max(minStep, step - 1);
-        setStep(prev);
-    };
-
     // ====== MOVE/ADD: Umbral y funciones de cálculo ANTES de usarlas en handleBeforeEnterStep ======
     // Umbral: 10 salarios mínimos (valor dado por el usuario)
     const SALARIO_MINIMO = 1423000;
     const SALARIOS_UMBRAL = 10;
     const UMBRAL_10_SM = SALARIO_MINIMO * SALARIOS_UMBRAL;
 
+    // --- NUEVAS UTILIDADES: parse/format moneda ---
+    const parseCurrency = (val) => {
+        if (val == null) return 0;
+        if (typeof val === "number") return val;
+        const s = String(val);
+        // eliminar todo lo que no sea dígito, punto o signo negativo
+        const cleaned = s.replace(/[^0-9\-.,]/g, "").replace(/\./g, "");
+        // manejar coma como separador decimal (si aplica) -> remplazar coma por punto
+        const normalized = cleaned.replace(/,/g, ".");
+        const num = parseFloat(normalized);
+        return isNaN(num) ? 0 : num;
+    };
+
+    const formatCurrency = (num) => {
+        const n = Number(num) || 0;
+        return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
+    };
+    // --- fin utilidades ---
+
     // Calcula el total estimado sumando (valorEstimado * cantidad) de cada producto
     const getTotalEstimado = () => {
         return formData.productos.reduce((sum, p) => {
-            const valor = parseFloat(p.valorEstimado) || 0;
+            const valor = parseCurrency(p.valorEstimado) || 0;
             const cantidad = parseInt(p.cantidad, 10) || 1;
             return sum + valor * cantidad;
         }, 0);
@@ -329,6 +225,171 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             return false;
         }
     }
+    // --- fin nuevo ---
+
+    const handleSubmitFinal = async () => {
+        // Validar datos mínimos
+        if (!formData.solicitante.nombre || !formData.solicitante.fecha) {
+            toast.error("Por favor completa los datos del solicitante antes de guardar.");
+            return;
+        }
+
+        if (formData.productos.length === 0) {
+            toast.error("Agrega al menos un producto.");
+            return;
+        }
+
+        try {
+            // --- NUEVO: antes de guardar, enviar payload final con esMayor ---
+            const requisicionId = initialData?.requisicion?.id;
+            const ergonomicos = formData.productos.some((p) => Boolean(p.ergonomico));
+            const tecnologicos = formData.productos.some((p) => Boolean(p.compraTecnologica));
+            const compraPresupuestada = Boolean(formData.solicitante.presupuestada);
+
+            // calcular total a partir del formulario actual (asegura sincronía con inputs)
+            const totalEstimado = getTotalEstimado();
+            // esMayor basado en total calculado (10 SM)
+            const esMayor = totalEstimado > UMBRAL_10_SM;
+
+            // preparar productos en formato numérico para el backend
+            const productosPayload = formData.productos.map((p) => ({
+                nombre: p.nombre,
+                cantidad: Number(p.cantidad) || 1,
+                valorEstimado: parseCurrency(p.valorEstimado) || 0,
+                descripcion: p.descripcion,
+                compraTecnologica: p.compraTecnologica ? 1 : 0,
+                ergonomico: p.ergonomico ? 1 : 0,
+                centroCosto: p.centroCosto || '',
+                cuentaContable: p.cuentaContable || '',
+            }));
+
+            const formularioenJSON = JSON.stringify(formData);
+
+            // NORMALIZACIÓN ROBUSTA: detectar tecnológicos/ergonómicos desde formData (acepta 1/"1"/true/"true")
+            const isTech = formData.productos.some(p => {
+                const v = p.compraTecnologica ?? p.compra_tecnologica;
+                return v === true || v === 1 || String(v) === "1" || String(v).toLowerCase() === "true";
+            });
+            const isErgo = formData.productos.some(p => {
+                const v = p.ergonomico ?? p.ergonomico;
+                return v === true || v === 1 || String(v) === "1" || String(v).toLowerCase() === "true";
+            });
+
+            // usar productosPayload/formData como fuente de verdad para booleans; añadir número paralela para compatibilidad
+            const tecnologicosFromForm = isTech;
+            const ergonomicosFromForm = isErgo;
+
+            const finalPayload = {
+                siExiste: productosPayload.length > 0,
+                purchaseTecnology: Boolean(tecnologicosFromForm),
+                purchaseTecnologyNumeric: tecnologicosFromForm ? 1 : 0,
+                sstAprobacion: Boolean(ergonomicosFromForm),
+                purchaseAprobated: compraPresupuestada,
+                esMayor,
+                filas: formularioenJSON,
+                valor_total: totalEstimado,
+                // indicar a backend que, si NO está en presupuesto, se requieren aprobaciones adicionales
+                requireGerAdmin: !compraPresupuestada,
+                requireGerGeneral: !compraPresupuestada,
+            };
+            // NOTA: movemos la llamada a Camunda hasta después de persistir la requisición/productos
+            // --- fin nuevo ---
+
+            if (isEditMode) {
+                // editar metadata
+                const id = initialData.requisicion.id;
+                const metaBody = {
+                    nombre_solicitante: formData.solicitante.nombre,
+                    fecha: formData.solicitante.fecha,
+                    fecha_requerido_entrega: formData.solicitante.fechaRequeridoEntrega,
+                    tiempo_aproximado_gestion: formData.solicitante.tiempoAproximadoGestion,
+                    justificacion: formData.solicitante.justificacion,
+                    area: formData.solicitante.area,
+                    sede: formData.solicitante.sede,
+                    urgencia: formData.solicitante.urgencia,
+                    presupuestada: formData.solicitante.presupuestada,
+                    valor_total: getTotalEstimado(), // <-- incluir valor total en la actualización
+                };
+                const metaRes = await fetch(`http://localhost:4000/api/requisiciones/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify(metaBody),
+                });
+                if (!metaRes.ok) throw new Error("Error actualizando requisición");
+
+                // actualizar productos (reemplazar)
+                // usamos productosPayload ya creado arriba para consistencia
+                const prodRes = await fetch(`http://localhost:4000/api/requisiciones/${id}/productos`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ productos: productosPayload }),
+                });
+                if (!prodRes.ok) throw new Error("Error actualizando productos");
+
+                // Llamado a Camunda ahora que la DB tiene la info actualizada
+                try {
+                    await endTwoStepStartThreeStep(finalPayload);
+                } catch (err) {
+                    console.error("Error enviando payload final a Camunda (post-update):", err);
+                }
+
+                if (typeof onCreated === "function") onCreated();
+                toast.success("Requisición actualizada correctamente");
+                onClose();
+            } else {
+                // crear nueva requisición (flow existente)
+                const creationPayload = {
+                    solicitante: formData.solicitante,
+                    productos: productosPayload,
+                    valor_total: getTotalEstimado(),
+                    filas: formularioenJSON,
+                };
+                const res = await fetch("http://localhost:4000/api/requisicion/create", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(creationPayload),
+                });
+                if (!res.ok) throw new Error("Error al guardar");
+                // después de crear, notificar a Camunda con los flags correctos
+                try {
+                    await endTwoStepStartThreeStep(finalPayload);
+                } catch (err) {
+                    console.error("Error enviando payload final a Camunda (post-create):", err);
+                }
+                if (typeof onCreated === "function") onCreated();
+                // animación como antes
+                console.log("datos de la requisicion", formData);
+                setShowAnimation(true);
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error("Hubo un error al guardar ❌");
+        }
+    };
+
+    useEffect(() => {
+        if (productoActivo3 >= formData.productos.length) {
+            setProductoActivo3(0);
+        }
+    }, [formData.productos.length]);
+
+    const handleNext = async () => {
+        const next = Math.min(maxStep, step + 1);
+        if (next === step) return;
+        const ok = await handleBeforeEnterStep(step, next);
+        if (ok) setStep(next);
+    };
+
+    const handlePrev = () => {
+        const prev = Math.max(minStep, step - 1);
+        setStep(prev);
+    };
+
+    // ====== MOVE/ADD: Umbral y funciones de cálculo ANTES de usarlas en handleBeforeEnterStep ======
+    // Umbral: 10 salarios mínimos (valor dado por el usuario)
+    
     // --- fin nuevo ---
 
     const handleBeforeEnterStep = async (currentStep, nextStep) => {
@@ -789,13 +850,26 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             <label>Valor estimado<label className="obligatorio">*</label></label>
                                             <div className="completeInputs">
                                                 <FontAwesomeIcon icon={faMoneyBill} className="icon" />
+                                                {/* ahora input texto con formato moneda en tiempo real */}
                                                 <input
-                                                    type="number"
+                                                    type="text"
                                                     placeholder="Valor estimado"
-                                                    value={formData.productos[productoActivo3].valorEstimado}
+                                                    value={formData.productos[productoActivo3].valorEstimado || ""}
                                                     onChange={(e) => {
+                                                        const raw = e.target.value;
+                                                        // obtener número y formatear
+                                                        const num = parseCurrency(raw);
                                                         const productos = [...formData.productos];
-                                                        productos[productoActivo3].valorEstimado = e.target.value;
+                                                        // si el usuario borra, dejar cadena vacía
+                                                        productos[productoActivo3].valorEstimado = raw.trim() === "" ? "" : formatCurrency(num);
+                                                        setFormData({ ...formData, productos });
+                                                    }}
+                                                    onBlur={(e) => {
+                                                        // al perder foco, asegurar formato consistente
+                                                        const raw = e.target.value;
+                                                        const num = parseCurrency(raw);
+                                                        const productos = [...formData.productos];
+                                                        productos[productoActivo3].valorEstimado = raw.trim() === "" ? "" : formatCurrency(num);
                                                         setFormData({ ...formData, productos });
                                                     }}
                                                 />
@@ -936,11 +1010,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             </li>
                                             <li>
                                                 <strong>Valor total estimado:</strong>{" "}
-                                                {getTotalEstimado().toLocaleString("es-CO", {
-                                                    style: "currency",
-                                                    currency: "COP",
-                                                    minimumFractionDigits: 0,
-                                                })}
+                                                {formatCurrency(getTotalEstimado())}
                                                 {/* Indicador si supera 10 salarios mínimos */}
                                                 {getTotalEstimado() > UMBRAL_10_SM ? (
                                                     <span style={{ color: "red", fontWeight: "bold", marginLeft: 8 }}>
@@ -977,7 +1047,9 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     <td>{prod.cantidad}</td>
                                                     <td>
                                                         {prod.valorEstimado
-                                                            ? `$${Number(prod.valorEstimado).toLocaleString()}`
+                                                            ? (typeof prod.valorEstimado === "string" && prod.valorEstimado.includes("$")
+                                                                ? prod.valorEstimado
+                                                                : formatCurrency(parseCurrency(prod.valorEstimado)))
                                                             : "—"}
                                                     </td>
                                                     <td>{prod.compraTecnologica ? "Sí" : "No"}</td>

@@ -8,6 +8,7 @@ import { faFile, faFileExcel } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
+import { approveBuyerTask } from "../services/camunda";
 
 function DashboardInner() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -29,6 +30,14 @@ function DashboardInner() {
   const prevPendingIdsRef = useRef(new Set());
   const prevStatusesRef = useRef(new Map());
   const firstPollRef = useRef(true);
+
+  // utilidad para formatear como pesos colombianos
+  const formatCOP = (val) => {
+    if (val == null || val === "") return "—";
+    const n = Number(val);
+    if (isNaN(n)) return String(val);
+    return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
+  };
 
   const fetchRequisiciones = async () => {
     try {
@@ -217,6 +226,30 @@ function DashboardInner() {
       toast.success("Requisición aprobada correctamente");
       setVerifyModalReq(null);
       await fetchRequisiciones();
+
+      // intentar aprobar la userTask del comprador en Camunda (Activity_19kdsft)
+      try {
+        // tomar variables desde el modal (si está cargado) o enviar mínimos
+        const processInstanceKey =
+          verifyModalReq?.processInstanceKey ||
+          verifyModalReq?.process_instance_key ||
+          verifyModalReq?.process_key ||
+          undefined;
+
+        const vars = {
+          siExiste: (verifyModalReq?.productos?.length ?? 0) > 0,
+          purchaseAprobated: true,
+          purchaseTecnology: (verifyModalReq?.productos || []).some(p => !!(p.compra_tecnologica || p.compraTecnologica)),
+          valor_total: verifyModalReq?.valor_total ?? undefined,
+        };
+
+        await approveBuyerTask(vars, { processInstanceKey });
+        console.log("approveBuyerTask ejecutada correctamente para requisición", id);
+      } catch (camundaErr) {
+        console.warn("No se pudo completar la userTask del comprador en Camunda:", camundaErr);
+        // no bloqueamos el flujo principal; informar opcionalmente al usuario
+        toast.warn("Aprobación registrada localmente, pero no se completó la tarea en Camunda.");
+      }
     } catch (err) {
       console.error(err);
       toast.error("No se pudo aprobar la requisición");
@@ -376,7 +409,7 @@ function DashboardInner() {
                       <p className="subTittles">
                         Valor total:{" "}
                         <span className="subChiquitin">
-                          ${req.valor_total?.toLocaleString("es-CO")}
+                          {formatCOP(req.valor_total)}
                         </span>
                       </p>
                     </div>
@@ -439,7 +472,7 @@ function DashboardInner() {
                     <h4>Totales</h4>
                     <ul>
                       <li><strong>Total productos:</strong> {verifyModalReq.productos?.length || 0}</li>
-                      <li><strong>Valor total:</strong> {verifyModalReq.valor_total?.toLocaleString ? `$${verifyModalReq.valor_total.toLocaleString("es-CO")}` : verifyModalReq.valor_total}</li>
+                      <li><strong>Valor total:</strong> {formatCOP(verifyModalReq.valor_total)}</li>
                     </ul>
                   </div>
                 </div>
@@ -458,7 +491,9 @@ function DashboardInner() {
                           <td style={{ padding: 6 }}>{i + 1}</td>
                           <td style={{ padding: 6 }}>{p.nombre || p.productoOServicio || "—"}</td>
                           <td style={{ padding: 6 }}>{p.cantidad || "—"}</td>
-                          <td style={{ padding: 6 }}>{p.valor_estimado ?? p.valorEstimado ? `$${Number(p.valor_estimado ?? p.valorEstimado).toLocaleString()}` : "—"}</td>
+                          <td style={{ padding: 6 }}>{/* valor estimado */}
+                          {formatCOP(p.valor_estimado ?? p.valorEstimado)}
+                          </td>
                           <td style={{ padding: 6 }}>{(p.compra_tecnologica || p.compraTecnologica) ? "Sí" : "No"}</td>
                           <td style={{ padding: 6 }}>{(p.ergonomico) ? "Sí" : "No"}</td>
                         </tr>

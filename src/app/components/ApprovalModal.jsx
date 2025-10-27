@@ -176,6 +176,13 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
         }
     };
 
+    const formatCOP = (val) => {
+        if (val == null || val === "") return "—";
+        const n = Number(val);
+        if (isNaN(n)) return String(val);
+        return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
+    };
+
     if (loading) {
         return (
             <div className="modal-overlay">
@@ -206,6 +213,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                         <p><strong>Área:</strong> {info.area}</p>
                         <p><strong>Justificación:</strong> {info.justificacion}</p>
                         <p><strong>Valor total:</strong> ${info.valor_total?.toLocaleString("es-CO")}</p>
+                        <p><strong>Valor total:</strong> {formatCOP(info.valor_total)}</p>
                     </div>
 
                     <div className="tabla-productos">
@@ -244,7 +252,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                                             <td>{p.nombre}</td>
                                             <td>{p.descripcion}</td>
                                             <td>{p.cantidad}</td>
-                                            <td>${p.valor_estimado?.toLocaleString("es-CO")}</td>
+                                            <td>{formatCOP(p.valor_estimado)}</td>
                                             <td>{p.compra_tecnologica ? "Sí" : "No"}</td>
                                             <td>{p.ergonomico ? "Sí" : "No"}</td>
                                         </tr>
