@@ -1,4 +1,7 @@
 {
     "CodeGPT.apiKey": "Gemini CLI",
-    "editor.fontFamily": "Consolas, 'Courier New', monospace"
+    "editor.fontFamily": "Consolas, 'Courier New', monospace",
+    "cSpell.words": [
+        "Cargando"
+    ]
 }

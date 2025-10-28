@@ -64,26 +64,23 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [mostrarModalProductos3, setMostrarModalProductos3] = useState(false);
     const [formData, setFormData] = useState(initialForm);
 
-    // soportar respuesta plana o anidada: initialData.requisicion || initialData (detalle)
+
     const isEditMode = Boolean(
         initialData &&
             (initialData.requisicion || initialData.requisicion_id || initialData.id)
     );
-    // aplicar restricciones de pasos sólo en modo edición
+
     const minStep = isEditMode ? (startStep ?? 2) : 1;
     const maxStep = isEditMode ? 3 : 4;
 
-    // === NUEVO: precarga cuando se abre en modo edición o en creación ===
     useEffect(() => {
         if (!open) return;
 
         const today = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
 
         if (isEditMode) {
-            // construir formData a partir de initialData (soporta distintas formas y tablas)
-            const req = initialData.requisicion ?? initialData;
 
-            // combinar todas las fuentes posibles de productos (incluye aprobados y rechazados)
+            const req = initialData.requisicion ?? initialData;
             const rawList = []
                 .concat(
                     initialData.productos || [],
@@ -97,8 +94,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 )
                 .filter(Boolean);
 
-            // deduplicar incluyendo el ESTADO de aprobación en la clave
-            // (así no descartamos una fila "rechazado" cuando ya existe una "aprobado" del mismo producto)
             const seen = new Set();
             const productosBack = [];
             rawList.forEach((p) => {
@@ -113,7 +108,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 }
             });
 
-            // helper local para formatear COP
             const formatCurrencyLocal = (num) =>
                 new Intl.NumberFormat("es-CO", {
                     style: "currency",
@@ -129,7 +123,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     valorEstimadoFormatted = !isNaN(num) ? formatCurrencyLocal(num) : String(rawValor);
                 }
 
-                // Normalizar aprobaciones: primero lista explícita, luego campo único (aprobado/estado/status)
                 let aprobacionesNormalized = [];
                 if (Array.isArray(p.aprobaciones) && p.aprobaciones.length) {
                     aprobacionesNormalized = p.aprobaciones.map(a => (typeof a === "string" ? { status: a } : { status: a.status ?? a.estado ?? a }));
@@ -153,7 +146,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     centroCosto: p.centro_costo ?? p.centroCosto ?? p.centro ?? "",
                     cuentaContable: p.cuenta_contable ?? p.cuentaContable ?? p.cuenta ?? "",
                     aprobaciones: aprobacionesNormalized,
-                    // conservar el estado crudo venido de la BD (si existe) para decisiones posteriores
                     aprobadoRaw: p.aprobado ?? p.aprobado_estado ?? p.estado ?? p.status ?? null,
                     fileName: p.fileName ?? "",
                 };
@@ -176,7 +168,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             });
             setStep(startStep ?? 2);
         } else {
-            // modo creación: resetear
             const resetForm = JSON.parse(JSON.stringify(initialForm));
             resetForm.solicitante.fecha = today;
             setFormData(resetForm);
@@ -190,7 +181,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         setShowAnimation(false);
         setFileName("");
 
-        // intentar obtener datos del usuario desde el backend
         (async () => {
             try {
                 const res = await fetch("http://localhost:4000/api/auth/me", {
@@ -198,7 +188,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 });
                 if (!res.ok) return;
                 const user = await res.json();
-                // si no estamos en modo edición, aplicar precarga; si sí, no sobrescribir nombre/area salvo que falten
                 setFormData(prev => {
                     if (isEditMode) {
                         return {
@@ -228,20 +217,15 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         })();
     }, [open, initialData, startStep]);
 
-    // ====== MOVE/ADD: Umbral y funciones de cálculo ANTES de usarlas en handleBeforeEnterStep ======
-    // Umbral: 10 salarios mínimos (valor dado por el usuario)
     const SALARIO_MINIMO = 1423000;
     const SALARIOS_UMBRAL = 10;
     const UMBRAL_10_SM = SALARIO_MINIMO * SALARIOS_UMBRAL;
 
-    // --- NUEVAS UTILIDADES: parse/format moneda ---
     const parseCurrency = (val) => {
         if (val == null) return 0;
         if (typeof val === "number") return val;
         const s = String(val);
-        // eliminar todo lo que no sea dígito, punto o signo negativo
         const cleaned = s.replace(/[^0-9\-.,]/g, "").replace(/\./g, "");
-        // manejar coma como separador decimal (si aplica) -> remplazar coma por punto
         const normalized = cleaned.replace(/,/g, ".");
         const num = parseFloat(normalized);
         return isNaN(num) ? 0 : num;
@@ -251,31 +235,20 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         const n = Number(num) || 0;
         return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
     };
-    // --- fin utilidades ---
 
-    // Calcula el total estimado sumando (valorEstimado * cantidad) de cada producto
-    // getTotalEstimado(onlyApproved = false):
-    // - onlyApproved = true => incluir producto sólo si:
-    //      * tiene aprobaciones explícitas y al menos una contiene "aprob" (aprobado),
-    //      * o si no tiene información de aprobación (pendiente) se incluye por defecto.
-    //    Esto evita contar productos que fueron explícitamente rechazados o que tienen aprobaciones sin ninguna aprobada.
     const getTotalEstimado = (onlyApproved = false) => {
         return formData.productos.reduce((sum, p) => {
-            // lógica de filtrado si pedimos sólo aprobados
             if (onlyApproved) {
                 const aprobaciones = p.aprobaciones || [];
-                // si existe lista de aprobaciones -> require al menos una aprobada
                 if (Array.isArray(aprobaciones) && aprobaciones.length > 0) {
                     const tieneAprob = aprobaciones.some(a => {
                         const raw = String(a?.status ?? a ?? "").toLowerCase();
-                        return raw.includes("aprob"); // 'aprobado', 'aprob', etc.
+                        return raw.includes("aprob"); 
                     });
-                    if (!tieneAprob) return sum; // todas las aprobaciones son no-aprobadas -> excluir
+                    if (!tieneAprob) return sum; 
                 } else if (p.aprobadoRaw != null && String(p.aprobadoRaw).trim() !== "") {
-                    // si hay campo crudo aprobadoRaw -> incluir sólo si contiene 'aprob'
                     if (!String(p.aprobadoRaw).toLowerCase().includes("aprob")) return sum;
                 }
-                // si no hay info de aprobación explícita, incluimos (se considera pendiente)
             }
 
             const valor = parseCurrency(p.valorEstimado) || 0;
@@ -284,14 +257,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         }, 0);
     };
 
-    // Retorna booleano si supera 10 salarios mínimos (mantiene la firma original parcialmente)
     const calcularRango = (valor_) => {
         const total = getTotalEstimado();
         if (valor_ === "total") return total;
         return total > UMBRAL_10_SM;
     };
 
-    // --- NUEVO: consulta sencilla a la tabla/endpoint requisiciones para verificar valor_total ---
     const DB_UMBRAL_SIMPLE = 1423000;
     async function checkRequisicionValorTotalFromDB(id) {
         try {
@@ -304,7 +275,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 return false;
             }
             const data = await res.json();
-            // soporta campos comunes: valor_total o valorTotal o valor
             const valor = parseFloat(data.valor_total ?? data.valorTotal ?? data.valor ?? 0) || 0;
             return valor > DB_UMBRAL_SIMPLE;
         } catch (err) {
@@ -312,10 +282,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             return false;
         }
     }
-    // --- fin nuevo ---
 
     const handleSubmitFinal = async () => {
-        // Validar datos mínimos
         if (!formData.solicitante.nombre || !formData.solicitante.fecha) {
             toast.error("Por favor completa los datos del solicitante antes de guardar.");
             return;
@@ -327,18 +295,14 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         }
 
         try {
-            // --- NUEVO: antes de guardar, enviar payload final con esMayor ---
             const requisicionId = initialData?.requisicion?.id;
             const ergonomicos = formData.productos.some((p) => Boolean(p.ergonomico));
             const tecnologicos = formData.productos.some((p) => Boolean(p.compraTecnologica));
             const compraPresupuestada = Boolean(formData.solicitante.presupuestada);
 
-            // calcular total a partir del formulario actual (asegura sincronía con inputs)
             const totalEstimado = getTotalEstimado();
-            // esMayor basado en total calculado (10 SM)
             const esMayor = totalEstimado > UMBRAL_10_SM;
 
-            // preparar productos en formato numérico para el backend
             const productosPayload = formData.productos.map((p) => ({
                 nombre: p.nombre,
                 cantidad: Number(p.cantidad) || 1,
@@ -352,7 +316,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
 
             const formularioenJSON = JSON.stringify(formData);
 
-            // NORMALIZACIÓN ROBUSTA: detectar tecnológicos/ergonómicos desde formData (acepta 1/"1"/true/"true")
             const isTech = formData.productos.some(p => {
                 const v = p.compraTecnologica ?? p.compra_tecnologica;
                 return v === true || v === 1 || String(v) === "1" || String(v).toLowerCase() === "true";
@@ -362,7 +325,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 return v === true || v === 1 || String(v) === "1" || String(v).toLowerCase() === "true";
             });
 
-            // usar productosPayload/formData como fuente de verdad para booleans; añadir número paralela para compatibilidad
             const tecnologicosFromForm = isTech;
             const ergonomicosFromForm = isErgo;
 
@@ -375,15 +337,11 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 esMayor,
                 filas: formularioenJSON,
                 valor_total: totalEstimado,
-                // indicar a backend que, si NO está en presupuesto, se requieren aprobaciones adicionales
                 requireGerAdmin: !compraPresupuestada,
                 requireGerGeneral: !compraPresupuestada,
             };
-            // NOTA: movemos la llamada a Camunda hasta después de persistir la requisición/productos
-            // --- fin nuevo ---
 
             if (isEditMode) {
-                // editar metadata
                 const id = initialData.requisicion.id;
                 const metaBody = {
                     nombre_solicitante: formData.solicitante.nombre,
@@ -395,7 +353,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     sede: formData.solicitante.sede,
                     urgencia: formData.solicitante.urgencia,
                     presupuestada: formData.solicitante.presupuestada,
-                    valor_total: getTotalEstimado(), // <-- incluir valor total en la actualización
+                    valor_total: getTotalEstimado(), 
                 };
                 const metaRes = await fetch(`http://localhost:4000/api/requisiciones/${id}`, {
                     method: "PUT",
@@ -405,8 +363,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 });
                 if (!metaRes.ok) throw new Error("Error actualizando requisición");
 
-                // actualizar productos (reemplazar)
-                // usamos productosPayload ya creado arriba para consistencia
                 const prodRes = await fetch(`http://localhost:4000/api/requisiciones/${id}/productos`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -415,7 +371,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 });
                 if (!prodRes.ok) throw new Error("Error actualizando productos");
 
-                // Llamado a Camunda ahora que la DB tiene la info actualizada
                 try {
                     await endTwoStepStartThreeStep(finalPayload);
                 } catch (err) {
@@ -426,7 +381,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 toast.success("Requisición actualizada correctamente");
                 onClose();
             } else {
-                // crear nueva requisición (flow existente)
                 const creationPayload = {
                     solicitante: formData.solicitante,
                     productos: productosPayload,
@@ -439,14 +393,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     body: JSON.stringify(creationPayload),
                 });
                 if (!res.ok) throw new Error("Error al guardar");
-                // después de crear, notificar a Camunda con los flags correctos
                 try {
                     await endTwoStepStartThreeStep(finalPayload);
                 } catch (err) {
                     console.error("Error enviando payload final a Camunda (post-create):", err);
                 }
                 if (typeof onCreated === "function") onCreated();
-                // animación como antes
                 console.log("datos de la requisicion", formData);
                 setShowAnimation(true);
             }
@@ -474,15 +426,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         setStep(prev);
     };
 
-    // ====== MOVE/ADD: Umbral y funciones de cálculo ANTES de usarlas en handleBeforeEnterStep ======
-    // Umbral: 10 salarios mínimos (valor dado por el usuario)
-
-    // --- fin nuevo ---
-
     const handleBeforeEnterStep = async (currentStep, nextStep) => {
         try {
-            // obtener id de requisicion si existe
-            // const requisicionId = initialData?.requisicion?.id;
 
             if (currentStep === 1 && nextStep === 2) {
                 const payload = {
@@ -490,9 +435,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 }
                 await endFirstStepStartTwoStep(payload);
             }
-
-            // Eliminado: envío para paso 4 aquí.
-            // Ahora el envío final se hace en handleSubmitFinal (al hacer click en Finalizar).
 
         } catch (err) {
             console.error("Error al cambiar de paso:", err);
@@ -508,11 +450,11 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const getAreaNombre = (area) => {
         switch (area) {
             case "TyP":
-                return "Tecnologia y Proyectos";
+                return "Tecnología y Proyectos";
             case "SST":
                 return "Seguridad y Salud en el Trabajo";
             case "GerenciaAdmin":
-                return "Gerencia Adminitrativa";
+                return "Gerencia Administrativa";
             case "GerenciaGeneral":
                 return "Gerencia General";
         }
@@ -541,7 +483,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                             "Datos del solicitante",
                             "Detalles del producto",
                             "Presupuesto",
-                            "Resumen y Finalizacion",
+                            "Resumen y finalización",
                         ].map((titulo, index) => (
                             <div
                                 key={index}
@@ -604,7 +546,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         </div>
                                     </div>
                                     <div className="campoAdicional">
-                                        <label>Fecha requerido de entrega<label className="obligatorio">*</label></label>
+                                        <label>Fecha requerida de entrega<label className="obligatorio">*</label></label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faCalendar} className="icon" />
                                             <input type="date" value={formData.solicitante.fechaRequeridoEntrega}
@@ -620,13 +562,13 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         </div>
                                     </div>
                                     <div className="campoAdicional">
-                                        <label>Tiempo aproximado de gestion (SLA)<label className="obligatorio">*</label></label>
+                                        <label>Tiempo aproximado de gestión (SLA)<label className="obligatorio">*</label></label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon
                                                 icon={faCalendar}
                                                 className="icon"
                                             />
-                                            <input type="text" placeholder="(cantidad) dias habiles"
+                                            <input type="text" placeholder="(cantidad) días hábiles"
                                                 value={formData.solicitante.tiempoAproximadoGestion}
                                                 onChange={(e) =>
                                                     setFormData({
@@ -691,7 +633,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         <label>Justificación de la compra</label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faBalanceScale} className="icon" />
-                                            <input type="text" placeholder="SOLO si la urgencia es Alta" value={formData.solicitante.justificacion}
+                                            <input type="text" placeholder="Solo si la urgencia es alta" value={formData.solicitante.justificacion}
                                                 onChange={(e) =>
                                                     setFormData({
                                                         ...formData,
@@ -839,7 +781,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         </div>
                                         <div className="firsInfoTwo">
                                             <label>
-                                                ¿Es un producto Tecnologico?<label className="obligatorio">*</label>
+                                                ¿Es un producto tecnológico?<label className="obligatorio">*</label>
                                                 <input
                                                     type="checkbox"
                                                     checked={formData.productos[productoActivo].compraTecnologica}
@@ -851,7 +793,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 />
                                             </label>
                                             <label>
-                                                ¿Es un producto Ergonomico?<label className="obligatorio">*</label>
+                                                ¿Es un producto ergonómico?<label className="obligatorio">*</label>
                                                 <input
                                                     type="checkbox"
                                                     checked={formData.productos[productoActivo].ergonomico}
@@ -937,22 +879,18 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             <label>Valor estimado<label className="obligatorio">*</label></label>
                                             <div className="completeInputs">
                                                 <FontAwesomeIcon icon={faMoneyBill} className="icon" />
-                                                {/* ahora input texto con formato moneda en tiempo real */}
                                                 <input
                                                     type="text"
                                                     placeholder="Valor estimado"
                                                     value={formData.productos[productoActivo3].valorEstimado || ""}
                                                     onChange={(e) => {
                                                         const raw = e.target.value;
-                                                        // obtener número y formatear
                                                         const num = parseCurrency(raw);
                                                         const productos = [...formData.productos];
-                                                        // si el usuario borra, dejar cadena vacía
                                                         productos[productoActivo3].valorEstimado = raw.trim() === "" ? "" : formatCurrency(num);
                                                         setFormData({ ...formData, productos });
                                                     }}
                                                     onBlur={(e) => {
-                                                        // al perder foco, asegurar formato consistente
                                                         const raw = e.target.value;
                                                         const num = parseCurrency(raw);
                                                         const productos = [...formData.productos];
@@ -1054,12 +992,10 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 )}
                             </div>
                         )}
-                        {/* PASO 4: APROBACIONES */}
                         {step === 4 && (
                             <div className="papitoGugutata">
                                 <h1 className="tittleContentGugutata">Resumen de solicitud</h1>
 
-                                {/* === DATOS DEL SOLICITANTE y TOTALES === */}
                                 <div className="resumenSectionOne">
                                     <div className="infoSolicitanteFinal">
                                         <h2>Datos del solicitante</h2>
@@ -1073,9 +1009,9 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             <p>
                                                 <strong>¿Está en presupuesto?:</strong>{" "}
                                                 {formData.solicitante.presupuestada ? (
-                                                    <span style={{ color: "green", fontWeight: "bold" }}>Si lo esta</span>
+                                                    <span style={{ color: "green", fontWeight: "bold" }}>Sí lo está</span>
                                                 ) : (
-                                                    <span style={{ color: "red", fontWeight: "bold" }}>No lo esta</span>
+                                                    <span style={{ color: "red", fontWeight: "bold" }}>No lo está</span>
                                                 )}
                                             </p>
                                         </ul>
@@ -1097,9 +1033,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             </li>
                                             <li>
                                                 <strong>Valor total estimado:</strong>{" "}
-                                                {/* Mostrar total considerando sólo productos aprobados cuando existan aprobaciones */}
                                                 {formatCurrency(getTotalEstimado(true))}
-                                                {/* Indicador si supera 10 salarios mínimos (sobre total filtrado) */}
                                                 {getTotalEstimado(true) > UMBRAL_10_SM ? (
                                                     <span style={{ color: "red", fontWeight: "bold", marginLeft: 8 }}>
                                                         — Supera 10 salarios mínimos
@@ -1113,7 +1047,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         </ul>
                                     </div>
                                 </div>
-                                {/* === DETALLES DE PRODUCTOS === */}
                                 <div className="resumenSection">
                                     <h2>Productos solicitados</h2>
                                     <table className="tablaResumen">
@@ -1160,8 +1093,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         )}
                     </div>
                 </div>
-
-                {/* === NAVEGACIÓN === */}
                 <div className="wizardModal-footer">
                     {step > minStep && (
                         <button

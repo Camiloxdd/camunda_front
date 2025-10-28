@@ -94,22 +94,80 @@ function RequisicionesInner({ children }) {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("¿Seguro que deseas eliminar esta requisición?")) return;
-    try {
-      const res = await fetch(
-        `http://localhost:4000/api/requisiciones/${id}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        }
-      );
-      toast.success("Formulario eliminado");
-      if (!res.ok) throw new Error("Error al eliminar");
-      await fetchAll();
-    } catch (err) {
-      console.error(err);
-      toast.error("No se pudo eliminar");
-    }
+    const toastId = toast.info(
+      <div
+        style={{
+          padding: "10px",
+          textAlign: "center",
+          color: "white",
+        }}
+      >
+        <strong style={{ display: "block", marginBottom: "8px" }}>
+          ¿Seguro que deseas eliminar esta requisición?
+        </strong>
+
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+          <button
+            style={{
+              backgroundColor: "#dc2626",
+              color: "white",
+              border: "none",
+              padding: "5px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+            onClick={async () => {
+              toast.dismiss(toastId);
+              try {
+                const res = await fetch(
+                  `http://localhost:4000/api/requisiciones/${id}`,
+                  {
+                    method: "DELETE",
+                    credentials: "include",
+                  }
+                );
+                if (!res.ok) throw new Error("Error al eliminar");
+                toast.success("Formulario eliminado correctamente.");
+                await fetchAll();
+              } catch (err) {
+                console.error(err);
+                toast.error("No se pudo eliminar ❌");
+              }
+            }}
+          >
+            Eliminar
+          </button>
+
+          <button
+            style={{
+              backgroundColor: "#e5e7eb",
+              color: "#111827",
+              border: "none",
+              padding: "5px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "500",
+            }}
+            onClick={() => toast.dismiss(toastId)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>,
+      {
+        position: "top-right", // 👈 esquina inferior derecha
+        autoClose: false, // No se cierra hasta que el usuario elija
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          background: "#3b82f6", // azul tipo “info”
+          borderRadius: "10px",
+        },
+        icon: "ℹ️",
+      }
+    );
   };
 
   const handleEditOpen = async (req) => {

@@ -266,67 +266,198 @@ function DashboardInner() {
     }
   };
 
-  // comprador: devolver requisición -> backend debe manejar el reenvío a aprobadores
   const handleDevolver = async (id) => {
-    if (!confirm("¿Deseas devolver esta requisición para corrección?")) return;
-    try {
-      const res = await fetch(`http://localhost:4000/api/requisiciones/${id}/devolver`, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Error al devolver");
-      toast.success("Requisición devuelta correctamente");
-      setVerifyModalReq(null);
-      await fetchRequisiciones();
-    } catch (err) {
-      console.error(err);
-      toast.error("No se pudo devolver la requisición");
-    }
+    const toastId = toast.info(
+      <div
+        style={{
+          padding: "10px",
+          textAlign: "center",
+          color: "white",
+        }}
+      >
+        <strong style={{ display: "block", marginBottom: "8px" }}>
+          ¿Deseas devolver esta requisición para corrección?
+        </strong>
+
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+          <button
+            style={{
+              backgroundColor: "#f97316", // naranja (acción intermedia)
+              color: "white",
+              border: "none",
+              padding: "6px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+            onClick={async () => {
+              toast.dismiss(toastId);
+              try {
+                const res = await fetch(
+                  `http://localhost:4000/api/requisiciones/${id}/devolver`,
+                  {
+                    method: "POST",
+                    credentials: "include",
+                  }
+                );
+                if (!res.ok) throw new Error("Error al devolver");
+                toast.success("Requisición devuelta correctamente 🔁");
+                setVerifyModalReq(null);
+                await fetchRequisiciones();
+              } catch (err) {
+                console.error(err);
+                toast.error("No se pudo devolver la requisición ❌");
+              }
+            }}
+          >
+            Devolver
+          </button>
+
+          <button
+            style={{
+              backgroundColor: "#e5e7eb",
+              color: "#111827",
+              border: "none",
+              padding: "6px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "500",
+            }}
+            onClick={() => toast.dismiss(toastId)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>,
+      {
+        position: "top-right", // 👈 esquina superior derecha
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          background: "#3b82f6", // azul consistente con las otras alertas
+          borderRadius: "10px",
+        },
+        icon: "ℹ️",
+      }
+    );
   };
+
 
   // comprador: aprobar totalmente (marcar requisición 100% aprobada)
   const handleAprobar = async (id) => {
-    if (!confirm("¿Deseas aprobar completamente esta requisición? Esta acción marcará la requisición como aprobada.")) return;
-    try {
-      setVerifyLoading(true);
-      const res = await fetch(`http://localhost:4000/api/requisiciones/${id}/aprobar-total`, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Error al aprobar");
-      toast.success("Requisición aprobada correctamente");
-      setVerifyModalReq(null);
-      await fetchRequisiciones();
+    const toastId = toast.info(
+      <div
+        style={{
+          padding: "10px",
+          textAlign: "center",
+          color: "white",
+        }}
+      >
+        <strong style={{ display: "block", marginBottom: "8px" }}>
+          ¿Deseas aprobar completamente esta requisición? <br />
+        </strong>
 
-      // intentar aprobar la userTask del comprador en Camunda (Activity_19kdsft)
-      try {
-        // tomar variables desde el modal (si está cargado) o enviar mínimos
-        const processInstanceKey =
-          verifyModalReq?.processInstanceKey ||
-          verifyModalReq?.process_instance_key ||
-          verifyModalReq?.process_key ||
-          undefined;
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+          <button
+            style={{
+              backgroundColor: "#16a34a", // verde para aprobar
+              color: "white",
+              border: "none",
+              padding: "6px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+            onClick={async () => {
+              toast.dismiss(toastId);
+              try {
+                setVerifyLoading(true);
+                const res = await fetch(
+                  `http://localhost:4000/api/requisiciones/${id}/aprobar-total`,
+                  {
+                    method: "POST",
+                    credentials: "include",
+                  }
+                );
+                if (!res.ok) throw new Error("Error al aprobar");
+                toast.success("Requisición aprobada correctamente ✅");
+                setVerifyModalReq(null);
+                await fetchRequisiciones();
 
-        const vars = {
-          siExiste: (verifyModalReq?.productos?.length ?? 0) > 0,
-          purchaseAprobated: true,
-          purchaseTecnology: (verifyModalReq?.productos || []).some(p => !!(p.compra_tecnologica || p.compraTecnologica)),
-          valor_total: verifyModalReq?.valor_total ?? undefined,
-        };
+                // intentar aprobar la userTask del comprador en Camunda
+                try {
+                  const processInstanceKey =
+                    verifyModalReq?.processInstanceKey ||
+                    verifyModalReq?.process_instance_key ||
+                    verifyModalReq?.process_key ||
+                    undefined;
 
-        await approveBuyerTask(vars, { processInstanceKey });
-        console.log("approveBuyerTask ejecutada correctamente para requisición", id);
-      } catch (camundaErr) {
-        console.warn("No se pudo completar la userTask del comprador en Camunda:", camundaErr);
-        // no bloqueamos el flujo principal; informar opcionalmente al usuario
-        toast.warn("Aprobación registrada localmente, pero no se completó la tarea en Camunda.");
+                  const vars = {
+                    siExiste: (verifyModalReq?.productos?.length ?? 0) > 0,
+                    purchaseAprobated: true,
+                    purchaseTecnology: (verifyModalReq?.productos || []).some(
+                      (p) =>
+                        !!(p.compra_tecnologica || p.compraTecnologica)
+                    ),
+                    valor_total: verifyModalReq?.valor_total ?? undefined,
+                  };
+
+                  await approveBuyerTask(vars, { processInstanceKey });
+                  console.log(
+                    "approveBuyerTask ejecutada correctamente para requisición",
+                    id
+                  );
+                } catch (camundaErr) {
+                  console.warn(
+                    "No se pudo completar la userTask del comprador en Camunda:",
+                    camundaErr
+                  );
+                  toast.warn(
+                    "Aprobación registrada localmente, pero no se completó en Camunda."
+                  );
+                }
+              } catch (err) {
+                console.error(err);
+                toast.error("No se pudo aprobar la requisición ❌");
+              } finally {
+                setVerifyLoading(false);
+              }
+            }}
+          >
+            Aprobar
+          </button>
+
+          <button
+            style={{
+              backgroundColor: "#e5e7eb",
+              color: "#111827",
+              border: "none",
+              padding: "6px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "500",
+            }}
+            onClick={() => toast.dismiss(toastId)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>,
+      {
+        position: "top-right", // 👈 esquina superior derecha
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          background: "#3b82f6", // azul informativo
+          borderRadius: "10px",
+        },
+        icon: "ℹ️",
       }
-    } catch (err) {
-      console.error(err);
-      toast.error("No se pudo aprobar la requisición");
-    } finally {
-      setVerifyLoading(false);
-    }
+    );
   };
 
   useEffect(() => {
@@ -361,6 +492,32 @@ function DashboardInner() {
   }, []);
 
 
+  const getAreaNombre = (area) => {
+    switch (area) {
+      case "TyP":
+        return "Tecnología y Proyectos";
+      case "SST":
+        return "Seguridad y Salud en el Trabajo";
+      case "GerenciaAdmin":
+        return "Gerencia Administrativa";
+      case "GerenciaGeneral":
+        return "Gerencia General";
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case "pendiente":
+        return "Pendiente";
+      case "rechazada":
+        return "Rechazada";
+      case "aprobada":
+        return "Aprobada";
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="dashboard-container-requisiciones" style={{ display: "flex" }}>
       <Sidebar onToggle={setIsSidebarOpen} />
@@ -387,7 +544,7 @@ function DashboardInner() {
                   <FontAwesomeIcon icon={faFile} />
                 </div>
                 <div className="infoTotalReq">
-                  <p>Requisiciones Totales</p>
+                  <p>Requisiciones totales</p>
                   <h2>{requisiciones.length}</h2>
                 </div>
               </div>
@@ -395,8 +552,8 @@ function DashboardInner() {
               <div className="porAprobarRequisiciones">
                 <div className="infoAprobarReq">
                   <p>
-                    {permissions?.isAprobador ? "Requisiciones por Aprobar" :
-                      permissions?.isComprador ? "Requisiciones para Verificar" :
+                    {permissions?.isAprobador ? "Requisiciones por aprobar" :
+                      permissions?.isComprador ? "Requisiciones para verificar" :
                         "Requisiciones creadas"}
                   </p>
                   <h2>
@@ -420,11 +577,11 @@ function DashboardInner() {
                 <h2>
                   {permissions?.isAprobador ? "Lista de Requisiciones por Aprobar" :
                     permissions?.isComprador ? "Requisiciones Aprobadas (para Verificar)" :
-                      "Estado de las requisiciones tuyas."}
+                      "Estado de tus requisiciones."}
                 </h2>
                 <p>
                   {permissions?.isAprobador ? "Selecciona la requisición que deseas aprobar." :
-                    permissions?.isComprador ? "Verifica que la requisición esté correcta. Si no, devuélvela para corrección." :
+                    permissions?.isComprador ? "Verifica que la requisición sea correcta. Si no, devuélvela para corrección." :
                       "Bienvenido al dashboard."}
                 </p>
               </div>
@@ -485,10 +642,10 @@ function DashboardInner() {
                       </p>
                       <p className="subTittles">
                         Estado:{" "}
-                        <span className="subChiquitin">{req.status || req.estado_aprobacion}</span>
+                        <span className="subChiquitin">{getStatusLabel(req.status || req.estado_aprobacion)}</span>
                       </p>
                       <p className="subTittles">
-                        Área: <span className="subChiquitin">{req.area}</span>
+                        Área: <span className="subChiquitin">{getAreaNombre(req.area)}</span>
                       </p>
                       <p className="subTittles">
                         Valor total:{" "}
@@ -549,7 +706,7 @@ function DashboardInner() {
           >
             <div className="modal-content">
               <div className="papitoGugutata">
-                <h1 className="tittleContentComprador ">Verificar Requisición #{verifyModalReq.requisicion_id}</h1>
+                <h1 className="tittleContentComprador ">Verificar requisición #{verifyModalReq.requisicion_id}</h1>
                 <div className="resumenSectionOne">
                   <div className="info-requisiciones">
                     <h3>Datos del solicitante</h3>
@@ -565,7 +722,7 @@ function DashboardInner() {
                   <div className="totalesComprador">
                     <h4>Totales</h4>
                     <ul>
-                      <li><strong>Total productos:</strong> {verifyModalReq.productos?.length || 0}</li>
+                      <li><strong>Total de productos:</strong> {verifyModalReq.productos?.length || 0}</li>
                       <li><strong>Valor total:</strong> {formatCOP(verifyModalReq.valor_total)}</li>
                     </ul>
                   </div>
