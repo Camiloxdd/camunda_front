@@ -301,12 +301,12 @@ function DashboardInner() {
                   }
                 );
                 if (!res.ok) throw new Error("Error al devolver");
-                toast.success("Requisición devuelta correctamente 🔁");
+                toast.success("Requisición devuelta correctamente");
                 setVerifyModalReq(null);
                 await fetchRequisiciones();
               } catch (err) {
                 console.error(err);
-                toast.error("No se pudo devolver la requisición ❌");
+                toast.error("No se pudo devolver la requisición");
               }
             }}
           >
@@ -382,7 +382,7 @@ function DashboardInner() {
                   }
                 );
                 if (!res.ok) throw new Error("Error al aprobar");
-                toast.success("Requisición aprobada correctamente ✅");
+                toast.success("Requisición aprobada correctamente");
                 setVerifyModalReq(null);
                 await fetchRequisiciones();
 
@@ -420,7 +420,7 @@ function DashboardInner() {
                 }
               } catch (err) {
                 console.error(err);
-                toast.error("No se pudo aprobar la requisición ❌");
+                toast.error("No se pudo aprobar la requisición");
               } finally {
                 setVerifyLoading(false);
               }
@@ -516,6 +516,13 @@ function DashboardInner() {
       default:
         return status;
     }
+  };
+
+  const getStatusClass = (status) => {
+    if (status === "aprobada") return "status-green";
+    if (status === "rechazada") return "status-red";
+    if (status === "pendiente") return "status-orange";
+    return "";
   };
 
   return (
@@ -642,7 +649,7 @@ function DashboardInner() {
                       </p>
                       <p className="subTittles">
                         Estado:{" "}
-                        <span className="subChiquitin">{getStatusLabel(req.status || req.estado_aprobacion)}</span>
+                        <span className={`status ${getStatusClass(req.status)}`}>{getStatusLabel(req.status || req.estado_aprobacion)}</span>
                       </p>
                       <p className="subTittles">
                         Área: <span className="subChiquitin">{getAreaNombre(req.area)}</span>

@@ -331,10 +331,11 @@ function RequisicionesInner({ children }) {
             <table>
               <thead>
                 <tr>
-                  <th>ID / Nombre</th>
-                  <th>Solicitante</th>
+                  <th>ID</th>
                   <th>Fecha de solicitud</th>
+                  <th>Solicitante</th>
                   <th>Área</th>
+                  <th>¿Está en presupuesto?</th>
                   <th>Valor total</th>
                   <th>Urgencia de la compra</th>
                   <th>Estado</th>
@@ -354,9 +355,12 @@ function RequisicionesInner({ children }) {
                   requisiciones.map((r) => (
                     <tr key={r.requisicion_id}>
                       <td>Requisición #{r.requisicion_id}</td>
-                      <td>{r.nombre_solicitante}</td>
                       <td>{new Date(r.fecha).toLocaleDateString()}</td>
+                      <td>{r.nombre_solicitante}</td>
                       <td>{getAreaNombre(r.area)}</td>
+                      <td style={{ color: r.presupuestada ? "green" : "red", fontWeight: "bold" }}>
+                        {r.presupuestada ? "Presupuestada" : "No presupuestada"}
+                      </td>
                       <td>{r.valor_total?.toLocaleString("es-CO")}</td>
                       <td>{r.urgencia}</td>
                       <td style={{ textTransform: "capitalize", fontWeight: 600 }}>

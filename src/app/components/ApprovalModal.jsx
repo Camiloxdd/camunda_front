@@ -18,7 +18,15 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                     { credentials: "include" }
                 );
                 const data = await res.json();
-                setDetalles(data);
+                const productosVisibles = (data.productos || []).filter(
+                    (p) => p.aprobado !== "rechazado" && p.visible !== 0
+                );
+
+                // Guardar los detalles pero solo con productos visibles
+                setDetalles({
+                    ...data,
+                    productos: productosVisibles,
+                });
 
                 // inicializa decisiones SOLO para productos que el usuario puede editar
                 const init = {};
@@ -52,15 +60,24 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
     const isEditableForUser = (product) => {
         const cargo = detalles?.currentUser?.cargo || "";
+        const esTecnologico = !!product.compra_tecnologica;
+        const esErgonomico = !!product.ergonomico;
+
+        if (!esTecnologico && !esErgonomico) {
+            return true;
+        }
+
         if (technoRoles.includes(cargo)) {
-            return !!product.compra_tecnologica;
+            return esTecnologico;
         }
+
         if (sstRoles.includes(cargo)) {
-            return !!product.ergonomico;
+            return esErgonomico;
         }
-        // otros roles pueden editar todo
+
         return true;
     };
+
 
     const toggleDecision = (productoId, product) => {
         if (!isEditableForUser(product)) return;
@@ -162,14 +179,14 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                     toast.info("Se completó la userTask correspondiente a tu rol en Camunda.");
                 }
             } catch (err) {
-                console.error("❌ Error al llamar a Camunda:", err);
+                console.error("Error al llamar a Camunda:", err);
                 toast.warn("No se completaron las tareas en Camunda automáticamente.");
             }
 
             onApproved();
             onClose();
         } catch (err) {
-            console.error("❌ Error al guardar:", err);
+            console.error("Error al guardar:", err);
             toast.error("No se pudo guardar las aprobaciones");
         } finally {
             setSaving(false);
@@ -183,27 +200,35 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
             const nowIso = new Date().toISOString();
 
-            // preparar decisiones: FORZAR rechazado (aprobado: false) para todos los productos que el usuario puede editar
+            // 🔹 Tomar solo los productos seleccionados (check activo = rechazado)
             const decisionesParaEnviar = (detalles.productos || [])
-                .filter((p) => isEditableForUser(p))
+                .filter((p) => isEditableForUser(p) && decisiones[p.id] === true)
                 .map((p) => ({
                     id: p.id,
                     aprobado: false,
-                    fecha_aprobado: null,
+                    fecha_aprobado: nowIso,
                 }));
 
-            // actualizar estado local para que los checkboxes se desmarquen inmediatamente
+            // ⚠️ Si no se seleccionó ninguno, mostrar alerta y salir
+            if (decisionesParaEnviar.length === 0) {
+                toast.warn("Selecciona al menos un producto para rechazar.");
+                setSaving(false);
+                return;
+            }
+
+            // 🔹 Actualizar el estado local (solo para los seleccionados)
             setDecisiones((prev) => {
                 const copy = { ...prev };
-                (detalles.productos || []).forEach((p) => {
-                    if (isEditableForUser(p)) copy[p.id] = false;
+                decisionesParaEnviar.forEach((p) => {
+                    copy[p.id] = false;
                 });
                 return copy;
             });
 
+            // 🔹 Enviar al backend solo los seleccionados
             const body = {
                 decisiones: decisionesParaEnviar,
-                action: "reject", // marca la intención de rechazo
+                action: "reject",
             };
 
             const res = await fetch(
@@ -218,17 +243,19 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
             if (!res.ok) throw new Error("Error al registrar rechazo");
             const data = await res.json();
-            toast.success(data.message || "Rechazo registrado");
+
+            toast.success(data.message || "Rechazo registrado correctamente");
 
             onApproved();
             onClose();
         } catch (err) {
-            console.error("❌ Error al registrar rechazo:", err);
+            console.error("Error al registrar rechazo:", err);
             toast.error("No se pudo registrar el rechazo");
         } finally {
             setSaving(false);
         }
     };
+
 
     const formatCOP = (val) => {
         if (val == null || val === "") return "—";
@@ -250,6 +277,19 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
     if (!detalles) return null;
     const { requisicion: info, productos } = detalles;
 
+    const getAreaNombre = (area) => {
+        switch (area) {
+            case "TyP":
+                return "Tecnologia y Proyectos";
+            case "SST":
+                return "Seguridad y Salud en el Trabajo";
+            case "GerenciaAdmin":
+                return "Gerencia Adminsitrativa";
+            case "GerenciaGeneral":
+                return "Gerencia General";
+        }
+    };
+
     return (
         <div className="modal-overlay">
             <div className="modal-content">
@@ -264,8 +304,8 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                     <div className="info-requisicion">
                         <p><strong>Solicitante:</strong> {info.nombre_solicitante}</p>
                         <p><strong>Fecha:</strong> {new Date(info.fecha).toLocaleDateString("es-ES")}</p>
-                        <p><strong>Área:</strong> {info.area}</p>
-                        <p><strong>Justificación:</strong> {info.justificacion}</p>
+                        <p><strong>Área:</strong> {getAreaNombre(info.area)}</p>
+                        <p><strong>Justificación:</strong> {info.justificacion || "No tiene."}</p>
                         <p><strong>Valor total:</strong> {formatCOP(info.valor_total)}</p>
                     </div>
 

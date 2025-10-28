@@ -65,7 +65,7 @@ export default function Dashboard() {
                 <div className="login-text">
                   <p className="login-subtitle">Bienvenido a la</p>
                   <h2 className="login-title">
-                    SOLICITUD DE REQUISICIÓN
+                    SOLICITUD DE REQUISICIÓN DE COMPRAS
                   </h2>
                 </div>
                 <img

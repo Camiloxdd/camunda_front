@@ -65,9 +65,10 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [formData, setFormData] = useState(initialForm);
 
 
+
     const isEditMode = Boolean(
         initialData &&
-            (initialData.requisicion || initialData.requisicion_id || initialData.id)
+        (initialData.requisicion || initialData.requisicion_id || initialData.id)
     );
 
     const minStep = isEditMode ? (startStep ?? 2) : 1;
@@ -243,9 +244,9 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 if (Array.isArray(aprobaciones) && aprobaciones.length > 0) {
                     const tieneAprob = aprobaciones.some(a => {
                         const raw = String(a?.status ?? a ?? "").toLowerCase();
-                        return raw.includes("aprob"); 
+                        return raw.includes("aprob");
                     });
-                    if (!tieneAprob) return sum; 
+                    if (!tieneAprob) return sum;
                 } else if (p.aprobadoRaw != null && String(p.aprobadoRaw).trim() !== "") {
                     if (!String(p.aprobadoRaw).toLowerCase().includes("aprob")) return sum;
                 }
@@ -353,7 +354,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     sede: formData.solicitante.sede,
                     urgencia: formData.solicitante.urgencia,
                     presupuestada: formData.solicitante.presupuestada,
-                    valor_total: getTotalEstimado(), 
+                    valor_total: getTotalEstimado(),
                 };
                 const metaRes = await fetch(`http://localhost:4000/api/requisiciones/${id}`, {
                     method: "PUT",
@@ -371,12 +372,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 });
                 if (!prodRes.ok) throw new Error("Error actualizando productos");
 
-                try {
-                    await endTwoStepStartThreeStep(finalPayload);
-                } catch (err) {
-                    console.error("Error enviando payload final a Camunda (post-update):", err);
-                }
-
                 if (typeof onCreated === "function") onCreated();
                 toast.success("Requisición actualizada correctamente");
                 onClose();
@@ -393,18 +388,13 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     body: JSON.stringify(creationPayload),
                 });
                 if (!res.ok) throw new Error("Error al guardar");
-                try {
-                    await endTwoStepStartThreeStep(finalPayload);
-                } catch (err) {
-                    console.error("Error enviando payload final a Camunda (post-create):", err);
-                }
                 if (typeof onCreated === "function") onCreated();
                 console.log("datos de la requisicion", formData);
                 setShowAnimation(true);
             }
         } catch (err) {
             console.error(err);
-            toast.error("Hubo un error al guardar ❌");
+            toast.error("Hubo un error al guardar");
         }
     };
 
@@ -428,14 +418,29 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
 
     const handleBeforeEnterStep = async (currentStep, nextStep) => {
         try {
+            if (currentStep === 3 && nextStep === 4) {
+                const productosIncompletos = formData.productos.filter(
+                    (p) =>
+                        !p.valorEstimado?.toString().trim() ||
+                        !p.centroCosto?.toString().trim() ||
+                        !p.cuentaContable?.toString().trim()
+                );
 
-            if (currentStep === 1 && nextStep === 2) {
-                const payload = {
-                    bienvenida: "Inicio del proceso de compras"
+                if (productosIncompletos.length > 0) {
+                    toast.error(
+                        "Todos los productos deben tener valor estimado, centro de costo y cuenta contable antes de continuar."
+                    );
+                    return false; 
                 }
-                await endFirstStepStartTwoStep(payload);
             }
 
+            // 🔹 Inicio del proceso normal (ya existente)
+            if (currentStep === 1 && nextStep === 2) {
+                const payload = {
+                    bienvenida: "Inicio del proceso de compras",
+                };
+                await endFirstStepStartTwoStep(payload);
+            }
         } catch (err) {
             console.error("Error al cambiar de paso:", err);
             toast.error("No se pudo avanzar al siguiente paso.");
@@ -443,6 +448,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         }
         return true;
     };
+
 
 
     if (!open) return null;
@@ -1043,7 +1049,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                         — No supera 10 salarios mínimos
                                                     </span>
                                                 )}
-                                             </li>
+                                            </li>
                                         </ul>
                                     </div>
                                 </div>

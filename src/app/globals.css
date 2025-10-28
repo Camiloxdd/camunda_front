@@ -2178,3 +2178,23 @@ input[type="time"] {
   border-radius: 8px;
   border-width: 2px;
 }
+
+.status-green {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-red {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.status-orange {
+    color: #fd7e14;
+    font-weight: bold;
+}
+
+.status-blue {
+    color: #007bff;
+    font-weight: bold;
+}
