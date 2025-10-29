@@ -300,7 +300,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             const ergonomicos = formData.productos.some((p) => Boolean(p.ergonomico));
             const tecnologicos = formData.productos.some((p) => Boolean(p.compraTecnologica));
             const compraPresupuestada = Boolean(formData.solicitante.presupuestada);
-
             const totalEstimado = getTotalEstimado();
             const esMayor = totalEstimado > UMBRAL_10_SM;
 
@@ -311,17 +310,18 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 descripcion: p.descripcion,
                 compraTecnologica: p.compraTecnologica ? 1 : 0,
                 ergonomico: p.ergonomico ? 1 : 0,
-                centroCosto: p.centroCosto || '',
-                cuentaContable: p.cuentaContable || '',
+                centroCosto: p.centroCosto || "",
+                cuentaContable: p.cuentaContable || "",
             }));
 
             const formularioenJSON = JSON.stringify(formData);
 
-            const isTech = formData.productos.some(p => {
+            const isTech = formData.productos.some((p) => {
                 const v = p.compraTecnologica ?? p.compra_tecnologica;
                 return v === true || v === 1 || String(v) === "1" || String(v).toLowerCase() === "true";
             });
-            const isErgo = formData.productos.some(p => {
+
+            const isErgo = formData.productos.some((p) => {
                 const v = p.ergonomico ?? p.ergonomico;
                 return v === true || v === 1 || String(v) === "1" || String(v).toLowerCase() === "true";
             });
@@ -343,6 +343,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             };
 
             if (isEditMode) {
+                // 🔹 --- MODO EDICIÓN (sin cambios)
                 const id = initialData.requisicion.id;
                 const metaBody = {
                     nombre_solicitante: formData.solicitante.nombre,
@@ -356,6 +357,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     presupuestada: formData.solicitante.presupuestada,
                     valor_total: getTotalEstimado(),
                 };
+
                 const metaRes = await fetch(`http://localhost:4000/api/requisiciones/${id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
@@ -376,20 +378,39 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 toast.success("Requisición actualizada correctamente");
                 onClose();
             } else {
+                // 🔹 --- MODO CREACIÓN + COMPLETAR TAREA EN CAMUNDA ---
+                const processInstanceKey = localStorage.getItem("processInstanceKey");
+
                 const creationPayload = {
                     solicitante: formData.solicitante,
                     productos: productosPayload,
                     valor_total: getTotalEstimado(),
                     filas: formularioenJSON,
+                    processInstanceKey, // 👈 lo incluimos si tu backend lo usa
                 };
+
                 const res = await fetch("http://localhost:4000/api/requisicion/create", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(creationPayload),
                 });
+
                 if (!res.ok) throw new Error("Error al guardar");
+
+                // 🔸 Llamamos a Camunda para completar la tarea
+                try {
+                    console.log("🔁 Completando tarea de Camunda (segundo paso)...");
+                    await endTwoStepStartThreeStep(finalPayload); // 👈 pasa tus variables del flujo
+                    console.log("✅ Tarea completada correctamente en Camunda");
+                } catch (err) {
+                    console.error("❌ Error completando tarea en Camunda:", err);
+                    toast.error("Error al avanzar en el flujo de aprobación");
+                }
+
                 if (typeof onCreated === "function") onCreated();
-                console.log("datos de la requisicion", formData);
+
+                console.log("📦 Datos de la requisición enviada:", creationPayload);
+                toast.success("Requisición creada correctamente");
                 setShowAnimation(true);
             }
         } catch (err) {
@@ -430,7 +451,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     toast.error(
                         "Todos los productos deben tener valor estimado, centro de costo y cuenta contable antes de continuar."
                     );
-                    return false; 
+                    return false;
                 }
             }
 
