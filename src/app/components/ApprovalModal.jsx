@@ -8,7 +8,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
     const [detalles, setDetalles] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [decisiones, setDecisiones] = useState({}); // { producto_id: true/false }
+    const [decisiones, setDecisiones] = useState({}); 
 
     useEffect(() => {
         const fetchDetalles = async () => {

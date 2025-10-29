@@ -386,7 +386,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     productos: productosPayload,
                     valor_total: getTotalEstimado(),
                     filas: formularioenJSON,
-                    processInstanceKey, // 👈 lo incluimos si tu backend lo usa
+                    processInstanceKey,
                 };
 
                 const res = await fetch("http://localhost:4000/api/requisicion/create", {
@@ -416,6 +416,23 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         } catch (err) {
             console.error(err);
             toast.error("Hubo un error al guardar");
+        }
+    };
+
+    const handleCancelWizard = async () => {
+        const key = localStorage.getItem("processInstanceKey");
+        if (key) {
+            try {
+                await fetch(`http://localhost:4000/api/process/${key}/cancel`, { method: "POST" });
+                localStorage.removeItem("processInstanceKey");
+                toast.info("Requisicion cancelada correctamente.");
+                console.log(`Proceso Camunda ${key} cancelado.`);
+            } catch (err) {
+                console.error("Error al cancelar proceso:", err);
+                toast.error("No se pudo cancelar el proceso.");
+            }
+        } else {
+            console.log("No hay proceso en curso para cancelar.");
         }
     };
 
@@ -494,12 +511,17 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         }
     };
 
+    const handleCloseModal = () => {
+        handleCancelWizard();
+        onClose();
+    }
+
     return (
         <div className="wizardModal-overlay">
             <div className="wizardModal-container">
                 <div className="wizardModal-header">
                     <h2>Solicitud de compra</h2>
-                    <button className="wizardModal-close" onClick={onClose}>
+                    <button className="wizardModal-close" onClick={handleCloseModal}>
                         ✕
                     </button>
                 </div>
@@ -1027,12 +1049,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                     <div className="infoSolicitanteFinal">
                                         <h2>Datos del solicitante</h2>
                                         <ul>
-                                            <li><strong>Nombre:</strong> {formData.solicitante.nombre || "—"}</li>
-                                            <li><strong>Fecha:</strong> {formData.solicitante.fecha || "—"}</li>
-                                            <li><strong>Área:</strong> {formData.solicitante.area || "—"}</li>
-                                            <li><strong>Sede:</strong> {formData.solicitante.sede || "—"}</li>
-                                            <li><strong>Urgencia:</strong> {formData.solicitante.urgencia || "—"}</li>
-                                            <li><strong>Justificación:</strong> {formData.solicitante.justificacion || "—"}</li>
+                                            <li><strong>Nombre:</strong> {formData.solicitante.nombre || "No tiene."}</li>
+                                            <li><strong>Fecha:</strong> {formData.solicitante.fecha || "No tiene."}</li>
+                                            <li><strong>Área:</strong> {getAreaNombre(formData.solicitante.area || "No tiene.")}</li>
+                                            <li><strong>Sede:</strong> {getSedeNombre(formData.solicitante.sede || "No tiene.")}</li>
+                                            <li><strong>Urgencia:</strong> {formData.solicitante.urgencia || "No tiene."}</li>
+                                            <li><strong>Justificación:</strong> {formData.solicitante.justificacion || "No tiene."}</li>
                                             <p>
                                                 <strong>¿Está en presupuesto?:</strong>{" "}
                                                 {formData.solicitante.presupuestada ? (

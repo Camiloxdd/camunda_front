@@ -15,12 +15,21 @@ export async function iniciarProceso(variables) {
 
         if (!res.ok) throw new Error("Error al iniciar el proceso.");
 
-        return await res.json();
+        const data = await res.json();
+
+        const processInstanceKey = data.processInstanceKey;
+
+        localStorage.setItem("processInstanceKey", processInstanceKey);
+
+        console.log("Proceso iniciado con processInstanceKey:", processInstanceKey);
+
+        return data;
     } catch (err) {
         console.error("Error en iniciar proceso:", err.message);
         throw err;
     }
 }
+
 
 export async function endFirstStepStartTwoStep(variables) {
     try {
