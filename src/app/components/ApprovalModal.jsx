@@ -8,7 +8,12 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
     const [detalles, setDetalles] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [decisiones, setDecisiones] = useState({}); 
+    const [decisiones, setDecisiones] = useState({});
+    // overlay animado durante la acción (aprobación/rechazo)
+    const [actionLoadingVisible, setActionLoadingVisible] = useState(false);
+    const [actionLoadingExiting, setActionLoadingExiting] = useState(false);
+    // IDs de items recientemente rechazados para marcar en rojo claro (no cierra modal)
+    const [rejectedIds, setRejectedIds] = useState(new Set());
 
     useEffect(() => {
         const fetchDetalles = async () => {
@@ -89,34 +94,39 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
     const handleGuardar = async () => {
         try {
-            setSaving(true);
-            toast.info("Guardando aprobaciones...", { autoClose: 2000 });
+            // Solo considerar productos editables (de su área)
+            const editable = (detalles.productos || []).filter((p) => isEditableForUser(p));
+            // comprobar que TODOS los editables tengan check true (no pueden quedar vacíos)
+            const notSelected = editable.filter((p) => !decisiones[p.id]);
+            if (notSelected.length > 0) {
+                toast.warn("Debes seleccionar todos los items de tu área antes de aprobar.");
+                return;
+            }
 
+            // confirmación via toast
+            const confirmed = await confirmToast("¿Confirmas que deseas aprobar los items seleccionados?", { confirmLabel: "Aprobar", cancelLabel: "Cancelar", confirmColor: "#16a34a" });
+            if (!confirmed) return;
+            setSaving(true);
+            setActionLoadingVisible(true);
+            // construir payload con SOLO los productos editables
             const nowIso = new Date().toISOString();
             const body = {
-                decisiones: (detalles.productos || [])
-                    .filter((p) => isEditableForUser(p))
-                    .map((p) => {
-                        const currentlyApproved = !!decisiones[p.id];
-                        const previouslyApproved =
-                            p.aprobado === "aprobado" || p.aprobado === 1 || p.aprobado === true;
-                        let fecha_aprobado = null;
-                        if (currentlyApproved) {
-                            if (previouslyApproved) {
-                                fecha_aprobado = p.fecha_aprobado || nowIso;
-                            } else {
-                                fecha_aprobado = nowIso;
-                            }
-                        } else {
-                            fecha_aprobado = null;
-                        }
-
-                        return {
-                            id: p.id,
-                            aprobado: currentlyApproved,
-                            fecha_aprobado,
-                        };
-                    }),
+                decisiones: editable.map((p) => {
+                    const currentlyApproved = !!decisiones[p.id];
+                    const previouslyApproved =
+                        p.aprobado === "aprobado" || p.aprobado === 1 || p.aprobado === true;
+                    let fecha_aprobado = null;
+                    if (currentlyApproved) {
+                        fecha_aprobado = previouslyApproved ? (p.fecha_aprobado || nowIso) : nowIso;
+                    } else {
+                        fecha_aprobado = null;
+                    }
+                    return {
+                        id: p.id,
+                        aprobado: currentlyApproved,
+                        fecha_aprobado,
+                    };
+                }),
             };
 
             const res = await fetch(
@@ -128,19 +138,17 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                     body: JSON.stringify(body),
                 }
             );
-
             if (!res.ok) throw new Error("Error al guardar aprobaciones");
             const data = await res.json();
             toast.success(data.message || "Aprobaciones registradas");
 
-            // --- NUEVA LÓGICA: dependiendo del monto total, usar una u otra llamada a Camunda ---
+            // llamar a Camunda según monto (misma lógica previa pero usando detalles.requisicion)
             try {
                 const salarioMinimo = Number(process.env.NEXT_PUBLIC_SALARIO_MINIMO) || 1160000;
-                const montoTotal = Number(info.valor_total || detalles.requisicion?.valor_total || 0);
+                const montoTotal = Number(detalles.requisicion?.valor_total ?? 0);
                 const esMayor = montoTotal >= salarioMinimo * 10;
 
-                // filas con el detalle por producto (se envía también para trazabilidad)
-                const filas = (detalles.productos || []).map(p => ({
+                const filas = (detalles.productos || []).map((p) => ({
                     id: p.id,
                     cantidad: p.cantidad,
                     valor_estimado: p.valor_estimado,
@@ -149,32 +157,26 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                     presupuestada: !!p.presupuestada,
                 }));
 
-                // variables booleanas que el proceso Camunda espera
                 const camundaVars = {
                     filas,
                     siExiste: filas.length > 0,
-                    purchaseTecnology: filas.some(f => f.compra_tecnologica && f.aprobado),
-                    sstAprobacion: filas.some(f => f.ergonomico && f.aprobado),
-                    purchaseAprobated: filas.some(f => f.presupuestada),
+                    purchaseTecnology: filas.some((f) => f.compra_tecnologica && decisiones[f.id]),
+                    sstAprobacion: filas.some((f) => f.ergonomico && decisiones[f.id]),
+                    purchaseAprobated: filas.some((f) => f.presupuestada),
                     esMayor,
-
                 };
 
-                // intentar obtener processInstanceKey (intenta varios nombres por si cambia el back)
                 const processInstanceKey =
                     detalles.requisicion?.processInstanceKey ||
                     detalles.requisicion?.process_instance_key ||
                     detalles.requisicion?.process_key ||
                     null;
-
                 const currentRole = detalles.currentUser?.cargo || null;
 
                 if (!esMayor) {
-                    // caso < 10 salarios mínimos -> 1 petición para aprobar pendientes (filtrada por processInstanceKey si existe)
                     await approvePendingSingle(camundaVars, { processInstanceKey });
                     toast.info("Se solicitó aprobación de tareas pendientes (flujo simplificado).");
                 } else {
-                    // caso >= 10 salarios mínimos -> completar SOLO las userTask del rol/proceso actual
                     await startThreeStep(camundaVars, { role: currentRole, processInstanceKey });
                     toast.info("Se completó la userTask correspondiente a tu rol en Camunda.");
                 }
@@ -184,10 +186,17 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
             }
 
             onApproved();
-            onClose();
+            // animación de salida del overlay antes de cerrar
+            setActionLoadingExiting(true);
+            setTimeout(() => {
+                setActionLoadingExiting(false);
+                setActionLoadingVisible(false);
+                onClose();
+            }, 360);
         } catch (err) {
             console.error("Error al guardar:", err);
             toast.error("No se pudo guardar las aprobaciones");
+            setActionLoadingVisible(false);
         } finally {
             setSaving(false);
         }
@@ -195,37 +204,27 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
     const handleRechazar = async () => {
         try {
-            setSaving(true);
-            toast.info("Registrando rechazo...", { autoClose: 2000 });
-
-            const nowIso = new Date().toISOString();
-
-            // 🔹 Tomar solo los productos seleccionados (check activo = rechazado)
-            const decisionesParaEnviar = (detalles.productos || [])
-                .filter((p) => isEditableForUser(p) && decisiones[p.id] === true)
-                .map((p) => ({
-                    id: p.id,
-                    aprobado: false,
-                    fecha_aprobado: nowIso,
-                }));
-
-            // ⚠️ Si no se seleccionó ninguno, mostrar alerta y salir
-            if (decisionesParaEnviar.length === 0) {
-                toast.warn("Selecciona al menos un producto para rechazar.");
-                setSaving(false);
+            // tomar solo productos editables y seleccionados para rechazar
+            const seleccionados = (detalles.productos || []).filter(
+                (p) => isEditableForUser(p) && decisiones[p.id] === true
+            );
+            if (seleccionados.length === 0) {
+                toast.warn("Selecciona al menos un producto de tu área para rechazar.");
                 return;
             }
 
-            // 🔹 Actualizar el estado local (solo para los seleccionados)
-            setDecisiones((prev) => {
-                const copy = { ...prev };
-                decisionesParaEnviar.forEach((p) => {
-                    copy[p.id] = false;
-                });
-                return copy;
-            });
+            const confirmed = await confirmToast("¿Confirmas que deseas rechazar los items seleccionados?", { confirmLabel: "Rechazar", cancelLabel: "Cancelar", confirmColor: "#dc2626", background: "#ef4444" });
+            if (!confirmed) return;
+            setSaving(true);
+            setActionLoadingVisible(true);
 
-            // 🔹 Enviar al backend solo los seleccionados
+            const nowIso = new Date().toISOString();
+            const decisionesParaEnviar = seleccionados.map((p) => ({
+                id: p.id,
+                aprobado: false,
+                fecha_aprobado: nowIso,
+            }));
+
             const body = {
                 decisiones: decisionesParaEnviar,
                 action: "reject",
@@ -240,22 +239,101 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                     body: JSON.stringify(body),
                 }
             );
-
             if (!res.ok) throw new Error("Error al registrar rechazo");
             const data = await res.json();
-
             toast.success(data.message || "Rechazo registrado correctamente");
 
-            onApproved();
-            onClose();
+            // actualizar estado local: marcar como rechazados visualmente y deschequearlos
+            setDecisiones((prev) => {
+                const copy = { ...prev };
+                decisionesParaEnviar.forEach((d) => {
+                    copy[d.id] = false;
+                });
+                return copy;
+            });
+            // añadir ids rechazados para marcar en rojo claro
+            setRejectedIds((prev) => {
+                const newSet = new Set(prev);
+                decisionesParaEnviar.forEach((d) => newSet.add(d.id));
+                return newSet;
+            });
+
+            // mantener modal abierto para seguir editando
+            // animación de salida del overlay
+            setActionLoadingExiting(true);
+            setTimeout(() => {
+                setActionLoadingExiting(false);
+                setActionLoadingVisible(false);
+            }, 360);
         } catch (err) {
             console.error("Error al registrar rechazo:", err);
             toast.error("No se pudo registrar el rechazo");
+            setActionLoadingVisible(false);
         } finally {
             setSaving(false);
         }
     };
 
+    // helper: muestra un toast con confirm/cancel y resuelve true/false
+    const confirmToast = (message, opts = {}) => {
+        return new Promise((resolve) => {
+            const toastId = `confirm-${Date.now()}`;
+            const content = (
+                <div style={{ padding: "10px", textAlign: "center", color: "white" }}>
+                    <strong style={{ display: "block", marginBottom: "8px" }}>{message}</strong>
+                    <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+                        <button
+                            onClick={() => {
+                                toast.dismiss(toastId);
+                                resolve(true);
+                            }}
+                            style={{
+                                backgroundColor: opts.confirmColor || "#16a34a",
+                                color: "white",
+                                border: "none",
+                                padding: "6px 12px",
+                                borderRadius: "5px",
+                                cursor: "pointer",
+                                fontWeight: "bold",
+                            }}
+                        >
+                            {opts.confirmLabel || "Sí"}
+                        </button>
+                        <button
+                            onClick={() => {
+                                toast.dismiss(toastId);
+                                resolve(false);
+                            }}
+                            style={{
+                                backgroundColor: opts.cancelColor || "#e5e7eb",
+                                color: opts.cancelTextColor || "#111827",
+                                border: "none",
+                                padding: "6px 12px",
+                                borderRadius: "5px",
+                                cursor: "pointer",
+                                fontWeight: "500",
+                            }}
+                        >
+                            {opts.cancelLabel || "Cancelar"}
+                        </button>
+                    </div>
+                </div>
+            );
+
+            toast.info(content, {
+                toastId,
+                position: "top-right",
+                autoClose: false,
+                closeOnClick: false,
+                draggable: false,
+                closeButton: false,
+                style: {
+                    background: opts.background || "#3b82f6",
+                    borderRadius: "10px",
+                },
+            });
+        });
+    };
 
     const formatCOP = (val) => {
         if (val == null || val === "") return "—";
@@ -292,7 +370,19 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content">
+            <div className="modal-content" style={{ position: "relative" }}>
+                {/* overlay animado confinado al contenido del modal */}
+                {actionLoadingVisible && (
+                    <div
+                        className={`approval-loading-overlay ${actionLoadingExiting ? "fade-out" : "fade-in"}`}
+                        style={{ position: "absolute", inset: 0, zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.92)" }}
+                    >
+                        <div className="loading-cambios" style={{ textAlign: "center" }}>
+                            <img src="/coopidrogas_logo_mini.png" className="LogoCambios" alt="Cargando..." />
+                            <p className="textLoading">Procesando...</p>
+                        </div>
+                    </div>
+                )}
                 <div className="modal-header">
                     <h2>Requisición #{info.id}</h2>
                     <button onClick={onClose} className="close-button">
@@ -330,7 +420,11 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                                         <tr
                                             key={p.id}
                                             style={{
-                                                backgroundColor: !editable ? "#ddddddff" : "transparent",
+                                                backgroundColor: rejectedIds.has(p.id)
+                                                    ? "#ffecec"
+                                                    : !editable
+                                                        ? "#ddddddff"
+                                                        : "transparent",
                                                 color: !editable ? "#666" : "inherit",
                                             }}
                                         >
@@ -357,10 +451,10 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                 </div>
 
                 <div className="modal-actions">
-                    <button onClick={handleGuardar} disabled={saving} className="btn-approve">
+                    <button onClick={handleGuardar} disabled={saving || actionLoadingVisible} className="btn-approve">
                         {saving ? "Aprobando..." : "Aprobar"}
                     </button>
-                    <button onClick={handleRechazar} disabled={saving} className="btn-approve" style={{ marginLeft: 8 }}>
+                    <button onClick={handleRechazar} disabled={saving || actionLoadingVisible} className="btn-approve" style={{ marginLeft: 8 }}>
                         {saving ? "Procesando..." : "Rechazar"}
                     </button>
                 </div>

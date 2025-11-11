@@ -20,6 +20,53 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+/* overlay animado para aprobar/rechazar (con fade-in/out) */
+.approval-loading-overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 60;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255,255,255,0.92);
+	opacity: 1;
+	transition: opacity 350ms ease, transform 350ms ease;
+	pointer-events: all;
+}
+
+/* entrada y salida */
+.approval-loading-overlay.fade-in {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+}
+.approval-loading-overlay.fade-out {
+	opacity: 0;
+	transform: translateY(-8px) scale(0.995);
+	pointer-events: none;
+}
+
+/* logo girando */
+.LogoCambios {
+	width: 80px;
+	height: 80px;
+	display: inline-block;
+	animation: logo-spin 900ms linear infinite;
+}
+
+/* texto bajo logo */
+.textLoading {
+	margin-top: 10px;
+	color: #111827;
+	font-weight: 600;
+}
+
+/* keyframes */
+@keyframes logo-spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
 }
 
 .modal-header {
@@ -132,3 +179,6 @@
   border-style: solid;
   transform: scale(1.10);
 }
+
+/* estilo para fila rechazado (si quieres más control) */
+/* ya se aplica inline con background color #ffecec */

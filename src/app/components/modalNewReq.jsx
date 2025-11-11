@@ -61,6 +61,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [mostrarModalProductos, setMostrarModalProductos] = useState(false);
     const [productoActivo3, setProductoActivo3] = useState(0);
     const [showAnimation, setShowAnimation] = useState(false);
+    // nuevo estado: indica transición/carga entre pasos
+    const [stepLoading, setStepLoading] = useState(false);
+    // controla si el overlay está montado (visible en DOM)
+    const [stepLoadingVisible, setStepLoadingVisible] = useState(false);
+    // controla la clase de salida (fade-out)
+    const [stepLoadingExiting, setStepLoadingExiting] = useState(false);
     const [mostrarModalProductos3, setMostrarModalProductos3] = useState(false);
     const [formData, setFormData] = useState(initialForm);
 
@@ -443,16 +449,46 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     }, [formData.productos.length]);
 
     const handleNext = async () => {
-        const next = Math.min(maxStep, step + 1);
-        if (next === step) return;
-        const ok = await handleBeforeEnterStep(step, next);
-        if (ok) setStep(next);
-    };
+		const next = Math.min(maxStep, step + 1);
+		if (next === step) return;
+		try {
+			// mostrar overlay
+			setStepLoadingVisible(true);
+			setStepLoading(true);
+			const ok = await handleBeforeEnterStep(step, next);
+			if (ok) setStep(next);
+		} catch (err) {
+			console.error("Error en transición siguiente:", err);
+		} finally {
+			// disparar animación de salida y limpiar después de su duración
+			setStepLoading(false);
+			setStepLoadingExiting(true);
+			setTimeout(() => {
+				setStepLoadingExiting(false);
+				setStepLoadingVisible(false);
+			}, 360); // debe coincidir con la duración CSS (ej. 350ms)
+		}
+	};
 
-    const handlePrev = () => {
-        const prev = Math.max(minStep, step - 1);
-        setStep(prev);
-    };
+    const handlePrev = async () => {
+		const prev = Math.max(minStep, step - 1);
+		try {
+			setStepLoadingVisible(true);
+			setStepLoading(true);
+			// pequeña pausa visual para que el loading sea perceptible
+			await new Promise((r) => setTimeout(r, 250));
+			setStep(prev);
+		} catch (err) {
+			console.error("Error en transición anterior:", err);
+		} finally {
+			setStepLoading(false);
+			setStepLoadingExiting(true);
+			setTimeout(() => {
+				setStepLoadingExiting(false);
+				setStepLoadingVisible(false);
+			}, 360);
+		}
+	};
 
     const handleBeforeEnterStep = async (currentStep, nextStep) => {
         try {
@@ -512,13 +548,33 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     };
 
     const handleCloseModal = () => {
-        handleCancelWizard();
-        onClose();
-    }
+		// evitar cerrar durante una transición/animación
+		if (stepLoadingVisible) return;
+		handleCancelWizard();
+		onClose();
+	};
 
     return (
         <div className="wizardModal-overlay">
-            <div className="wizardModal-container">
+            {/* asegurar que el overlay interno quede confinado a este container */}
+            <div className="wizardModal-container" style={{ position: "relative" }}>
+ 				{/* Overlay de carga entre pasos (solo dentro del container) */}
+ 				{stepLoadingVisible && (
+ 					<div
+						className={`loading-container ${stepLoadingExiting ? "fade-out" : "fade-in"}`}						style={{ position: "absolute", inset: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.92)" }}
+					>
+						<div className="loading-cambios" style={{ textAlign: "center" }}>
+							<img
+								src="/coopidrogas_logo_mini.png"
+								className="LogoCambios"
+								alt="Cargando..."
+								// ancho/alto controlados en CSS; la rotación viene de .LogoCambios
+							/>
+							<p className="textLoading" style={{ marginTop: 10 }}>Cargando...</p>
+					</div>
+					</div>
+ 				)}
+ 
                 <div className="wizardModal-header">
                     <h2>Solicitud de compra</h2>
                     <button className="wizardModal-close" onClick={handleCloseModal}>
@@ -1147,7 +1203,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         <button
                             className="wizardModal-btn wizardModal-prev"
                             onClick={handlePrev}
-                            disabled={showAnimation}
+                            disabled={showAnimation || stepLoadingVisible}
                         >
                             ← Anterior
                         </button>
@@ -1156,7 +1212,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         <button
                             className="wizardModal-btn wizardModal-next"
                             onClick={handleNext}
-                            disabled={showAnimation}
+                            disabled={showAnimation || stepLoadingVisible}
                         >
                             Siguiente →
                         </button>
@@ -1164,14 +1220,14 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         <button
                             className="wizardModal-btn wizardModal-confirm"
                             onClick={handleSubmitFinal}
-                            disabled={showAnimation}
+                            disabled={showAnimation || stepLoadingVisible}
                         >
                             Finalizar
                         </button>
                     )}
                 </div>
-            </div>
-
-        </div>
-    );
-}
+             </div>
+ 
+         </div>
+     );
+ }
