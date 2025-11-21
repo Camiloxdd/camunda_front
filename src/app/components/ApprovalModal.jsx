@@ -10,16 +10,12 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [decisiones, setDecisiones] = useState({});
-<<<<<<< HEAD
     const [token, setToken] = useState("");
-=======
->>>>>>> 3c2300cc2a555bcc27e9efafb65de671d03e14fb
     // overlay animado durante la acción (aprobación/rechazo)
     const [actionLoadingVisible, setActionLoadingVisible] = useState(false);
     const [actionLoadingExiting, setActionLoadingExiting] = useState(false);
     // IDs de items recientemente rechazados para marcar en rojo claro (no cierra modal)
     const [rejectedIds, setRejectedIds] = useState(new Set());
-<<<<<<< HEAD
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -27,8 +23,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
             setToken(storedToken);
         }
     }, []);
-=======
->>>>>>> 3c2300cc2a555bcc27e9efafb65de671d03e14fb
 
     useEffect(() => {
         const fetchDetalles = async () => {
@@ -111,7 +105,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
     const handleGuardar = async () => {
         try {
-<<<<<<< HEAD
             // tomar productos editables (de su área) EXCLUYENDO los que ya fueron rechazados
             const editableAll = (detalles.productos || []).filter((p) => isEditableForUser(p));
             const editable = editableAll.filter((p) => !rejectedIds.has(p.id));
@@ -129,27 +122,13 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                 return;
             }
 
-=======
-            // Solo considerar productos editables (de su área)
-            const editable = (detalles.productos || []).filter((p) => isEditableForUser(p));
-            // comprobar que TODOS los editables tengan check true (no pueden quedar vacíos)
-            const notSelected = editable.filter((p) => !decisiones[p.id]);
-            if (notSelected.length > 0) {
-                toast.warn("Debes seleccionar todos los items de tu área antes de aprobar.");
-                return;
-            }
-
->>>>>>> 3c2300cc2a555bcc27e9efafb65de671d03e14fb
             // confirmación via toast
             const confirmed = await confirmToast("¿Confirmas que deseas aprobar los items seleccionados?", { confirmLabel: "Aprobar", cancelLabel: "Cancelar", confirmColor: "#16a34a" });
             if (!confirmed) return;
             setSaving(true);
             setActionLoadingVisible(true);
-<<<<<<< HEAD
             // construir payload con SOLO los productos editables que NO fueron rechazados
-=======
             // construir payload con SOLO los productos editables
->>>>>>> 3c2300cc2a555bcc27e9efafb65de671d03e14fb
             const nowIso = new Date().toISOString();
             const body = {
                 decisiones: editable.map((p) => {
