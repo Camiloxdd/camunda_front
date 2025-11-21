@@ -282,17 +282,7 @@ export async function approvePendingSingle(variables, options = {}) {
         const tareasRes = await fetch(`${API_BASE}/tasks/search`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                siExiste: variables.siExiste,
-                purchaseTecnology: variables.purchaseTecnology,
-                sstAprobacion: variables.sstAprobacion,
-                vobo: variables.vobo,
-                purchaseAprobated: variables.purchaseAprobated,
-                esMayor: variables.esMayor,
-                purchaseAprobatedTecnology: variables.purchaseAprobatedTecnology,
-                purchaseAprobatedErgonomic: variables.purchaseAprobatedErgonomic,
-                filas: variables.filas,
-            })
+            body: JSON.stringify({})
         });
 
         const tareasData = await tareasRes.json();

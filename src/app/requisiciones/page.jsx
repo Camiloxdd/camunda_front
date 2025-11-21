@@ -13,12 +13,18 @@ import {
   faRefresh,
   faFilePdf,
   faTimeline,
+  faFile,
+  faFileCircleCheck,
+  faFileCircleQuestion,
+  faFileCircleXmark
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import WizardModal from "../components/modalNewReq";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import TimeLap from "../components/timeLap";
 import { iniciarProceso } from "../services/camunda";
+import api from "../services/axios";
+import SearchBar from "../components/searchBar";
 
 function RequisicionesInner({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -29,26 +35,35 @@ function RequisicionesInner({ children }) {
   const [modalInitialData, setModalInitialData] = useState(null);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [timelineReqId, setTimelineReqId] = useState(null);
+  const [token, setToken] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { role, permissions } = useAuth();
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const t = localStorage.getItem("token");
+      setToken(t);
+
+      if (!t) {
+        setUser(null);
+      }
+    }
+  }, []);
 
   const fetchAll = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:4000/api/requisiciones", {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Error al obtener requisiciones");
-      const data = await res.json();
-      setRequisiciones(Array.isArray(data) ? data : [data]);
 
-      console.log(data)
+      const res = await api.get("/api/requisiciones");
+      setRequisiciones(Array.isArray(res.data) ? res.data : [res.data]);
+
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchAll();
@@ -120,7 +135,7 @@ function RequisicionesInner({ children }) {
             onClick={async () => {
               toast.dismiss(toastId);
               try {
-                const res = await fetch(
+                const res = await api.delete(
                   `http://localhost:4000/api/requisiciones/${id}`,
                   {
                     method: "DELETE",
@@ -253,13 +268,6 @@ function RequisicionesInner({ children }) {
     }
   };
 
-  const getSedeNombre = (sede) => {
-    switch (sede) {
-      case "cota":
-        return "Cota";
-    }
-  };
-
   const getAreaNombre = (area) => {
     switch (area) {
       case "TyP":
@@ -288,6 +296,15 @@ function RequisicionesInner({ children }) {
     setOpen(true);
   }
 
+  const getStatusClass = (status) => {
+    const s = status?.toLowerCase();
+
+    if (s.includes("apro")) return "status-aprobada";
+    if (s.includes("pend")) return "status-pendiente";
+    if (s.includes("rechazada")) return "status-devuelta";
+
+    return "status-default";
+  };
 
   return (
     <div style={{ display: "flex" }}>
@@ -301,6 +318,7 @@ function RequisicionesInner({ children }) {
         startStep={modalInitialData ? 2 : undefined}
       />
       <Sidebar onToggle={setIsSidebarOpen} />
+
       <div
         style={{
           marginTop: "100px",
@@ -309,24 +327,63 @@ function RequisicionesInner({ children }) {
           marginLeft: isSidebarOpen ? "210px" : "80px",
         }}
       >
-        <div className="headerUsers">
-          <div className="headerInfoRequisiciones">
-            <h2>Gestión de Requisiciones</h2>
-            <p>Lista de todas las requisiciones en el sistema.</p>
-          </div>
-          <div className="buttonsRequisiciones">
-            <button onClick={fetchAll}>
-              <FontAwesomeIcon icon={faRefresh} />
-            </button>
-            {permissions?.canCreateRequisition && (
-              <button onClick={abrirModalNuevaReq}>
-                <FontAwesomeIcon icon={faPlus} />
-              </button>
-            )}
-          </div>
-        </div>
 
         <div className="tablaGestionUsuarios">
+          <div className="firstContainerDash">
+                      <div className="porcents">
+                        <div className="totalRequisiciones">
+                          <div className="infoTotalReq">
+                            <p>Requisiciones totales</p>
+                            <h2>{requisiciones.length}</h2>
+                          </div>
+                          <div className="iconTotalReq">
+                            <FontAwesomeIcon icon={faFile} />
+                          </div>
+                        </div>
+          
+                        <div className="porAprobarRequisiciones">
+                          <div className="infoAprobarReq">
+                            <p>Requisiciones aprobadas</p>
+                            <h2>
+                              {requisiciones.filter((r) => (r.estado_aprobacion || r.status) === "Totalmente Aprobada").length}
+                            </h2>
+                          </div>
+                          <div className="iconAprobarReq">
+                            <FontAwesomeIcon icon={faFileCircleCheck} />
+                          </div>
+                        </div> 
+                        <div className="pendientesAprobaciones">
+                          <div className="infoAprobarReq">
+                            <p>Requisiciones pendientes</p>
+                            <h2>
+                              {requisiciones.filter((r) => (r.estado_aprobacion || r.status) === "pendiente").length}
+                            </h2>
+                          </div>
+                          <div className="iconPendientesReq">
+                            <FontAwesomeIcon icon={faFileCircleQuestion} />
+                          </div>
+                        </div>
+                        <div className="rechazarAprobaciones">
+                          <div className="infoAprobarReq">
+                            <p>Requisiciones rechazadas</p>
+                            <h2>
+                              {requisiciones.filter((r) => (r.estado_aprobacion || r.status) === "rechazada").length}
+                            </h2>
+                          </div>
+                          <div className="iconRechazarReq">
+                            <FontAwesomeIcon icon={faFileCircleXmark} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                                    <div className="papaHeaderRequi">
+                    <div className="barraDeNavegacion">
+                      <SearchBar
+                        placeholder="Buscar por ID de requisición..."
+                        onQueryChange={setSearchQuery}
+                      />
+                    </div>
+                  </div>
           <div className="tableGestUsers">
             <table>
               <thead>
@@ -337,8 +394,7 @@ function RequisicionesInner({ children }) {
                   <th>Área</th>
                   <th>¿Está en presupuesto?</th>
                   <th>Valor total</th>
-                  <th>Urgencia de la compra</th>
-                  <th>Estado</th>
+                  <th>Urgencia</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -354,7 +410,10 @@ function RequisicionesInner({ children }) {
                 ) : (
                   requisiciones.map((r) => (
                     <tr key={r.requisicion_id}>
-                      <td>Requisición #{r.requisicion_id}</td>
+                      <td>
+                        <span className={`status-circle ${getStatusClass(r.status)}`} />
+                          Requisición #{r.requisicion_id}
+                      </td>
                       <td>{new Date(r.fecha).toLocaleDateString()}</td>
                       <td>{r.nombre_solicitante}</td>
                       <td>{getAreaNombre(r.area)}</td>
@@ -363,9 +422,6 @@ function RequisicionesInner({ children }) {
                       </td>
                       <td>{r.valor_total?.toLocaleString("es-CO")}</td>
                       <td>{r.urgencia}</td>
-                      <td style={{ textTransform: "capitalize", fontWeight: 600 }}>
-                        {r.status}
-                      </td>
                       <td>
                         <button
                           title="Ver flujo"
@@ -408,6 +464,16 @@ function RequisicionesInner({ children }) {
               </tbody>
             </table>
           </div>
+        </div>
+        <div className="floating-actions">
+          <button onClick={fetchAll} className="fab-btn secondary">
+            <FontAwesomeIcon icon={faRefresh} />
+          </button>
+          {permissions?.canCreateRequisition && (
+            <button onClick={abrirModalNuevaReq} className="fab-btn primary">
+              <FontAwesomeIcon icon={faPlus} />
+            </button>
+          )}
         </div>
       </div>
       {editing && (
@@ -524,6 +590,7 @@ function RequisicionesInner({ children }) {
           </div>
         </div>
       )}
+
     </div>
   );
 }

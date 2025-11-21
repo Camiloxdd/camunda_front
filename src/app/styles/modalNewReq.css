@@ -15,6 +15,62 @@
   padding: 24px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   animation: wizardModal-scaleIn 0.3s ease;
+  position: relative;
+}
+
+/* overlay de carga (confined to container) */
+.loading-container {
+	position: absolute;
+	inset: 0;
+	z-index: 40;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255,255,255,0.92);
+	/* inica visible por defecto; las clases controlan animación */
+	opacity: 1;
+	transform: translateY(0) scale(1);
+	transition: opacity 350ms ease, transform 350ms ease;
+	pointer-events: all;
+}
+
+/* entrada opcional */
+.loading-container.fade-in {
+	opacity: 1;
+	transform: translateY(0) scale(1);
+}
+
+/* salida: animación al desaparecer */
+.loading-container.fade-out {
+	opacity: 0;
+	transform: translateY(-8px) scale(0.995);
+	pointer-events: none;
+}
+
+/* caja interna */
+.loading-cambios {
+	text-align: center;
+}
+
+/* logo girando */
+.LogoCambios {
+	width: 80px;
+	height: 80px;
+	display: inline-block;
+	animation: logo-spin 900ms linear infinite;
+}
+
+/* texto bajo logo */
+.textLoading {
+	margin-top: 10px;
+	color: #111827;
+	font-weight: 600;
+}
+
+/* keyframes */
+@keyframes logo-spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
 }
 
 .wizardModal-header {

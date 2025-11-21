@@ -1,20 +1,21 @@
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
-import timeLap from "./components/timeLap";
+
 config.autoAddCss = false;
 
 import "./globals.css";
 import ClientToast from "../../src/app/components/ClientToast"; // 👈 importas el cliente
+import { poppins } from "../../public/fonts/fonts";
 
 export const metadata = {
-  title: "Camunda Next.js App",
-  description: "Interact with Camunda Tasks",
+  title: "Requisición de compras",
+
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      <body className={`${poppins.className}`}>
         {children}
         <ClientToast />
       </body>

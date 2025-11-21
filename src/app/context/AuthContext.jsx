@@ -1,5 +1,6 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
+import api from "../services/axios";
 
 const AuthContext = createContext(null);
 
@@ -7,15 +8,24 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
 
+  // ✅ función para obtener usuario autenticado
   const fetchUser = async () => {
     setLoadingUser(true);
     try {
-      const res = await fetch("http://localhost:4000/api/auth/me", { credentials: "include" });
-      if (!res.ok) {
+      if (typeof window === "undefined") return; // evita error SSR
+      const token = localStorage.getItem("token"); // ✅ aquí lo definimos
+
+      if (!token) {
         setUser(null);
         return;
       }
-      const data = await res.json();
+
+      // ✅ llamada protegida con header Bearer
+      const res = await api.get("/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = res.data;
       setUser(data || null);
     } catch (e) {
       console.error("fetchUser error:", e);
@@ -44,11 +54,10 @@ export function AuthProvider({ children }) {
     isSolicitante,
     isComprador,
     isSuperAdmin,
-    // reglas de negocio:
     canCreateRequisition: isSolicitante || isSuperAdmin,
     canViewDashboard: isAprobador || isSuperAdmin,
-    canViewRequisiciones: isSolicitante || isAprobador || isComprador || isSuperAdmin,
-    // añade más flags según necesites
+    canViewRequisiciones:
+      isSolicitante || isAprobador || isComprador || isSuperAdmin,
   };
 
   const hasRole = (roleName) => {

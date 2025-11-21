@@ -16,6 +16,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
+import api from "../services/axios";   
 
 export const Sidebar = ({ onToggle }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -62,15 +63,15 @@ export const Sidebar = ({ onToggle }) => {
 
     const handleLogout = async () => {
         try {
+            const token = localStorage.getItem("token");
             // si el contexto provee logout, ejecutarlo
             if (typeof logout === "function") {
                 try { logout(); } catch (e) { /* ignore */ }
             }
 
             // informar al backend para borrar cookie/session
-            await fetch("http://localhost:4000/api/auth/logout", {
-                method: "POST",
-                credentials: "include",
+            await api.post("http://localhost:8000/api/auth/logout", {
+                headers: { Authorization: `Bearer ${token}` },
             });
 
             // redirigir al login (ajusta ruta si tu app usa otra)
@@ -103,13 +104,16 @@ export const Sidebar = ({ onToggle }) => {
                             </button>
                             
                         ))}
-                            <button type="button" className="logoutBtn" onClick={handleLogout} title="Cerrar sesión">
-                                <FontAwesomeIcon icon={faRightFromBracket} size="lg" />
-                                {isOpen && <p>Cerrar sesión</p>}
-                            </button>
-                    </nav>
 
-                    {/* Footer: botón de cerrar sesión */}
+                    </nav>
+                    <nav className="sidebar-9-footer">
+                        <button type="button" title="Cerrar sesión" onClick={handleLogout} >
+                            <FontAwesomeIcon icon={faRightFromBracket} size="lg" />
+                            {isOpen && <p>Cerrar sesión</p>}
+                        </button>
+                    </nav>
+                    
+                    
 
                 </div>
             </aside>

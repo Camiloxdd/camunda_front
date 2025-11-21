@@ -61,6 +61,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [mostrarModalProductos, setMostrarModalProductos] = useState(false);
     const [productoActivo3, setProductoActivo3] = useState(0);
     const [showAnimation, setShowAnimation] = useState(false);
+    // nuevo estado: indica transición/carga entre pasos
+    const [stepLoading, setStepLoading] = useState(false);
+    // controla si el overlay está montado (visible en DOM)
+    const [stepLoadingVisible, setStepLoadingVisible] = useState(false);
+    // controla la clase de salida (fade-out)
+    const [stepLoadingExiting, setStepLoadingExiting] = useState(false);
     const [mostrarModalProductos3, setMostrarModalProductos3] = useState(false);
     const [formData, setFormData] = useState(initialForm);
 
@@ -184,7 +190,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
 
         (async () => {
             try {
-                const res = await fetch("http://localhost:4000/api/auth/me", {
+                const res = await fetch("http://localhost:8000/api/auth/me", {
                     credentials: "include",
                 });
                 if (!res.ok) return;
@@ -268,7 +274,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     async function checkRequisicionValorTotalFromDB(id) {
         try {
             if (!id) return false;
-            const res = await fetch(`http://localhost:4000/api/requisiciones/${id}`, {
+            const res = await fetch(`http://localhost:8000/api/requisiciones/${id}`, {
                 credentials: "include",
             });
             if (!res.ok) {
@@ -292,6 +298,18 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
 
         if (formData.productos.length === 0) {
             toast.error("Agrega al menos un producto.");
+            return;
+        }
+
+        // Validación: cada producto debe ser tecnológico o ergonómico (o ambos)
+        const invalidTipo = formData.productos
+            .map((p, i) => ({ p, i }))
+            .filter(({ p }) => !Boolean(p.compraTecnologica) && !Boolean(p.ergonomico));
+        if (invalidTipo.length > 0) {
+            const list = invalidTipo
+                .map(({ p, i }) => p.nombre ? `${i + 1} (${p.nombre})` : `${i + 1}`)
+                .join(", ");
+            toast.error(`Cada producto debe ser tecnológico o ergonómico. Revisa los ítems: ${list}`);
             return;
         }
 
@@ -358,7 +376,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     valor_total: getTotalEstimado(),
                 };
 
-                const metaRes = await fetch(`http://localhost:4000/api/requisiciones/${id}`, {
+                const metaRes = await fetch(`http://localhost:8000/api/requisiciones/${id}`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
@@ -366,7 +384,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 });
                 if (!metaRes.ok) throw new Error("Error actualizando requisición");
 
-                const prodRes = await fetch(`http://localhost:4000/api/requisiciones/${id}/productos`, {
+                const prodRes = await fetch(`http://localhost:8000/api/requisiciones/${id}/productos`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     credentials: "include",
@@ -389,7 +407,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     processInstanceKey,
                 };
 
-                const res = await fetch("http://localhost:4000/api/requisicion/create", {
+                const res = await fetch("http://localhost:8000/api/requisicion/create", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(creationPayload),
@@ -423,7 +441,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         const key = localStorage.getItem("processInstanceKey");
         if (key) {
             try {
-                await fetch(`http://localhost:4000/api/process/${key}/cancel`, { method: "POST" });
+                await fetch(`http://localhost:8000/api/process/${key}/cancel`, { method: "POST" });
                 localStorage.removeItem("processInstanceKey");
                 toast.info("Requisicion cancelada correctamente.");
                 console.log(`Proceso Camunda ${key} cancelado.`);
@@ -443,19 +461,63 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     }, [formData.productos.length]);
 
     const handleNext = async () => {
-        const next = Math.min(maxStep, step + 1);
-        if (next === step) return;
-        const ok = await handleBeforeEnterStep(step, next);
-        if (ok) setStep(next);
-    };
+		const next = Math.min(maxStep, step + 1);
+		if (next === step) return;
+		try {
+			// mostrar overlay
+			setStepLoadingVisible(true);
+			setStepLoading(true);
+			const ok = await handleBeforeEnterStep(step, next);
+			if (ok) setStep(next);
+		} catch (err) {
+			console.error("Error en transición siguiente:", err);
+		} finally {
+			// disparar animación de salida y limpiar después de su duración
+			setStepLoading(false);
+			setStepLoadingExiting(true);
+			setTimeout(() => {
+				setStepLoadingExiting(false);
+				setStepLoadingVisible(false);
+			}, 360); // debe coincidir con la duración CSS (ej. 350ms)
+		}
+	};
 
-    const handlePrev = () => {
-        const prev = Math.max(minStep, step - 1);
-        setStep(prev);
-    };
+    const handlePrev = async () => {
+		const prev = Math.max(minStep, step - 1);
+		try {
+			setStepLoadingVisible(true);
+			setStepLoading(true);
+			// pequeña pausa visual para que el loading sea perceptible
+			await new Promise((r) => setTimeout(r, 250));
+			setStep(prev);
+		} catch (err) {
+			console.error("Error en transición anterior:", err);
+		} finally {
+			setStepLoading(false);
+			setStepLoadingExiting(true);
+			setTimeout(() => {
+				setStepLoadingExiting(false);
+				setStepLoadingVisible(false);
+			}, 360);
+		}
+	};
 
     const handleBeforeEnterStep = async (currentStep, nextStep) => {
         try {
+            // Validación al avanzar de Paso 2 -> Paso 3:
+            if (currentStep === 2 && nextStep === 3) {
+                const invalid = formData.productos
+                    .map((p, i) => ({ p, i }))
+                    .filter(({ p }) => !Boolean(p.compraTecnologica) && !Boolean(p.ergonomico));
+                if (invalid.length > 0) {
+                    const names = invalid
+                        .map(({ p, i }) => p.nombre ? `${i + 1} (${p.nombre})` : `${i + 1}`)
+                        .join(", ");
+                    toast.error(`Cada producto debe ser tecnológico o ergonómico. Revisa los ítems: ${names}`);
+                    return false;
+                }
+            }
+
             if (currentStep === 3 && nextStep === 4) {
                 const productosIncompletos = formData.productos.filter(
                     (p) =>
@@ -512,13 +574,33 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     };
 
     const handleCloseModal = () => {
-        handleCancelWizard();
-        onClose();
-    }
+		// evitar cerrar durante una transición/animación
+		if (stepLoadingVisible) return;
+		handleCancelWizard();
+		onClose();
+	};
 
     return (
         <div className="wizardModal-overlay">
-            <div className="wizardModal-container">
+            {/* asegurar que el overlay interno quede confinado a este container */}
+            <div className="wizardModal-container" style={{ position: "relative" }}>
+ 				{/* Overlay de carga entre pasos (solo dentro del container) */}
+ 				{stepLoadingVisible && (
+ 					<div
+						className={`loading-container ${stepLoadingExiting ? "fade-out" : "fade-in"}`}						style={{ position: "absolute", inset: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.92)" }}
+					>
+						<div className="loading-cambios" style={{ textAlign: "center" }}>
+							<img
+								src="/coopidrogas_logo_mini.png"
+								className="LogoCambios"
+								alt="Cargando..."
+								// ancho/alto controlados en CSS; la rotación viene de .LogoCambios
+							/>
+							<p className="textLoading" style={{ marginTop: 10 }}>Cargando...</p>
+					</div>
+					</div>
+ 				)}
+ 
                 <div className="wizardModal-header">
                     <h2>Solicitud de compra</h2>
                     <button className="wizardModal-close" onClick={handleCloseModal}>
@@ -1147,7 +1229,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         <button
                             className="wizardModal-btn wizardModal-prev"
                             onClick={handlePrev}
-                            disabled={showAnimation}
+                            disabled={showAnimation || stepLoadingVisible}
                         >
                             ← Anterior
                         </button>
@@ -1156,7 +1238,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         <button
                             className="wizardModal-btn wizardModal-next"
                             onClick={handleNext}
-                            disabled={showAnimation}
+                            disabled={showAnimation || stepLoadingVisible}
                         >
                             Siguiente →
                         </button>
@@ -1164,14 +1246,14 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         <button
                             className="wizardModal-btn wizardModal-confirm"
                             onClick={handleSubmitFinal}
-                            disabled={showAnimation}
+                            disabled={showAnimation || stepLoadingVisible}
                         >
                             Finalizar
                         </button>
                     )}
                 </div>
-            </div>
-
-        </div>
-    );
-}
+             </div>
+ 
+         </div>
+     );
+ }

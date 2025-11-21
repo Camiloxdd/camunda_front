@@ -4,25 +4,75 @@ import { Sidebar } from "../components/Slidebar";
 import Navbar from "../components/navbar";
 import SearchBar from "../components/searchBar";
 import ApprovalModal from "../components/ApprovalModal";
-import { faFile, faFileExcel } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faPencil, faFilePdf, faTimeline, faX, faPlus, faRefresh, faFile, faFileCircleCheck, faFileCircleQuestion, faFileCircleXmark, faFileEdit, faFileExcel, faUserPen, faDownload, faBoxArchive } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Suspense } from "react";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
-import { approveBuyerTask } from "../services/camunda";
+import { approveBuyerTask, iniciarProceso } from "../services/camunda";
+import styles from "../dashboard/DashboardRequisiciones.module.css";
+import api from "../services/axios";
+import WizardModal from "../components/modalNewReq";
 
 function DashboardInner() {
+  function getBadgeClass(estado) {
+    const normalized = String(estado).toLowerCase().trim();
+
+    switch (normalized) {
+      case "pendiente":
+        return styles.statusPending;
+
+      case "aprobada":
+        return styles.statusApproved;
+
+      case "rechazada":
+        return styles.statusRejected;
+
+      case "totalmente aprobada":
+        return styles.statusApproved; // Usar el mismo estilo que "aprobada"
+
+      case "devuelta":
+        return styles.statusPending; // Amarillo/naranja como pendiente
+
+      default:
+        return styles.statusPending; // Fallback
+    }
+  }
+
+  function getBadgeClassBar(estado) {
+    const normalized = String(estado).toLowerCase().trim();
+
+    switch (normalized) {
+      case "pendiente":
+        return styles.statusPendingBar;
+
+      case "aprobada":
+        return styles.statusApprovedBar;
+
+      case "rechazada":
+        return styles.statusRejectedBar;
+
+      case "totalmente aprobada":
+        return styles.statusApprovedBar; // Usar el mismo estilo que "aprobada"
+
+      case "devuelta":
+        return styles.statusPendingBar; // Amarillo/naranja como pendiente
+
+      default:
+        return styles.statusPendingBar; // Fallback
+    }
+  }
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [requisiciones, setRequisiciones] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedReq, setSelectedReq] = useState(null); // para la modal de aprobador
-  const [verifyModalReq, setVerifyModalReq] = useState(null); // para comprador: detalles a mostrar en modal
+  const [modalInitialData, setModalInitialData] = useState(null);
+  const [selectedReq, setSelectedReq] = useState(null);
+  const [verifyModalReq, setVerifyModalReq] = useState(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { permissions, user } = useAuth();
   const [statusFilter, setStatusFilter] = useState("todas");
-
-
-
   // IDs para prevenir toasts duplicados
   const sessionToastIdRef = useRef("session-started");
   const pendingToastIdRef = useRef("pending-reqs");
@@ -30,12 +80,22 @@ function DashboardInner() {
   const newReqsToastIdRef = useRef("new-reqs");
   const devueltaToastIdRef = useRef("devuelta-reqs");
   const aprobadaToastIdRef = useRef("aprobada-reqs");
-
   const prevPendingIdsRef = useRef(new Set());
   const prevStatusesRef = useRef(new Map());
   const firstPollRef = useRef(true);
+  const [open, setOpen] = useState(false);
+  const [solicitanteReq, setSolicitanteReq] = useState(null);
+  const [token, setToken] = useState(null);
+  const [openReqModal, setOpenReqModal] = useState(false);
+  const [loadingSolicitante, setLoadingSolicitante] = useState(false);
 
-  // utilidad para formatear como pesos colombianos
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const t = localStorage.getItem("token");
+      setToken(t);
+    }
+  }, []);
+
   const formatCOP = (val) => {
     if (val == null || val === "") return "—";
     const n = Number(val);
@@ -44,14 +104,12 @@ function DashboardInner() {
   };
 
   const requisicionesFiltradas = requisiciones.filter((req) => {
-    // 🔸 1. Filtro por texto (búsqueda en tiempo real)
     const matchesSearch = !searchQuery.trim()
       ? true
       : String(req.requisicion_id || "")
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
 
-    // 🔸 2. Filtro por estado
     const estado = String(req.status || req.estado_aprobacion || "").toLowerCase();
     const matchesStatus =
       statusFilter === "todas" ? true : estado === statusFilter;
@@ -59,45 +117,40 @@ function DashboardInner() {
     return matchesSearch && matchesStatus;
   });
 
-
-
   const fetchRequisiciones = async () => {
     try {
       setLoading(true);
 
       if (permissions?.isAprobador && user?.nombre) {
-        const res = await fetch(
-          `http://localhost:4000/api/requisiciones/aprobador/${encodeURIComponent(user.nombre)}`,
-          { credentials: "include" }
+        const res = await api.get(
+          `http://localhost:8000/api/requisiciones/aprobador/${encodeURIComponent(user.nombre)}`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-        if (!res.ok) throw new Error("Error al obtener requisiciones del aprobador");
-        const data = await res.json();
+        // axios lanza en non-2xx; no usar res.ok. Usar res.status si es necesario.
+        if (res.status < 200 || res.status >= 300) throw new Error("Error al obtener requisiciones del aprobador");
+        const data = res.data;
         const lista = Array.isArray(data) ? data : [data];
-
         // 🧠 Añadir estado de aprobación según el orden (del timeLap)
         const completadas = await Promise.all(
           lista.map(async (req) => {
             try {
-              const r = await fetch(
-                `http://localhost:4000/api/requisiciones/${req.requisicion_id}/aprobacion`,
-                { credentials: "include" }
+              const r = await api.get(
+                `http://localhost:8000/api/requisiciones/${req.requisicion_id}/aprobacion`,
+                { headers: { Authorization: `Bearer ${token}` } }
               );
-              if (!r.ok) return { ...req, puedeAprobar: false };
+              // comprobar status con axios
+              if (r.status < 200 || r.status >= 300) return { ...req, puedeAprobar: false };
 
-              const info = await r.json();
+              const info = r.data;
               const { approvers, nextOrder } = info || {};
               if (!approvers) return { ...req, puedeAprobar: false };
-
-              // Encontrar si este usuario está dentro del flujo
+              // ...resto inalterado...
               const actual = approvers.find(
                 (a) =>
                   a.nombre_aprobador?.toLowerCase() === user.nombre.toLowerCase() ||
                   a.rol_aprobador?.toLowerCase() === user.rol?.toLowerCase()
               );
-
-              // ✅ Puede aprobar si está visible o es su turno (nextOrder)
               const puedeAprobar = actual?.visible === true || actual?.orden === nextOrder;
-
               return { ...req, puedeAprobar };
             } catch {
               return { ...req, puedeAprobar: false };
@@ -108,16 +161,20 @@ function DashboardInner() {
         setRequisiciones(completadas);
       }
       else if (permissions?.isComprador) {
-        const res = await fetch("http://localhost:4000/api/requisiciones", { credentials: "include" });
-        const data = await res.json();
+        const res = await api.get("http://localhost:8000/api/requisiciones", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = res.data;
         const lista = (Array.isArray(data) ? data : [data]).filter(
           (r) => (r.status || r.estado) === "aprobada" || (r.status || r.estado) === "devuelta"
         );
         setRequisiciones(lista);
       }
       else if (user?.nombre) {
-        const res = await fetch("http://localhost:4000/api/requisiciones", { credentials: "include" });
-        const data = await res.json();
+        const res = await api.get("http://localhost:8000/api/requisiciones", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = res.data;
         const lista = (Array.isArray(data) ? data : [data]).filter(
           (r) => r.nombre_solicitante?.toLowerCase() === user.nombre.toLowerCase()
         );
@@ -133,34 +190,33 @@ function DashboardInner() {
     }
   };
 
-
-
-
-  useEffect(() => {
-    if (permissions) fetchRequisiciones();
-  }, [permissions, user]);
-  // refrescar cuando cambien permisos / user
-
-  // Polling para notificaciones (nuevas, devueltas, aprobadas)
   useEffect(() => {
     let intervalId;
     const startPolling = () => {
-      // inicializar estado previo para evitar falsas detecciones y permitir diffs inmediatos
       const init = async () => {
         try {
           if (permissions?.isAprobador) {
-            const resPendInit = await fetch("http://localhost:4000/api/requisiciones/pendientes", { credentials: "include" });
-            if (resPendInit.ok) {
-              const dataPendInit = await resPendInit.json();
-              prevPendingIdsRef.current = new Set((Array.isArray(dataPendInit) ? dataPendInit : [dataPendInit]).map(r => r.requisicion_id));
-            }
+            const resPendInit = await api.get(
+              "http://localhost:8000/api/requisiciones/pendientes",
+              { headers: { Authorization: `Bearer ${token}`, "X-User-Id": user?.id } }
+            );
+
+            const dataPendInit = resPendInit.data;
+            prevPendingIdsRef.current = new Set(
+              (Array.isArray(dataPendInit) ? dataPendInit : [dataPendInit]).map(r => r.requisicion_id)
+            );
+
           }
-          const resAllInit = await fetch("http://localhost:4000/api/requisiciones", { credentials: "include" });
-          if (resAllInit.ok) {
-            const allInit = await resAllInit.json();
-            prevStatusesRef.current = new Map((Array.isArray(allInit) ? allInit : [allInit]).map(r => [r.requisicion_id, r.status]));
-          }
-          // marcar que ya pasó la primera recolección
+          const resAllInit = await api.get(
+            "http://localhost:8000/api/requisiciones",
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          const allInit = resAllInit.data;
+          prevStatusesRef.current = new Map(
+            (Array.isArray(allInit) ? allInit : [allInit]).map(r => [r.requisicion_id, r.status])
+          );
+
           firstPollRef.current = false;
         } catch (err) {
           console.error("Error inicializando polling:", err);
@@ -173,9 +229,11 @@ function DashboardInner() {
         try {
           // 1) Para aprobadores: comprobar pendientes y comparar ids
           if (permissions?.isAprobador) {
-            const resPend = await fetch("http://localhost:4000/api/requisiciones/pendientes", { credentials: "include" });
+            const resPend = await api.get("http://localhost:8000/api/requisiciones/pendientes", {
+              headers: { Authorization: `Bearer ${token}`, "X-User-Id": user?.id },
+            });
             if (resPend.ok) {
-              const dataPend = await resPend.json();
+              const dataPend = resPend.data;
               const pendingIds = new Set((Array.isArray(dataPend) ? dataPend : [dataPend]).map(r => r.requisicion_id));
               const prev = prevPendingIdsRef.current;
               if (!firstPollRef.current) {
@@ -197,9 +255,11 @@ function DashboardInner() {
           }
 
           // 2) Comprobar cambios de status globales (devuelta/aprobada)
-          const resAll = await fetch("http://localhost:4000/api/requisiciones", { credentials: "include" });
+          const resAll = await api.get("http://localhost:8000/api/requisiciones", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
           if (resAll.ok) {
-            const all = await resAll.json();
+            const all = resAll.data;
             const prevStatuses = prevStatusesRef.current;
             if (!firstPollRef.current) {
               for (const r of Array.isArray(all) ? all : [all]) {
@@ -236,12 +296,15 @@ function DashboardInner() {
         }
       }, 10000); // cada 10s
     };
-
-    if (permissions) startPolling();
+    if (!permissions || !token) return;
+    startPolling();
     return () => clearInterval(intervalId);
   }, [permissions]);
 
-  // Exponer toast en window para permitir llamadas internas del polling (opcional)
+  useEffect(() => {
+    if (permissions) fetchRequisiciones();
+  }, [permissions, user]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.toast = toast;
@@ -249,15 +312,29 @@ function DashboardInner() {
     return () => { if (typeof window !== "undefined") window.toast = undefined; };
   }, []);
 
-  // comprador: abrir modal con resumen (igual paso 4)
   const handleVerifyOpen = async (req) => {
     try {
       setVerifyLoading(true);
-      const res = await fetch(`http://localhost:4000/api/requisiciones/${req.requisicion_id}`, { credentials: "include" });
-      if (!res.ok) throw new Error("Error al obtener detalles");
-      const data = await res.json();
-      // data.requisicion y data.productos están presentes según backend
-      setVerifyModalReq({ ...data.requisicion, productos: data.productos, requisicion_id: req.requisicion_id });
+
+      const res = await api.get(`http://localhost:8000/api/requisiciones/${req.requisicion_id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status !== 200) throw new Error("Error al obtener detalles");
+
+      const data = res.data;
+
+      // 👇👇 AGREGA ESTO AQUÍ 👇👇
+      console.log("🔵 DATA COMPLETA:", data);
+      console.log("🟦 Productos recibidos:", data.productos);
+      console.log("🟩 Requisición recibida:", data.requisicion);
+
+      setVerifyModalReq({
+        ...data.requisicion,
+        productos: data.productos,
+        requisicion_id: req.requisicion_id
+      });
+
     } catch (err) {
       console.error(err);
       toast.error("No se pudo cargar la requisición");
@@ -265,6 +342,7 @@ function DashboardInner() {
       setVerifyLoading(false);
     }
   };
+
 
   const handleDevolver = async (id) => {
     const toastId = toast.info(
@@ -293,14 +371,13 @@ function DashboardInner() {
             onClick={async () => {
               toast.dismiss(toastId);
               try {
-                const res = await fetch(
-                  `http://localhost:4000/api/requisiciones/${id}/devolver`,
+                const res = await api.post(
+                  `http://localhost:8000/api/requisiciones/${id}/devolver`,
                   {
-                    method: "POST",
-                    credentials: "include",
+                    headers: { Authorization: `Bearer ${token}` },
                   }
                 );
-                if (!res.ok) throw new Error("Error al devolver");
+                if (res.status !== 200) throw new Error("Error al devolver");
                 toast.success("Requisición devuelta correctamente");
                 setVerifyModalReq(null);
                 await fetchRequisiciones();
@@ -344,8 +421,6 @@ function DashboardInner() {
     );
   };
 
-
-  // comprador: aprobar totalmente (marcar requisición 100% aprobada)
   const handleAprobar = async (id) => {
     const toastId = toast.info(
       <div
@@ -374,11 +449,10 @@ function DashboardInner() {
               toast.dismiss(toastId);
               try {
                 setVerifyLoading(true);
-                const res = await fetch(
-                  `http://localhost:4000/api/requisiciones/${id}/aprobar-total`,
+                const res = await api.post(
+                  `http://localhost:8000/api/requisiciones/${id}/aprobar-total`,
                   {
-                    method: "POST",
-                    credentials: "include",
+                    headers: { Authorization: `Bearer ${token}` },
                   }
                 );
                 if (!res.ok) throw new Error("Error al aprobar");
@@ -491,38 +565,154 @@ function DashboardInner() {
     }
   }, []);
 
+  function getStatusLabel(estado) {
+    const normalized = String(estado).toLowerCase().trim();
 
-  const getAreaNombre = (area) => {
-    switch (area) {
-      case "TyP":
-        return "Tecnología y Proyectos";
-      case "SST":
-        return "Seguridad y Salud en el Trabajo";
-      case "GerenciaAdmin":
-        return "Gerencia Administrativa";
-      case "GerenciaGeneral":
-        return "Gerencia General";
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status) {
+    switch (normalized) {
       case "pendiente":
         return "Pendiente";
       case "rechazada":
         return "Rechazada";
       case "aprobada":
         return "Aprobada";
+      case "totalmente aprobada":
+        return "Totalmente Aprobada";
+      case "devuelta":
+        return "Devuelta";
       default:
-        return status;
+        return estado || "Desconocido";
+    }
+  }
+
+  useEffect(() => {
+    fetchRequisiciones();
+
+  }, []);
+
+  const abrirModalNuevaReq = () => {
+    handleStartProcessCamunda();
+    setOpen(true);
+
+  }
+
+  const handleStartProcessCamunda = async () => {
+    try {
+      await iniciarProceso({})
+    } catch (error) {
+      console.log("Error al iniciar el proceso: ", error)
+    }
+  }
+
+  const handleOpenSolicitanteModal = async (req) => {
+    try {
+      setLoadingSolicitante(true);
+      const res = await api.get(
+        `http://localhost:8000/api/requisiciones/${req.requisicion_id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const data = res.data;
+
+      console.log("🔵 Req solicitante:", data);
+
+      // Intentar obtener información de aprobadores (flujo)
+      let aprobadores = [];
+      try {
+        const apr = await api.get(
+          `http://localhost:8000/api/requisiciones/${req.requisicion_id}/aprobacion`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const aprData = apr.data || {};
+        aprobadores = aprData.approvers || aprData.aprobadores || [];
+      } catch (e) {
+        console.warn("No se pudo obtener data de aprobadores:", e);
+      }
+
+      // Asegurar que siempre haya un campo `requisicion_id` (fallbacks)
+      setSolicitanteReq({
+        ...data.requisicion,
+        productos: data.productos,
+        requisicion_id:
+          data.requisicion?.requisicion_id ??
+          data.requisicion_id ??
+          req.requisicion_id,
+        aprobadores, // añadir lista de aprobadores al estado
+      });
+
+      setOpenReqModal(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("No se pudo cargar la requisición");
+    } finally {
+      setLoadingSolicitante(false);
     }
   };
 
-  const getStatusClass = (status) => {
-    if (status === "aprobada") return "status-green";
-    if (status === "rechazada") return "status-red";
-    if (status === "pendiente") return "status-orange";
-    return "";
+  // Calcular estado normalizado de la requisición seleccionada (para usar en el modal del solicitante)
+  const estadoSolicitante = solicitanteReq
+    ? String(
+      solicitanteReq?.status ||
+      solicitanteReq?.estado_aprobacion ||
+      solicitanteReq?.estado ||
+      ""
+    ).toLowerCase()
+    : "";
+
+  // Helper para mostrar estado legible de cada aprobador
+  const getApproverLabel = (a) => {
+    // posibles campos: aprobado, approved, estado_aprobador, visible, orden
+    if (!a) return "Desconocido";
+    if (a.aprobado === true || a.approved === true || String(a.estado_aprobador || "").toLowerCase() === "aprobado") {
+      return "Aprobado";
+    }
+    if (a.visible === true) return "Visible";
+    return "Pendiente";
+  };
+
+  const getAreaNombre = (areaId) => {
+    switch (areaId) {
+      case "TyP":
+        return "Tecnologia y Proyectos";
+      case "SST":
+        return "Seguridad y Salud en el Trabajo";
+      case "GerenciaAdmin":
+        return "Gerencia Adminsitrativa";
+      case "GerenciaGeneral":
+        return "Gerencia General";
+    }
+  };
+
+  const getCargoNombre = (cargoId) => {
+    switch (cargoId) {
+      case "managerGeneral":
+        return "Gerente General";
+      case "managerAdmin":
+        return "Gerente Administrativo";
+      case "managerAreaTyc":
+        return "Gerente de Área Tecnologia y Proyectos";
+      case "managerSST":
+        return "Gerente de Área SST";
+      case "dicTyC":
+        return "Director / Líder de Área Tec y Proyectos";
+      case "dicSST":
+        return "Director / Líder de SST";
+      case "CoordiDevWeb":
+        return "Coordinador Desarrollo Web";
+      case "analistaQA":
+        return "Analista Requerimientos y QA";
+      case "gerAdmin":
+        return "Gerente Administrativo";
+      case "gerGeneral":
+        return "Gerente General";
+      case "dicTYP":
+        return "Director Tecnologia y Proyectos";
+      case "gerTyC":
+        return "Gerente Tecnologia y Proyectos";
+      default:
+        return cargoId || "Usuario";
+    }
   };
 
   return (
@@ -537,79 +727,83 @@ function DashboardInner() {
         }}
       >
         <Navbar />
-
-        <div className="containerOneDashboard">
-          <div className="firstContainerDash">
-            <div className="infoGeneralUserDash">
-              <h2>Dashboard</h2>
-              <p>Revisa si tienes requisiciones pendientes por aprobar.</p>
-            </div>
-
-            <div className="porcents">
-              <div className="totalRequisiciones">
-                <div className="iconTotalReq">
-                  <FontAwesomeIcon icon={faFile} />
+        <WizardModal
+          open={open}
+          onClose={() => { setOpen(false); setModalInitialData(null); }}
+          onCreated={fetchRequisiciones}
+          initialData={modalInitialData}
+          startStep={modalInitialData ? 2 : undefined}
+        />
+        <Suspense fallback={<div>Cargando...</div>}>
+          <div className="containerOneDashboard">
+            <div className="firstContainerDash">
+              <div className="porcents">
+                <div className="totalRequisiciones">
+                  <div className="infoTotalReq">
+                    <p>Requisiciones totales</p>
+                    <h2>{requisiciones.length}</h2>
+                  </div>
+                  <div className="iconTotalReq">
+                    <FontAwesomeIcon icon={faFile} />
+                  </div>
                 </div>
-                <div className="infoTotalReq">
-                  <p>Requisiciones totales</p>
-                  <h2>{requisiciones.length}</h2>
+                <div className="porAprobarRequisiciones">
+                  <div className="infoAprobarReq">
+                    <p>Requisiciones aprobadas</p>
+                    <h2>
+                      {requisiciones.filter((r) => (r.estado_aprobacion || r.status) === "Totalmente Aprobada").length}
+                    </h2>
+                  </div>
+                  <div className="iconAprobarReq">
+                    <FontAwesomeIcon icon={faFileCircleCheck} />
+                  </div>
                 </div>
-              </div>
-
-              <div className="porAprobarRequisiciones">
-                <div className="infoAprobarReq">
-                  <p>
-                    {permissions?.isAprobador ? "Requisiciones por aprobar" :
-                      permissions?.isComprador ? "Requisiciones para verificar" :
-                        "Requisiciones creadas"}
-                  </p>
-                  <h2>
-                    {permissions?.isAprobador
-                      ? requisiciones.filter((r) => (r.status || r.estado_aprobacion) === "pendiente").length
-                      : requisiciones.length}
-                  </h2>
+                <div className="pendientesAprobaciones">
+                  <div className="infoAprobarReq">
+                    <p>Requisiciones pendientes</p>
+                    <h2>
+                      {requisiciones.filter((r) => (r.estado_aprobacion || r.status) === "pendiente").length}
+                    </h2>
+                  </div>
+                  <div className="iconPendientesReq">
+                    <FontAwesomeIcon icon={faFileCircleQuestion} />
+                  </div>
                 </div>
-                <div className="iconAprobarReq">
-                  <FontAwesomeIcon icon={faFileExcel} />
+                <div className="rechazarAprobaciones">
+                  <div className="infoAprobarReq">
+                    <p>Requisiciones rechazadas</p>
+                    <h2>
+                      {requisiciones.filter((r) => (r.estado_aprobacion || r.status) === "rechazada").length}
+                    </h2>
+                  </div>
+                  <div className="iconRechazarReq">
+                    <FontAwesomeIcon icon={faFileCircleXmark} />
+                  </div>
+                </div>
+                <div className="floating-actions">
+                  <button onClick={fetchRequisiciones} className="fab-btn secondary">
+                    <FontAwesomeIcon icon={faRefresh} />
+                  </button>
+                  {permissions?.canCreateRequisition && (
+                    <button onClick={abrirModalNuevaReq} className="fab-btn primary">
+                      <FontAwesomeIcon icon={faPlus} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
+        </Suspense>
         <div className="secondContainerDash">
           <div className="containerTwoDash">
             <div className="papaHeaderRequi">
-              <div className="headerListReq">
-                <h2>
-                  {permissions?.isAprobador ? "Lista de Requisiciones por Aprobar" :
-                    permissions?.isComprador ? "Requisiciones Aprobadas (para Verificar)" :
-                      "Estado de tus requisiciones."}
-                </h2>
-                <p>
-                  {permissions?.isAprobador ? "Selecciona la requisición que deseas aprobar." :
-                    permissions?.isComprador ? "Verifica que la requisición sea correcta. Si no, devuélvela para corrección." :
-                      "Bienvenido al dashboard."}
-                </p>
-              </div>
               <div className="barraDeNavegacion">
                 <SearchBar
                   placeholder="Buscar por ID de requisición..."
                   onQueryChange={setSearchQuery}
                 />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="selectDashboard"
-                >
-                  <option value="todas">Todas</option>
-                  <option value="pendiente">Pendiente</option>
-                  <option value="rechazada">Rechazada</option>
-                  <option value="aprobada">Aprobada</option>
-                </select>
               </div>
             </div>
-
             <div className="listaReq">
               {loading ? (
                 <div className="loading-container">
@@ -633,80 +827,64 @@ function DashboardInner() {
                   </div>
                 </div>
               ) : (
-                requisicionesFiltradas.map((req) => (
-                  <div key={req.requisicion_id} className="requisicion">
-                    <div className="infoIzquierda">
-                      <h3 className="tittleHeaderRequeri">Requisición #{req.requisicion_id}</h3>
-                      <p className="subTittles">
-                        Creador:{" "}
-                        <span className="subChiquitin">{req.nombre_solicitante}</span>
-                      </p>
-                      <p className="subTittles">
-                        Fecha de creación:{" "}
-                        <span className="subChiquitin">
-                          {new Date(req.fecha).toLocaleDateString("es-ES")}
-                        </span>
-                      </p>
-                      <p className="subTittles">
-                        Estado:{" "}
-                        <span className={`status ${getStatusClass(req.status)}`}>{getStatusLabel(req.status || req.estado_aprobacion)}</span>
-                      </p>
-                      <p className="subTittles">
-                        Área: <span className="subChiquitin">{getAreaNombre(req.area)}</span>
-                      </p>
-                      <p className="subTittles">
-                        Valor total:{" "}
-                        <span className="subChiquitin">
-                          {formatCOP(req.valor_total)}
-                        </span>
-                      </p>
-                    </div>
+                requisicionesFiltradas.map((req) => {
+                  const estado = String(req.status || req.estado_aprobacion || "").toLowerCase();
+                  const fecha = req.fecha || req.created_at || "—";
+                  const valor = req.valor_total || req.valor || 0;
 
-                    <div className="infoDerecha">
-                      <FontAwesomeIcon icon={faFileExcel} />
-                      {permissions?.isAprobador ? (
-                        req.puedeAprobar ? (
-                          <button
-                            className="buttonReqEdit"
-                            onClick={() => setSelectedReq(req)} // abre modal aprobador
-                          >
-                            <p>Revisar</p>
-                          </button>
-                        ) : (
-                          <button
-                            className="buttonReqDisabled"
-                            disabled
-                          >
-                            Faltan aprobaciones previas
-                          </button>
-                        )
-                      ) : permissions?.isComprador ? (
-                        <button
-                          className="buttonReqEdit"
-                          onClick={() => handleVerifyOpen(req)} // abre modal comprador
-                        >
-                          <p>Verificar</p>
-                        </button>
-                      ) : null}
+                  return (
+                    <div key={req.requisicion_id} className="cardAccent" onClick={() => {
+                      if (permissions?.isComprador) {
+                        handleVerifyOpen(req);  // modal comprador
+                      }
+                      else if (permissions?.isAprobador) {
+                        setSelectedReq(req);    // ApprovalModal
+                      }
+                      else {
+                        handleOpenSolicitanteModal(req);
+                        setSolicitanteReq(req); // modal solicitante
+                        setOpenReqModal(true);
+                      }
+                    }}
+                    >
+                      <div className={`${styles.accentBar} ${getBadgeClassBar(estado)}`}></div>
 
+                      <div className={styles.accentContent}>
+                        <div className={styles.accentHeader}>
+                          <div className={styles.accentLeft}>
+                            <h3 className={styles.accentTitle}>Req. #{req.requisicion_id}</h3>
+                            <p className={styles.accentCreator}>{req.nombre_solicitante}</p>
+                          </div>
+
+                          <span className={`${styles.badge} ${getBadgeClass(estado)}`}>
+                            {getStatusLabel(estado)}
+                          </span>
+
+                        </div>
+
+                        <div className={styles.accentFooter}>
+                          <p className={styles.accentDate}>
+                            {fecha}
+                          </p>
+                          <p className={styles.accentPrice}>
+                            {formatCOP(valor)}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>
         </div>
-
-        {/* MODAL Aprobador (existente) */}
         {selectedReq && (
           <ApprovalModal
             requisicion={selectedReq}
             onClose={() => setSelectedReq(null)}
-            onApproved={fetchRequisiciones} // refresca la lista al aprobar
+            onApproved={fetchRequisiciones}
           />
         )}
-
-        {/* MODAL Comprador: resumen (paso 4) */}
         {verifyModalReq && (
           <div
             className="modalOverlayVerifiRequi"
@@ -734,7 +912,6 @@ function DashboardInner() {
                     </ul>
                   </div>
                 </div>
-
                 <div className="tabla-productos">
                   <h4>Productos</h4>
                   <table className="tablaResumen">
@@ -759,7 +936,6 @@ function DashboardInner() {
                     </tbody>
                   </table>
                 </div>
-
                 <div className="buttonsVerifiRequi">
                   <button onClick={() => setVerifyModalReq(null)}>Cerrar</button>
                   <button onClick={() => handleDevolver(verifyModalReq.requisicion_id)} disabled={verifyLoading}>
@@ -773,12 +949,312 @@ function DashboardInner() {
             </div>
           </div>
         )}
+        {openReqModal && solicitanteReq && (
+          <div className="modalOverlay">
+            <div className="modalBox">
+              <style>{`
+                .skeleton-line{
+                  display:inline-block;
+                  height:12px;
+                  border-radius:6px;
+                  background: linear-gradient(90deg, #e9e9e9 25%, #f5f5f5 50%, #e9e9e9 75%);
+                  background-size: 200% 100%;
+                  animation: shimmer 1.2s linear infinite;
+                }
+                @keyframes shimmer{
+                  0%{ background-position: 200% 0; }
+                  100%{ background-position: -200% 0; }
+                }
+              `}</style>
+              <div className="infoIzquierdaReq">
+                <div className="contentIzquierda">
+                  {loadingSolicitante ? (
+                    <>
+                      <div className="tittle">
+                        <p style={{ fontSize: 18 }}>
+                          <span className="skeleton-line" style={{ width: 140, height: 20 }} />
+                        </p>
+                      </div>
+                      <div className="tagEstado" style={{ marginTop: 8 }}>
+                        <span className="skeleton-line" style={{ width: 80, height: 18, borderRadius: 12 }} />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="tittle">
+                        <p>REQUISICION #{solicitanteReq.requisicion_id}</p>
+                      </div>
+                      <div className="tagEstado">
+                        <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
+                          {getStatusLabel(estadoSolicitante)}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="detallesRequisicion">
+                  <h1>Detalles</h1>
+                  {loadingSolicitante ? (
+                    <div className="areaYFecha">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="containerInfoReq" style={{ marginBottom: 10 }}>
+                          <div className="skeleton-line" style={{ width: i % 2 ? "50%" : "80%", height: 14 }} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="areaYFecha">
+                      <div className="containerInfoReq">
+                        <p className="labelTittle">Área:</p>
+                        <p className="textLabel">{getAreaNombre(solicitanteReq.area) || "—"}</p>
+                      </div>
+                      <div className="containerInfoReq">
+                        <p className="labelTittle">Sede:</p>
+                        <p className="textLabel">{solicitanteReq.sede || "—"}</p>
+                      </div>
+                      <div className="containerInfoReq">
+                        <p className="labelTittle">Fecha:</p>
+                        <p className="textLabel">{solicitanteReq.fecha || "—"}</p>
+                      </div>
+                      <div className="containerInfoReq">
+                        <p className="labelTittle">Justificación:</p>
+                        <p className="textLabel">{solicitanteReq.justificacion || "No tiene."}</p>
+                      </div>
+                      <div className="containerInfoReq">
+                        <p className="labelTittle">Nivel de Urgencia:</p>
+                        <p className="textLabel">{solicitanteReq.urgencia || "—"}</p>
+                      </div>
+                      <div className="containerInfoReq">
+                        <p className="labelTittle">¿Esta presupuestada?:</p>
+                        <p className="textLabel">{solicitanteReq.presupuestada ? "Sí" : "No"}</p>
+                      </div>
+                      <br />
+                    </div>
+                  )}
+                </div>
+                <div className="buttonsAprobarReq">
+                  <br />
+                  {permissions?.isSolicitante && (
+                    <div className="flujoAprobacion">
+                      <h1>Flujo de aprobación</h1>
+                      <div className="listaDeAprobadores">
+                        <ul className="listaAprobadores">
+                          {loadingSolicitante ? (
+                            // skeleton aprobadores
+                            Array.from({ length: 3 }).map((_, i) => (
+                              <li key={"sk-ap-" + i} className="aprobadorRow" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
+                                <div style={{ flex: 1 }}>
+                                  <div className="skeleton-line" style={{ width: 160, height: 14, marginBottom: 6 }} />
+                                  <div className="skeleton-line" style={{ width: 100, height: 12 }} />
+                                </div>
+                                <div style={{ marginLeft: 12 }}>
+                                  <div className="skeleton-line" style={{ width: 80, height: 20, borderRadius: 12 }} />
+                                </div>
+                              </li>
+                            ))
+                          ) : solicitanteReq?.aprobadores?.length ? (
+                            solicitanteReq.aprobadores.map((ap, idx) => (
+                              <li key={ap.nombre_aprobador ?? ap.id ?? idx} className="aprobadorRow">
+                                <div className="aprobadorInfo">
+                                  <strong>- {ap.nombre_aprobador || ap.nombre || "—"}</strong>
+                                  <span className="aprobadorMeta">{getCargoNombre(ap.rol_aprobador || ap.rol)} </span>
+                                </div>
+                                <div className="aprobadorStatus">
+                                  <span className={`${styles.badge} ${getBadgeClass(ap.estado_aprobador || (ap.aprobado ? "aprobada" : "pendiente"))}`}>
+                                    {getApproverLabel(ap)}
+                                  </span>
+                                </div>
+                              </li>
+                            ))
+                          ) : (
+                            <li className="noAprobadores">No hay información del flujo de aprobación.</li>
+                          )}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                  {permissions?.isAprobador && estadoSolicitante === "pendiente" && (
+                    <>
+                      <button
+                        className="devolverBtn"
+                        onClick={() => handleDevolver(solicitanteReq.requisicion_id)}
+                      >Devolver</button>
+                      <button
+                        className="aprobarBtn"
+                        onClick={() => handleAprobar(solicitanteReq.requisicion_id)}
+                      >Aprobar</button>
+                    </>
+                  )}
+                  {permissions?.isComprador && estadoSolicitante === "aprobada" && (
+                    <button
+                      className="finalizarBtn"
+                      onClick={() => handleFinalizePurchase(solicitanteReq.requisicion_id)}
+                    >Finalizar Compra</button>
+                  )}
+                </div>
+              </div>
+              <div className="infoDerechaReq">
+                <div className="headerInfoReq">
+                  <div className="tittleHeaderReq">
+                    <h2>Valor de la Requisición</h2>
+                  </div>
+                  <div className="buttonsHeaderInfoReq">
+                    <button
+                      title="Ver flujo"
+                      onClick={() => openTimeline(solicitanteReq.requisicion_id)}
+                      style={{ color: "#1d5da8", fontSize: "15px" }}
+                      className="iconTimeLone"
+                    >
+                      <FontAwesomeIcon icon={faTimeline} />
+                    </button>
+                    <button
+                      title="Word"
+                      onClick={() => handleDescargarPDF(solicitanteReq.requisicion_id)}
+                      style={{ color: "#1d5da8", fontSize: "15px" }}
+                      className="iconPdf"
+                    >
+                      <FontAwesomeIcon icon={faDownload} />
+                    </button>
+                    {permissions?.canCreateRequisition && (
+                      <button
+                        title="Editar"
+                        onClick={() => handleEditOpen(solicitanteReq)}
+                      >
+                        <FontAwesomeIcon icon={faPencil} style={{ color: "#1d5da8", fontSize: "15px" }} />
+                      </button>
+                    )}
+                    {permissions?.canCreateRequisition && (
+                      <button
+                        title="Eliminar"
+                        onClick={() => handleDelete(solicitanteReq.requisicion_id)}
+                      >
+                        <FontAwesomeIcon icon={faTrash} style={{ color: "red", fontSize: "15px" }} />
+                      </button>
+                    )}
+                    <button
+                      className="modalCloseReq"
+                      style={{ color: "#1d5da8", fontSize: "15px", }}
+                      onClick={() => {
+                        setOpenReqModal(false);
+                        setSolicitanteReq(null);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faX} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="containerMontoTotal">
+                  <p className="labelMonto">Monto Total</p>
+                  <p className="labelTotal">{formatCOP(solicitanteReq.valor_total)}</p>
+                  <p className="labelMontoText">Valor total estimado para esta requisición</p>
+                </div>
+
+                <div className="containerProductosAsociados">
+                  <h2>Productos Asociados</h2>
+                  <div className="containerDeverdadTabla">
+                    <div className="tabla-productos-container">
+
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Producto / Servicio</th>
+                            <th className="center">Cantidad</th>
+                            <th className="right">Valor Unitario</th>
+                            <th className="center">Tecnológico</th>
+                            <th className="center">Ergonómico</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {loadingSolicitante ? (
+                            // skeleton rows mientras carga
+                            Array.from({ length: 3 }).map((_, sIdx) => (
+                              <tr key={"sk-" + sIdx} className={sIdx % 2 === 0 ? "fila-par" : "fila-impar"}>
+                                <td>
+                                  <div className="skeleton-line" style={{ width: "60%", height: 14 }} />
+                                </td>
+                                <td className="center">
+                                  <div className="skeleton-line" style={{ width: "30%", height: 12 }} />
+                                </td>
+                                <td className="right">
+                                  <div className="skeleton-line" style={{ width: "40%", height: 12 }} />
+                                </td>
+                                <td className="center">
+                                  <div className="skeleton-line" style={{ width: "30%", height: 12 }} />
+                                </td>
+                                <td className="center">
+                                  <div className="skeleton-line" style={{ width: "30%", height: 12 }} />
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            solicitanteReq?.productos?.map((producto, idx) => (
+                              <tr key={producto.id ?? idx} className={idx % 2 === 0 ? "fila-par" : "fila-impar"}>
+                                <td>
+                                  <p className="prod-nombre">{producto.nombre}</p>
+                                  <p className="prod-desc">{producto.descripcion}</p>
+                                </td>
+
+                                <td className="center">
+                                  <p className="bold">{producto.cantidad}</p>
+                                </td>
+
+                                <td className="right">
+                                  <p className="valor">
+                                    {formatCOP(producto.valor_estimado)}
+                                  </p>
+                                </td>
+
+                                <td className="center">
+                                  <span className={producto.compra_tecnologica ? "ok" : "no"}>
+                                    {producto.compra_tecnologica ? "✓ Sí" : "No"}
+                                  </span>
+                                </td>
+
+                                <td className="center">
+                                  <span className={producto.ergonomico ? "ok" : "no"}>
+                                    {producto.ergonomico ? "✓ Sí" : "No"}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+
+                      </table>
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/*
+            <div className="modalBox">
+              <h2>Requisición #{solicitanteReq.requisicion_id}</h2>
+              <p><strong>Solicitante:</strong> {solicitanteReq.nombre_solicitante}</p>
+              <p><strong>Valor total:</strong> {formatCOP(solicitanteReq.valor_total)}</p>
+              <p><strong>Estado:</strong> {getStatusLabel(solicitanteReq.status)}</p>
+              <p><strong>Fecha:</strong> {solicitanteReq.fecha}</p>
+              <button
+                className="modalCloseReq"
+                onClick={() => {
+                  setOpenReqModal(false);
+                  setSolicitanteReq(null);
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+            */}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// envolver el DashboardInner con AuthProvider para que useAuth no sea null
 export default function Dashboard() {
   return (
     <AuthProvider>

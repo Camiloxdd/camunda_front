@@ -41,7 +41,13 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <img src="/coopidrogas_logo_mini.png" alt="Logo" className="logo" />
+      <div className="logoAndTittle">
+        <img src="/coopidrogas_logo_mini.png" alt="Logo" className="logo" />
+        <div className="tittleLogo">
+          <h2>Gestión de Requisiciones</h2>
+          <p>Lista de todas las requisiciones en el sistema</p>
+        </div>
+      </div>
       <div className="nav-links">
         <div className="infoUser">
           <div className="nameAndRol">
@@ -62,7 +68,7 @@ export default function Navbar() {
           </div>
         </div>
       </div>
-      
+
     </nav>
   );
 }

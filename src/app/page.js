@@ -10,6 +10,7 @@ import {
 import { faMicrosoft } from "@fortawesome/free-brands-svg-icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation"
+import api from "./services/axios";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -29,28 +30,35 @@ export default function Dashboard() {
     setError(null);
 
     try {
-      const res = await fetch(`http://localhost:4000/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', 
-        body: JSON.stringify({ correo, contraseña })
+      const res = await api.post(`/api/auth/login`, {
+        email: correo,       // asegúrate de usar los mismos nombres que espera el backend
+        password: contraseña
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.message || 'Login failed');
-        setLoading(false);
-        return;
-      }
+      const data = res.data;
 
-      router.push('/dashboard'); 
+      // Guarda el token en localStorage
+      localStorage.setItem('token', data.token);
+
+      // Redirige al dashboard
+      router.push('/dashboard');
     } catch (err) {
       console.error(err);
-      setError('Error de conexión');
+      if (err.response) {
+        setError(err.response.data.message || 'Credenciales inválidas');
+      } else {
+        setError('Error de conexión con el servidor');
+      }
     } finally {
       setLoading(false);
     }
   }
+
 
   return (
     <div className=" background-img">

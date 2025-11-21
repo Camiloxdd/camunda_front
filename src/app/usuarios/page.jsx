@@ -21,6 +21,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import UserModal from "../components/userModal";
+import api from "../services/axios";
 
 function UsuariosInner() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -35,6 +36,18 @@ function UsuariosInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
+
+  const [token, setToken] = useState(null);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const t = localStorage.getItem("token");
+      setToken(t);
+
+      if (!t) {
+        setUser(null);
+      }
+    }
+  }, []);
 
   const options = [
     { value: "dicTYP", label: "Director Tecnologia y Proyectos" },
@@ -192,14 +205,13 @@ function UsuariosInner() {
 
   const fetchUsuarios = async () => {
     try {
-      const res = await fetch("http://localhost:4000/api/user/list", {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Error al obtener usuarios");
-      const data = await res.json();
-      setUserList(Array.isArray(data) ? data : [data]);
+      setLoading(true);
+
+      const res = await api.get("/api/user/list");
+      setUserList(Array.isArray(res.data) ? res.data : [res.data]);
+
     } catch (err) {
-      setError(err.message);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -469,9 +481,8 @@ function UsuariosInner() {
                         {options.map((opt) => (
                           <li
                             key={opt.value}
-                            className={`option ${
-                              selectedCargo === opt.value ? "selected" : ""
-                            }`}
+                            className={`option ${selectedCargo === opt.value ? "selected" : ""
+                              }`}
                             onClick={() => handleSelectCargo(opt.value)}
                           >
                             {opt.label}
@@ -531,9 +542,8 @@ function UsuariosInner() {
                         {optionsSede.map((opt) => (
                           <li
                             key={opt.value}
-                            className={`option ${
-                              selectedSede === opt.value ? "selected" : ""
-                            }`}
+                            className={`option ${selectedSede === opt.value ? "selected" : ""
+                              }`}
                             onClick={() => handleSelectSede(opt.value)}
                           >
                             {opt.label}
@@ -569,9 +579,8 @@ function UsuariosInner() {
                         {optionsArea.map((opt) => (
                           <li
                             key={opt.value}
-                            className={`option ${
-                              selectedArea === opt.value ? "selected" : ""
-                            }`}
+                            className={`option ${selectedArea === opt.value ? "selected" : ""
+                              }`}
                             onClick={() => handleSelectArea(opt.value)}
                           >
                             {opt.label}

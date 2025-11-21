@@ -40,16 +40,21 @@
 }
 
 .tablaGestionUsuarios {
-  background-color: #f3f3f3;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  margin-top: 15px;
+  background-color: RED;
   width: 99%;
+  display: grid;
+  text-align: center;
+  height: 88vh;
   border-radius: 10px;
   padding: 10px;
 }
 
 .tableGestUsers {
+  border-radius: 16px;
+  background-color: yellow;
   padding: 15px;
+  width: 100%;
   justify-content: center;
   align-items: center;
   text-align: center;
@@ -58,9 +63,6 @@
 
 .tableGestUsers table {
   width: 100%;
-  gap: 15px;
-  border-collapse: separate;
-  border-spacing: 0;
   border-radius: 10px;
   overflow: hidden;
 }
@@ -73,23 +75,9 @@
 }
 
 .tableGestUsers tbody {
-  margin-top: 15px;
   background-color: #e0e0e0;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  height: 50px;
   color: black;
-}
-
-.tableGestUsers tbody input {
-  background-color: transparent;
-  border: none;
-  width: 90%;
-  height: 35px;
-  border-radius: 8px;
-}
-
-.tableGestUsers tbody input:focus {
-  outline: none;
 }
 
 .tableGestUsers button {
@@ -279,17 +267,7 @@
   transform: scale(1.1);
 }
 
-.tablaGestionUsuarios {
-  background-color: #f3f3f3;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  margin-top: 15px;
-  width: 99%;
-  border-radius: 10px;
-  padding: 10px;
-}
-
 .tableGestUsers {
-  padding: 15px;
   justify-content: center;
   align-items: center;
   text-align: center;
@@ -299,14 +277,12 @@
 .tableGestUsers table {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0 8px; /* 👈 espacio entre filas */
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
 .tableGestUsers thead {
   height: 60px;
-  border-radius: 15px;
   background-color: #1d5da8;
   color: white;
 }
@@ -325,30 +301,18 @@
 }
 
 /* 👇 borde o línea separadora entre filas */
-.tableGestUsers tbody tr {
-  border-bottom: 1px solid #ccc;
-}
+
 
 /* 👇 efecto hover opcional */
 .tableGestUsers tbody tr:hover {
   background-color: #e8f0ff;
 }
 
+
 .tableGestUsers tbody td {
   padding: 10px 8px;
 
   font-weight: bold;
-}
-
-.tableGestUsers tbody input {
-  background-color: transparent;
-  border: none;
-  width: 90%;
-  height: 35px;
-}
-
-.tableGestUsers tbody input:focus {
-  outline: none;
 }
 
 .tableGestUsers button {
@@ -369,4 +333,72 @@
 
 .iconPdf{
   color: orange;
+}
+
+.floating-actions {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  display: flex;
+  gap: 12px;
+  z-index: 100;
+}
+
+.fab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.fab-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.fab-btn:active {
+  transform: translateY(0);
+}
+
+.fab-btn.primary {
+  background-color: #1d5da8;
+  font-size: 20px;
+  color: white;
+}
+
+.fab-btn.secondary {
+  font-size: 20px;
+  background-color: white;
+  color: #1d5da8;
+  border: 1px solid var(--dash-border);
+}
+
+.status-circle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.status-aprobada {
+  background-color: #28a745; 
+}
+
+.status-pendiente {
+  background-color: #ffc107; 
+}
+
+.status-devuelta {
+  background-color: #dc3545; 
+}
+
+.status-default {
+  background-color: #6c757d; 
 }
