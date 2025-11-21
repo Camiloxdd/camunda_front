@@ -89,11 +89,27 @@ function DashboardInner() {
   const [openReqModal, setOpenReqModal] = useState(false);
   const [loadingSolicitante, setLoadingSolicitante] = useState(false);
 
+  // Leer token desde localStorage al montar y actualizar si cambia en otra pestaña (event storage).
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window === "undefined") return;
+
+    const readToken = () => {
       const t = localStorage.getItem("token");
       setToken(t);
-    }
+      console.debug("Token leído desde localStorage:", t);
+    };
+
+    readToken();
+
+    const onStorage = (e) => {
+      if (e.key === "token") {
+        setToken(e.newValue);
+        console.debug("Token actualizado vía evento storage:", e.newValue);
+      }
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   }, []);
 
   const formatCOP = (val) => {
@@ -200,8 +216,9 @@ function DashboardInner() {
               "http://localhost:8000/api/requisiciones/pendientes",
               { headers: { Authorization: `Bearer ${token}`, "X-User-Id": user?.id } }
             );
-
             const dataPendInit = resPendInit.data;
+
+
             prevPendingIdsRef.current = new Set(
               (Array.isArray(dataPendInit) ? dataPendInit : [dataPendInit]).map(r => r.requisicion_id)
             );
@@ -315,6 +332,12 @@ function DashboardInner() {
   const handleVerifyOpen = async (req) => {
     try {
       setVerifyLoading(true);
+
+      if (!token) {
+        toast.error("Token no encontrado. Por favor inicia sesión.");
+        setVerifyLoading(false);
+        return;
+      }
 
       const res = await api.get(`http://localhost:8000/api/requisiciones/${req.requisicion_id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -590,7 +613,7 @@ function DashboardInner() {
   }, []);
 
   const abrirModalNuevaReq = () => {
-    handleStartProcessCamunda();
+    /*handleStartProcessCamunda();*/
     setOpen(true);
 
   }
@@ -606,6 +629,12 @@ function DashboardInner() {
   const handleOpenSolicitanteModal = async (req) => {
     try {
       setLoadingSolicitante(true);
+      if (!token) {
+        toast.error("Token no encontrado. Por favor inicia sesión.");
+        setLoadingSolicitante(false);
+        return;
+      }
+
       const res = await api.get(
         `http://localhost:8000/api/requisiciones/${req.requisicion_id}`,
         {
@@ -883,6 +912,8 @@ function DashboardInner() {
             requisicion={selectedReq}
             onClose={() => setSelectedReq(null)}
             onApproved={fetchRequisiciones}
+            user={user}             // ← APORTA EL USUARIO LOGUEADO
+            token={token}
           />
         )}
         {verifyModalReq && (
@@ -966,191 +997,8 @@ function DashboardInner() {
                   100%{ background-position: -200% 0; }
                 }
               `}</style>
+              
               <div className="infoIzquierdaReq">
-                <div className="contentIzquierda">
-                  {loadingSolicitante ? (
-                    <>
-                      <div className="tittle">
-                        <p style={{ fontSize: 18 }}>
-                          <span className="skeleton-line" style={{ width: 140, height: 20 }} />
-                        </p>
-                      </div>
-                      <div className="tagEstado" style={{ marginTop: 8 }}>
-                        <span className="skeleton-line" style={{ width: 80, height: 18, borderRadius: 12 }} />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="tittle">
-                        <p>REQUISICION #{solicitanteReq.requisicion_id}</p>
-                      </div>
-                      <div className="tagEstado">
-                        <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
-                          {getStatusLabel(estadoSolicitante)}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="detallesRequisicion">
-                  <h1>Detalles</h1>
-                  {loadingSolicitante ? (
-                    <div className="areaYFecha">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="containerInfoReq" style={{ marginBottom: 10 }}>
-                          <div className="skeleton-line" style={{ width: i % 2 ? "50%" : "80%", height: 14 }} />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="areaYFecha">
-                      <div className="containerInfoReq">
-                        <p className="labelTittle">Área:</p>
-                        <p className="textLabel">{getAreaNombre(solicitanteReq.area) || "—"}</p>
-                      </div>
-                      <div className="containerInfoReq">
-                        <p className="labelTittle">Sede:</p>
-                        <p className="textLabel">{solicitanteReq.sede || "—"}</p>
-                      </div>
-                      <div className="containerInfoReq">
-                        <p className="labelTittle">Fecha:</p>
-                        <p className="textLabel">{solicitanteReq.fecha || "—"}</p>
-                      </div>
-                      <div className="containerInfoReq">
-                        <p className="labelTittle">Justificación:</p>
-                        <p className="textLabel">{solicitanteReq.justificacion || "No tiene."}</p>
-                      </div>
-                      <div className="containerInfoReq">
-                        <p className="labelTittle">Nivel de Urgencia:</p>
-                        <p className="textLabel">{solicitanteReq.urgencia || "—"}</p>
-                      </div>
-                      <div className="containerInfoReq">
-                        <p className="labelTittle">¿Esta presupuestada?:</p>
-                        <p className="textLabel">{solicitanteReq.presupuestada ? "Sí" : "No"}</p>
-                      </div>
-                      <br />
-                    </div>
-                  )}
-                </div>
-                <div className="buttonsAprobarReq">
-                  <br />
-                  {permissions?.isSolicitante && (
-                    <div className="flujoAprobacion">
-                      <h1>Flujo de aprobación</h1>
-                      <div className="listaDeAprobadores">
-                        <ul className="listaAprobadores">
-                          {loadingSolicitante ? (
-                            // skeleton aprobadores
-                            Array.from({ length: 3 }).map((_, i) => (
-                              <li key={"sk-ap-" + i} className="aprobadorRow" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-                                <div style={{ flex: 1 }}>
-                                  <div className="skeleton-line" style={{ width: 160, height: 14, marginBottom: 6 }} />
-                                  <div className="skeleton-line" style={{ width: 100, height: 12 }} />
-                                </div>
-                                <div style={{ marginLeft: 12 }}>
-                                  <div className="skeleton-line" style={{ width: 80, height: 20, borderRadius: 12 }} />
-                                </div>
-                              </li>
-                            ))
-                          ) : solicitanteReq?.aprobadores?.length ? (
-                            solicitanteReq.aprobadores.map((ap, idx) => (
-                              <li key={ap.nombre_aprobador ?? ap.id ?? idx} className="aprobadorRow">
-                                <div className="aprobadorInfo">
-                                  <strong>- {ap.nombre_aprobador || ap.nombre || "—"}</strong>
-                                  <span className="aprobadorMeta">{getCargoNombre(ap.rol_aprobador || ap.rol)} </span>
-                                </div>
-                                <div className="aprobadorStatus">
-                                  <span className={`${styles.badge} ${getBadgeClass(ap.estado_aprobador || (ap.aprobado ? "aprobada" : "pendiente"))}`}>
-                                    {getApproverLabel(ap)}
-                                  </span>
-                                </div>
-                              </li>
-                            ))
-                          ) : (
-                            <li className="noAprobadores">No hay información del flujo de aprobación.</li>
-                          )}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-                  {permissions?.isAprobador && estadoSolicitante === "pendiente" && (
-                    <>
-                      <button
-                        className="devolverBtn"
-                        onClick={() => handleDevolver(solicitanteReq.requisicion_id)}
-                      >Devolver</button>
-                      <button
-                        className="aprobarBtn"
-                        onClick={() => handleAprobar(solicitanteReq.requisicion_id)}
-                      >Aprobar</button>
-                    </>
-                  )}
-                  {permissions?.isComprador && estadoSolicitante === "aprobada" && (
-                    <button
-                      className="finalizarBtn"
-                      onClick={() => handleFinalizePurchase(solicitanteReq.requisicion_id)}
-                    >Finalizar Compra</button>
-                  )}
-                </div>
-              </div>
-              <div className="infoDerechaReq">
-                <div className="headerInfoReq">
-                  <div className="tittleHeaderReq">
-                    <h2>Valor de la Requisición</h2>
-                  </div>
-                  <div className="buttonsHeaderInfoReq">
-                    <button
-                      title="Ver flujo"
-                      onClick={() => openTimeline(solicitanteReq.requisicion_id)}
-                      style={{ color: "#1d5da8", fontSize: "15px" }}
-                      className="iconTimeLone"
-                    >
-                      <FontAwesomeIcon icon={faTimeline} />
-                    </button>
-                    <button
-                      title="Word"
-                      onClick={() => handleDescargarPDF(solicitanteReq.requisicion_id)}
-                      style={{ color: "#1d5da8", fontSize: "15px" }}
-                      className="iconPdf"
-                    >
-                      <FontAwesomeIcon icon={faDownload} />
-                    </button>
-                    {permissions?.canCreateRequisition && (
-                      <button
-                        title="Editar"
-                        onClick={() => handleEditOpen(solicitanteReq)}
-                      >
-                        <FontAwesomeIcon icon={faPencil} style={{ color: "#1d5da8", fontSize: "15px" }} />
-                      </button>
-                    )}
-                    {permissions?.canCreateRequisition && (
-                      <button
-                        title="Eliminar"
-                        onClick={() => handleDelete(solicitanteReq.requisicion_id)}
-                      >
-                        <FontAwesomeIcon icon={faTrash} style={{ color: "red", fontSize: "15px" }} />
-                      </button>
-                    )}
-                    <button
-                      className="modalCloseReq"
-                      style={{ color: "#1d5da8", fontSize: "15px", }}
-                      onClick={() => {
-                        setOpenReqModal(false);
-                        setSolicitanteReq(null);
-                      }}
-                    >
-                      <FontAwesomeIcon icon={faX} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="containerMontoTotal">
-                  <p className="labelMonto">Monto Total</p>
-                  <p className="labelTotal">{formatCOP(solicitanteReq.valor_total)}</p>
-                  <p className="labelMontoText">Valor total estimado para esta requisición</p>
-                </div>
-
                 <div className="containerProductosAsociados">
                   <h2>Productos Asociados</h2>
                   <div className="containerDeverdadTabla">
@@ -1222,13 +1070,139 @@ function DashboardInner() {
                             ))
                           )}
                         </tbody>
-
                       </table>
-
                     </div>
                   </div>
                 </div>
               </div>
+              
+              <div className="infoDerechaReq">
+                <div className="detallesReqCompletos">
+                  <div className="contentIzquierda">
+                    {loadingSolicitante ? (
+                      <>
+                        <div className="tittle">
+                          <p style={{ fontSize: 18 }}>
+                            <span className="skeleton-line" style={{ width: 140, height: 20 }} />
+                          </p>
+                        </div>
+                        <div className="tagEstado" style={{ marginTop: 8 }}>
+                          <span className="skeleton-line" style={{ width: 80, height: 18, borderRadius: 12 }} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="tittle">
+                          <p>REQUISICION #{solicitanteReq.requisicion_id}</p>
+                        </div>
+                        <div className="tagEstado">
+                          <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
+                            {getStatusLabel(estadoSolicitante)}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="detallesRequisicion">
+                    <h1>Detalles</h1>
+                    {loadingSolicitante ? (
+                      <div className="areaYFecha">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <div key={i} className="containerInfoReq" style={{ marginBottom: 10 }}>
+                            <div className="skeleton-line" style={{ width: i % 2 ? "50%" : "80%", height: 14 }} />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="areaYFecha">
+                        <div className="containerInfoReq">
+                          <p className="labelTittle">Área:</p>
+                          <p className="textLabel">{getAreaNombre(solicitanteReq.area) || "—"}</p>
+                        </div>
+                        <div className="containerInfoReq">
+                          <p className="labelTittle">Sede:</p>
+                          <p className="textLabel">{solicitanteReq.sede || "—"}</p>
+                        </div>
+                        <div className="containerInfoReq">
+                          <p className="labelTittle">Fecha:</p>
+                          <p className="textLabel">{solicitanteReq.fecha || "—"}</p>
+                        </div>
+                        <div className="containerInfoReq">
+                          <p className="labelTittle">Justificación:</p>
+                          <p className="textLabel">{solicitanteReq.justificacion || "No tiene."}</p>
+                        </div>
+                        <div className="containerInfoReq">
+                          <p className="labelTittle">Nivel de Urgencia:</p>
+                          <p className="textLabel">{solicitanteReq.urgencia || "—"}</p>
+                        </div>
+                        <div className="containerInfoReq">
+                          <p className="labelTittle">¿Esta presupuestada?:</p>
+                          <p className="textLabel">{solicitanteReq.presupuestada ? "Sí" : "No"}</p>
+                        </div>
+                        <br />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="montoPrecioReq">
+                  <div className="containerMontoTotal">
+                    <p className="labelMonto">Monto Total</p>
+                    <p className="labelTotal">{formatCOP(solicitanteReq.valor_total)}</p>
+                    <p className="labelMontoText">Valor total estimado para esta requisición</p>
+                  </div>
+                </div>
+                
+              </div>
+              <div className="headerInfoReq">
+                    <div className="tittleHeaderReq">
+                      <h2>Valor de la Requisición</h2>
+                    </div>
+                    <div className="buttonsHeaderInfoReq">
+                      <button
+                        title="Ver flujo"
+                        onClick={() => openTimeline(solicitanteReq.requisicion_id)}
+                        style={{ color: "#1d5da8", fontSize: "18px" }}
+                        className="iconTimeLone"
+                      >
+                        <FontAwesomeIcon icon={faTimeline} />
+                      </button>
+                      <button
+                        title="Word"
+                        onClick={() => handleDescargarPDF(solicitanteReq.requisicion_id)}
+                        style={{ color: "#1d5da8", fontSize: "18px" }}
+                        className="iconPdf"
+                      >
+                        <FontAwesomeIcon icon={faDownload} />
+                      </button>
+                      {permissions?.canCreateRequisition && (
+                        <button
+                          title="Editar"
+                          onClick={() => handleEditOpen(solicitanteReq)}
+                        >
+                          <FontAwesomeIcon icon={faPencil} style={{ color: "#1d5da8", fontSize: "18px" }} />
+                        </button>
+                      )}
+                      {permissions?.canCreateRequisition && (
+                        <button
+                          title="Eliminar"
+                          onClick={() => handleDelete(solicitanteReq.requisicion_id)}
+                        >
+                          <FontAwesomeIcon icon={faTrash} style={{ color: "red", fontSize: "18px" }} />
+                        </button>
+                      )}
+                      <button
+                        className="modalCloseReq"
+                        style={{ color: "#1d5da8", fontSize: "18px", }}
+                        onClick={() => {
+                          setOpenReqModal(false);
+                          setSolicitanteReq(null);
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faX} />
+                      </button>
+                    </div>
+                  </div>
             </div>
             {/*
             <div className="modalBox">

@@ -24,6 +24,7 @@ import {
 import TextareaAutosize from "react-textarea-autosize";
 import SaveAnimation from "./animationCreateRequisicion";
 import { faDailymotion } from "@fortawesome/free-brands-svg-icons";
+import api from "../services/axios";
 import { endFirstStepStartTwoStep, endTwoStepStartThreeStep } from "../services/camunda";
 
 const initialForm = {
@@ -69,6 +70,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [stepLoadingExiting, setStepLoadingExiting] = useState(false);
     const [mostrarModalProductos3, setMostrarModalProductos3] = useState(false);
     const [formData, setFormData] = useState(initialForm);
+    const [token, setToken] = useState("");
 
 
 
@@ -81,123 +83,136 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const maxStep = isEditMode ? 3 : 4;
 
     useEffect(() => {
+        if (typeof window !== "undefined") {
+            const t = localStorage.getItem("token");
+            setToken(t);
+        }
+    }, []);
+
+    useEffect(() => {
         if (!open) return;
 
-        const today = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
+        const today = new Date().toISOString().slice(0, 10);
 
-        if (isEditMode) {
+        const initializeForm = async () => {
+            // Obtener token
+            let userToken = token;
+            if (!userToken && typeof window !== "undefined") {
+                userToken = localStorage.getItem("token");
+            }
 
-            const req = initialData.requisicion ?? initialData;
-            const rawList = []
-                .concat(
-                    initialData.productos || [],
-                    initialData.productos_list || [],
-                    initialData.items || [],
-                    initialData.productos_aprobados || [],
-                    initialData.productos_rechazados || [],
-                    initialData.approved_products || [],
-                    initialData.rejected_products || [],
-                    initialData.requisicion_productos || []
-                )
-                .filter(Boolean);
+            if (isEditMode) {
+                const req = initialData.requisicion ?? initialData;
+                const rawList = []
+                    .concat(
+                        initialData.productos || [],
+                        initialData.productos_list || [],
+                        initialData.items || [],
+                        initialData.productos_aprobados || [],
+                        initialData.productos_rechazados || [],
+                        initialData.approved_products || [],
+                        initialData.rejected_products || [],
+                        initialData.requisicion_productos || []
+                    )
+                    .filter(Boolean);
 
-            const seen = new Set();
-            const productosBack = [];
-            rawList.forEach((p) => {
-                const idPart = String(p.id ?? p.producto_id ?? p.nombre ?? p.name ?? "");
-                const estadoPart = String(p.aprobado ?? p.estado ?? p.status ?? p.estado_aprobacion ?? "").trim();
-                const valorPart = String(p.valor_estimado ?? p.valorEstimado ?? p.valor ?? "").trim();
-                const cantidadPart = String(p.cantidad ?? p.qty ?? "").trim();
-                const key = `${idPart}::${estadoPart}::${cantidadPart}::${valorPart}`;
-                if (!seen.has(key)) {
-                    seen.add(key);
-                    productosBack.push(p);
-                }
-            });
-
-            const formatCurrencyLocal = (num) =>
-                new Intl.NumberFormat("es-CO", {
-                    style: "currency",
-                    currency: "COP",
-                    minimumFractionDigits: 0,
-                }).format(Number(num) || 0);
-
-            const mappedProductos = (productosBack || []).map((p) => {
-                const rawValor = p.valor_estimado ?? p.valorEstimado ?? p.valor ?? "";
-                let valorEstimadoFormatted = "";
-                if (rawValor !== null && rawValor !== undefined && rawValor !== "") {
-                    const num = Number(rawValor);
-                    valorEstimadoFormatted = !isNaN(num) ? formatCurrencyLocal(num) : String(rawValor);
-                }
-
-                let aprobacionesNormalized = [];
-                if (Array.isArray(p.aprobaciones) && p.aprobaciones.length) {
-                    aprobacionesNormalized = p.aprobaciones.map(a => (typeof a === "string" ? { status: a } : { status: a.status ?? a.estado ?? a }));
-                } else if (Array.isArray(p.aprobado) && p.aprobado.length) {
-                    aprobacionesNormalized = p.aprobado.map(a => (typeof a === "string" ? { status: a } : { status: a.status ?? a.estado ?? a }));
-                } else {
-                    const raw = p.aprobaciones ?? p.aprobado ?? p.estado ?? p.status ?? p.estado_aprobacion ?? null;
-                    if (raw !== null && raw !== undefined && String(raw).trim() !== "") {
-                        aprobacionesNormalized = [{ status: String(raw) }];
+                const seen = new Set();
+                const productosBack = [];
+                rawList.forEach((p) => {
+                    const idPart = String(p.id ?? p.producto_id ?? p.nombre ?? p.name ?? "");
+                    const estadoPart = String(p.aprobado ?? p.estado ?? p.status ?? p.estado_aprobacion ?? "").trim();
+                    const valorPart = String(p.valor_estimado ?? p.valorEstimado ?? p.valor ?? "").trim();
+                    const cantidadPart = String(p.cantidad ?? p.qty ?? "").trim();
+                    const key = `${idPart}::${estadoPart}::${cantidadPart}::${valorPart}`;
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        productosBack.push(p);
                     }
-                }
-
-                return {
-                    id: p.id ?? p.producto_id ?? null,
-                    nombre: p.nombre ?? p.name ?? "",
-                    cantidad: p.cantidad ?? p.qty ?? 1,
-                    descripcion: p.descripcion ?? p.description ?? "",
-                    compraTecnologica: Boolean(p.compra_tecnologica ?? p.compraTecnologica ?? (p.compra_tecnologica_numeric ?? 0)),
-                    ergonomico: Boolean(p.ergonomico ?? p.ergonomico_numeric ?? false),
-                    valorEstimado: valorEstimadoFormatted,
-                    centroCosto: p.centro_costo ?? p.centroCosto ?? p.centro ?? "",
-                    cuentaContable: p.cuenta_contable ?? p.cuentaContable ?? p.cuenta ?? "",
-                    aprobaciones: aprobacionesNormalized,
-                    aprobadoRaw: p.aprobado ?? p.aprobado_estado ?? p.estado ?? p.status ?? null,
-                    fileName: p.fileName ?? "",
-                };
-            });
-
-            setFormData({
-                solicitante: {
-                    nombre: req.nombre_solicitante ?? req.nombre ?? "",
-                    fecha: req.fecha ? String(req.fecha).slice(0, 10) : today,
-                    fechaRequeridoEntrega: req.fecha_requerido_entrega ? req.fecha_requerido_entrega.slice(0, 10) : "",
-                    tiempoAproximadoGestion: req.tiempo_aproximado_gestion || "",
-                    justificacion: req.justificacion || "",
-                    area: req.area || "",
-                    sede: req.sede || "",
-                    urgencia: req.urgencia || "",
-                    presupuestada: Boolean(req.presupuestada),
-                    status: req.status || "pendiente"
-                },
-                productos: mappedProductos.length ? mappedProductos : [...initialForm.productos]
-            });
-            setStep(startStep ?? 2);
-        } else {
-            const resetForm = JSON.parse(JSON.stringify(initialForm));
-            resetForm.solicitante.fecha = today;
-            setFormData(resetForm);
-            setStep(1);
-        }
-
-        setProductoActivo(0);
-        setProductoActivo3(0);
-        setMostrarModalProductos(false);
-        setMostrarModalProductos3(false);
-        setShowAnimation(false);
-        setFileName("");
-
-        (async () => {
-            try {
-                const res = await fetch("http://localhost:8000/api/auth/me", {
-                    credentials: "include",
                 });
-                if (!res.ok) return;
-                const user = await res.json();
-                setFormData(prev => {
-                    if (isEditMode) {
-                        return {
+
+                const formatCurrencyLocal = (num) =>
+                    new Intl.NumberFormat("es-CO", {
+                        style: "currency",
+                        currency: "COP",
+                        minimumFractionDigits: 0,
+                    }).format(Number(num) || 0);
+
+                const mappedProductos = (productosBack || []).map((p) => {
+                    const rawValor = p.valor_estimado ?? p.valorEstimado ?? p.valor ?? "";
+                    let valorEstimadoFormatted = "";
+                    if (rawValor !== null && rawValor !== undefined && rawValor !== "") {
+                        const num = Number(rawValor);
+                        valorEstimadoFormatted = !isNaN(num) ? formatCurrencyLocal(num) : String(rawValor);
+                    }
+
+                    let aprobacionesNormalized = [];
+                    if (Array.isArray(p.aprobaciones) && p.aprobaciones.length) {
+                        aprobacionesNormalized = p.aprobaciones.map(a => (typeof a === "string" ? { status: a } : { status: a.status ?? a.estado ?? a }));
+                    } else if (Array.isArray(p.aprobado) && p.aprobado.length) {
+                        aprobacionesNormalized = p.aprobado.map(a => (typeof a === "string" ? { status: a } : { status: a.status ?? a.estado ?? a }));
+                    } else {
+                        const raw = p.aprobaciones ?? p.aprobado ?? p.estado ?? p.status ?? p.estado_aprobacion ?? null;
+                        if (raw !== null && raw !== undefined && String(raw).trim() !== "") {
+                            aprobacionesNormalized = [{ status: String(raw) }];
+                        }
+                    }
+
+                    return {
+                        id: p.id ?? p.producto_id ?? null,
+                        nombre: p.nombre ?? p.name ?? "",
+                        cantidad: p.cantidad ?? p.qty ?? 1,
+                        descripcion: p.descripcion ?? p.description ?? "",
+                        compraTecnologica: Boolean(p.compra_tecnologica ?? p.compraTecnologica ?? (p.compra_tecnologica_numeric ?? 0)),
+                        ergonomico: Boolean(p.ergonomico ?? p.ergonomico_numeric ?? false),
+                        valorEstimado: valorEstimadoFormatted,
+                        centroCosto: p.centro_costo ?? p.centroCosto ?? p.centro ?? "",
+                        cuentaContable: p.cuenta_contable ?? p.cuentaContable ?? p.cuenta ?? "",
+                        aprobaciones: aprobacionesNormalized,
+                        aprobadoRaw: p.aprobado ?? p.aprobado_estado ?? p.estado ?? p.status ?? null,
+                        fileName: p.fileName ?? "",
+                    };
+                });
+
+                setFormData({
+                    solicitante: {
+                        nombre: req.nombre_solicitante ?? req.nombre ?? "",
+                        fecha: req.fecha ? String(req.fecha).slice(0, 10) : today,
+                        fechaRequeridoEntrega: req.fecha_requerido_entrega ? req.fecha_requerido_entrega.slice(0, 10) : "",
+                        tiempoAproximadoGestion: req.tiempo_aproximado_gestion || "",
+                        justificacion: req.justificacion || "",
+                        area: req.area || "",
+                        sede: req.sede || "",
+                        urgencia: req.urgencia || "",
+                        presupuestada: Boolean(req.presupuestada),
+                        status: req.status || "pendiente"
+                    },
+                    productos: mappedProductos.length ? mappedProductos : [...initialForm.productos]
+                });
+                setStep(startStep ?? 2);
+            } else {
+                const resetForm = JSON.parse(JSON.stringify(initialForm));
+                resetForm.solicitante.fecha = today;
+                setFormData(resetForm);
+                setStep(1);
+            }
+
+            setProductoActivo(0);
+            setProductoActivo3(0);
+            setMostrarModalProductos(false);
+            setMostrarModalProductos3(false);
+            setShowAnimation(false);
+            setFileName("");
+
+            // Precarga de datos del usuario
+            if (userToken) {
+                try {
+                    const res = await api.get("/api/auth/me", {
+                        headers: { Authorization: `Bearer ${userToken}` },
+                    });
+
+                    const user = res.data;
+                    if (user && (user.nombre || user.area || user.sede)) {
+                        setFormData(prev => ({
                             ...prev,
                             solicitante: {
                                 ...prev.solicitante,
@@ -205,24 +220,16 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 area: prev.solicitante.area || user.area || "",
                                 sede: prev.solicitante.sede || user.sede || "",
                             }
-                        };
+                        }));
                     }
-                    return {
-                        ...prev,
-                        solicitante: {
-                            ...prev.solicitante,
-                            nombre: user.nombre || prev.solicitante.nombre,
-                            area: user.area || prev.solicitante.area,
-                            sede: user.sede || prev.solicitante.sede,
-                        }
-                    };
-                });
-
-            } catch (err) {
-                console.error("No se pudo obtener usuario para precarga:", err);
+                } catch (err) {
+                    console.error("Error al obtener datos del usuario:", err);
+                }
             }
-        })();
-    }, [open, initialData, startStep]);
+        };
+
+        initializeForm();
+    }, [open, initialData, startStep, token]);
 
     const SALARIO_MINIMO = 1423000;
     const SALARIOS_UMBRAL = 10;
@@ -407,13 +414,15 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     processInstanceKey,
                 };
 
-                const res = await fetch("http://localhost:8000/api/requisicion/create", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(creationPayload),
-                });
+                const res = await api.post("http://localhost:8000/api/requisicion/create",
+                    creationPayload,
+                    {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
 
-                if (!res.ok) throw new Error("Error al guardar");
+                if (res.status !== 201) {
+                    throw new Error("Error al guardar");
+                }
 
                 // 🔸 Llamamos a Camunda para completar la tarea
                 try {
@@ -461,46 +470,46 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     }, [formData.productos.length]);
 
     const handleNext = async () => {
-		const next = Math.min(maxStep, step + 1);
-		if (next === step) return;
-		try {
-			// mostrar overlay
-			setStepLoadingVisible(true);
-			setStepLoading(true);
-			const ok = await handleBeforeEnterStep(step, next);
-			if (ok) setStep(next);
-		} catch (err) {
-			console.error("Error en transición siguiente:", err);
-		} finally {
-			// disparar animación de salida y limpiar después de su duración
-			setStepLoading(false);
-			setStepLoadingExiting(true);
-			setTimeout(() => {
-				setStepLoadingExiting(false);
-				setStepLoadingVisible(false);
-			}, 360); // debe coincidir con la duración CSS (ej. 350ms)
-		}
-	};
+        const next = Math.min(maxStep, step + 1);
+        if (next === step) return;
+        try {
+            // mostrar overlay
+            setStepLoadingVisible(true);
+            setStepLoading(true);
+            const ok = await handleBeforeEnterStep(step, next);
+            if (ok) setStep(next);
+        } catch (err) {
+            console.error("Error en transición siguiente:", err);
+        } finally {
+            // disparar animación de salida y limpiar después de su duración
+            setStepLoading(false);
+            setStepLoadingExiting(true);
+            setTimeout(() => {
+                setStepLoadingExiting(false);
+                setStepLoadingVisible(false);
+            }, 360); // debe coincidir con la duración CSS (ej. 350ms)
+        }
+    };
 
     const handlePrev = async () => {
-		const prev = Math.max(minStep, step - 1);
-		try {
-			setStepLoadingVisible(true);
-			setStepLoading(true);
-			// pequeña pausa visual para que el loading sea perceptible
-			await new Promise((r) => setTimeout(r, 250));
-			setStep(prev);
-		} catch (err) {
-			console.error("Error en transición anterior:", err);
-		} finally {
-			setStepLoading(false);
-			setStepLoadingExiting(true);
-			setTimeout(() => {
-				setStepLoadingExiting(false);
-				setStepLoadingVisible(false);
-			}, 360);
-		}
-	};
+        const prev = Math.max(minStep, step - 1);
+        try {
+            setStepLoadingVisible(true);
+            setStepLoading(true);
+            // pequeña pausa visual para que el loading sea perceptible
+            await new Promise((r) => setTimeout(r, 250));
+            setStep(prev);
+        } catch (err) {
+            console.error("Error en transición anterior:", err);
+        } finally {
+            setStepLoading(false);
+            setStepLoadingExiting(true);
+            setTimeout(() => {
+                setStepLoadingExiting(false);
+                setStepLoadingVisible(false);
+            }, 360);
+        }
+    };
 
     const handleBeforeEnterStep = async (currentStep, nextStep) => {
         try {
@@ -574,33 +583,33 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     };
 
     const handleCloseModal = () => {
-		// evitar cerrar durante una transición/animación
-		if (stepLoadingVisible) return;
-		handleCancelWizard();
-		onClose();
-	};
+        // evitar cerrar durante una transición/animación
+        if (stepLoadingVisible) return;
+        handleCancelWizard();
+        onClose();
+    };
 
     return (
         <div className="wizardModal-overlay">
             {/* asegurar que el overlay interno quede confinado a este container */}
             <div className="wizardModal-container" style={{ position: "relative" }}>
- 				{/* Overlay de carga entre pasos (solo dentro del container) */}
- 				{stepLoadingVisible && (
- 					<div
-						className={`loading-container ${stepLoadingExiting ? "fade-out" : "fade-in"}`}						style={{ position: "absolute", inset: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.92)" }}
-					>
-						<div className="loading-cambios" style={{ textAlign: "center" }}>
-							<img
-								src="/coopidrogas_logo_mini.png"
-								className="LogoCambios"
-								alt="Cargando..."
-								// ancho/alto controlados en CSS; la rotación viene de .LogoCambios
-							/>
-							<p className="textLoading" style={{ marginTop: 10 }}>Cargando...</p>
-					</div>
-					</div>
- 				)}
- 
+                {/* Overlay de carga entre pasos (solo dentro del container) */}
+                {stepLoadingVisible && (
+                    <div
+                        className={`loading-container ${stepLoadingExiting ? "fade-out" : "fade-in"}`} style={{ position: "absolute", inset: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.92)" }}
+                    >
+                        <div className="loading-cambios" style={{ textAlign: "center" }}>
+                            <img
+                                src="/coopidrogas_logo_mini.png"
+                                className="LogoCambios"
+                                alt="Cargando..."
+                            // ancho/alto controlados en CSS; la rotación viene de .LogoCambios
+                            />
+                            <p className="textLoading" style={{ marginTop: 10 }}>Cargando...</p>
+                        </div>
+                    </div>
+                )}
+
                 <div className="wizardModal-header">
                     <h2>Solicitud de compra</h2>
                     <button className="wizardModal-close" onClick={handleCloseModal}>
@@ -1252,8 +1261,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         </button>
                     )}
                 </div>
-             </div>
- 
-         </div>
-     );
- }
+            </div>
+
+        </div>
+    );
+}

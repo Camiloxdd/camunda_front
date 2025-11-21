@@ -5,16 +5,18 @@ import "../styles/views/ApprovalModal.css";
 import api from "../services/axios";
 import { approvePendingSingle, startThreeStep } from "../services/camunda";
 
-export default function ApprovalModal({ requisicion, onClose, onApproved }) {
-    const [detalles, setDetalles] = useState(null);
+export default function ApprovalModal({ requisicion, onClose, onApproved, user }) {
+    const [detalles, setDetalles] = useState({
+        currentUser: user,        
+        requisicion: {},
+        productos: [],
+    });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [decisiones, setDecisiones] = useState({});
     const [token, setToken] = useState("");
-    // overlay animado durante la acción (aprobación/rechazo)
     const [actionLoadingVisible, setActionLoadingVisible] = useState(false);
     const [actionLoadingExiting, setActionLoadingExiting] = useState(false);
-    // IDs de items recientemente rechazados para marcar en rojo claro (no cierra modal)
     const [rejectedIds, setRejectedIds] = useState(new Set());
 
     useEffect(() => {
@@ -35,24 +37,22 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                 const productosVisibles = (data.productos || []).filter(
                     (p) => p.aprobado !== "rechazado" && p.visible !== 0
                 );
-
-                // Guardar los detalles pero solo con productos visibles
-                setDetalles({
-                    ...data,
+                setDetalles(prev => ({
+                    currentUser: user,
+                    requisicion: data.requisicion,
                     productos: productosVisibles,
-                });
+                }));
 
-                // inicializa decisiones SOLO para productos que el usuario puede editar
                 const init = {};
                 const technoRoles = ["dicTYP", "gerTyC"];
                 const sstRoles = ["dicSST", "gerSST"];
-                const cargo = data?.currentUser?.cargo || "";
+                const cargo = user?.cargo || "";
 
                 (data.productos || []).forEach((p) => {
                     const editable =
                         (technoRoles.includes(cargo) && !!p.compra_tecnologica) ||
                         (sstRoles.includes(cargo) && !!p.ergonomico) ||
-                        (!technoRoles.concat(sstRoles).includes(cargo)); // otros roles pueden editar todo
+                        (!technoRoles.concat(sstRoles).includes(cargo)); 
 
                     if (editable) {
                         init[p.id] = (p.aprobado === "aprobado" || p.aprobado === 1 || p.aprobado === true) || false;
@@ -94,7 +94,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
 
     const toggleDecision = (productoId, product) => {
-        // no permitir toggle si no es editable o si ya fue rechazado
         if (!isEditableForUser(product)) return;
         if (rejectedIds.has(productoId)) return;
         setDecisiones((prev) => ({
@@ -105,30 +104,24 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
     const handleGuardar = async () => {
         try {
-            // tomar productos editables (de su área) EXCLUYENDO los que ya fueron rechazados
             const editableAll = (detalles.productos || []).filter((p) => isEditableForUser(p));
             const editable = editableAll.filter((p) => !rejectedIds.has(p.id));
 
-            // si no hay items editables para aprobar (todos fueron rechazados), avisar y salir
             if (editable.length === 0) {
                 toast.warn("No hay items editables para aprobar (los items de tu área ya fueron rechazados).");
                 return;
             }
 
-            // comprobar que TODOS los editables restantes tengan check true
             const notSelected = editable.filter((p) => !decisiones[p.id]);
             if (notSelected.length > 0) {
                 toast.warn("Debes seleccionar todos los items de tu área antes de aprobar.");
                 return;
             }
 
-            // confirmación via toast
             const confirmed = await confirmToast("¿Confirmas que deseas aprobar los items seleccionados?", { confirmLabel: "Aprobar", cancelLabel: "Cancelar", confirmColor: "#16a34a" });
             if (!confirmed) return;
             setSaving(true);
             setActionLoadingVisible(true);
-            // construir payload con SOLO los productos editables que NO fueron rechazados
-            // construir payload con SOLO los productos editables
             const nowIso = new Date().toISOString();
             const body = {
                 decisiones: editable.map((p) => {
@@ -148,9 +141,9 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                     };
                 }),
             };
-            console.log("Payload de aprobaciones:", body);
+            
             const res = await api.put(
-                `http://localhost:8000/api/requisiciones/${requisicion.requisicion_id}/aprobar-items`,
+                `/api/requisiciones/${requisicion.requisicion_id}/aprobar-items`,
                 body,
                 {
                     headers: {
@@ -160,11 +153,9 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                     },
                 }
             );
-            if (!res.ok) throw new Error("Error al guardar aprobaciones");
-            const data = await res.json();
+            const data = res.data;
             toast.success(data.message || "Aprobaciones registradas");
 
-            // llamar a Camunda según monto (misma lógica previa pero usando detalles.requisicion)
             try {
                 const salarioMinimo = Number(process.env.NEXT_PUBLIC_SALARIO_MINIMO) || 1160000;
                 const montoTotal = Number(detalles.requisicion?.valor_total ?? 0);
@@ -208,7 +199,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
             }
 
             onApproved();
-            // animación de salida del overlay antes de cerrar
             setActionLoadingExiting(true);
             setTimeout(() => {
                 setActionLoadingExiting(false);
@@ -226,7 +216,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
 
     const handleRechazar = async () => {
         try {
-            // tomar solo productos editables y seleccionados para rechazar
             const seleccionados = (detalles.productos || []).filter(
                 (p) => isEditableForUser(p) && decisiones[p.id] === true
             );
@@ -265,7 +254,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
             const data = await res.json();
             toast.success(data.message || "Rechazo registrado correctamente");
 
-            // actualizar estado local: marcar como rechazados visualmente y deschequearlos
             setDecisiones((prev) => {
                 const copy = { ...prev };
                 decisionesParaEnviar.forEach((d) => {
@@ -273,15 +261,13 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
                 });
                 return copy;
             });
-            // añadir ids rechazados para marcar en rojo claro
+
             setRejectedIds((prev) => {
                 const newSet = new Set(prev);
                 decisionesParaEnviar.forEach((d) => newSet.add(d.id));
                 return newSet;
             });
 
-            // mantener modal abierto para seguir editando
-            // animación de salida del overlay
             setActionLoadingExiting(true);
             setTimeout(() => {
                 setActionLoadingExiting(false);
@@ -296,7 +282,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
         }
     };
 
-    // helper: muestra un toast con confirm/cancel y resuelve true/false
     const confirmToast = (message, opts = {}) => {
         return new Promise((resolve) => {
             const toastId = `confirm-${Date.now()}`;
@@ -393,7 +378,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved }) {
     return (
         <div className="modal-overlay">
             <div className="modal-content" style={{ position: "relative" }}>
-                {/* overlay animado confinado al contenido del modal */}
                 {actionLoadingVisible && (
                     <div
                         className={`approval-loading-overlay ${actionLoadingExiting ? "fade-out" : "fade-in"}`}
