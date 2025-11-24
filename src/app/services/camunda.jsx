@@ -1,4 +1,6 @@
-const API_BASE = "http://localhost:4000/api"
+import api from "../services/axios";
+import axios from "../services/axios";
+const API_BASE = "http://localhost:8000/api"
 
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -7,15 +9,20 @@ function delay(ms) {
 //INICIAR PROCESO
 export async function iniciarProceso(variables) {
     try {
-        const res = await fetch(`${API_BASE}/process/start`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ variables })
-        });
+        const res = await axios.post(
+            `${API_BASE}/process/start`,
+            { variables },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                withCredentials: true
+            }
+        );
 
-        if (!res.ok) throw new Error("Error al iniciar el proceso.");
+        if (res.status !== 200) throw new Error("Error al iniciar el proceso.");
 
-        const data = await res.json();
+        const data = res.data;
 
         const processInstanceKey = data.processInstanceKey;
 
@@ -30,56 +37,67 @@ export async function iniciarProceso(variables) {
     }
 }
 
-
-export async function endFirstStepStartTwoStep(variables) {
+export async function endFirstStepStartTwoStep(variables = {}) {
     try {
-        const tareasRes = await fetch(`${API_BASE}/tasks/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({})
-        });
+        // 1. BODY correcto para /v2/user-tasks/search
+        const searchPayload = {
+            filter: {
+                state: "CREATED",
+            },
+            page: {
+                limit: 50,
+                // after: "cursor..."  // opcional
+            },
+        };
 
-        const tareasData = await tareasRes.json();
-        console.log("Tareas recibidas desde Camunda:", tareasData);
-
-        const tareas = tareasData.items || [];
-
-        const coincidencias = tareas.filter(
-            t => t.elementId === "Activity_1wt5a91" && t.state === "CREATED"
+        const tareasRes = await axios.post(
+            `${API_BASE}/tasks/search`,
+            searchPayload,
+            {
+                headers: { "Content-Type": "application/json" },
+                withCredentials: true,
+            }
         );
-        const primerPaso = coincidencias.at(-1);
+
+        const tareas = tareasRes.data?.items ?? [];
+
+        const primerPaso = tareas
+            .filter((t) => t.elementId === "Activity_1tsfyvb")
+            .at(-1);
 
         if (!primerPaso) {
-            console.error("No hay tareas en first_Step");
+            console.warn("⏭️ No hay tareas pendientes en este paso. Ya fue completada.");
             return;
         }
 
         const userTaskKey = primerPaso.userTaskKey;
 
-        const completeRes = await fetch(
-            `http://localhost:4000/api/tasks/${userTaskKey}/complete`,
+        // 2. BODY correcto para completar una Camunda user task (v2)
+        const completePayload = {
+            variables: variables ?? {},   // objeto plano de variables
+            // action es opcional, pero soportado para describir el outcome
+            action: "complete",
+        };
+
+        const res = await axios.post(
+            `${API_BASE}/tasks/${userTaskKey}/complete`,
+            completePayload,
             {
-                method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    variables: {
-                        ejemploVar: "paso al segundo paso"
-                    }
-                }),
+                withCredentials: true,
             }
         );
 
-        if (!completeRes.ok) throw new Error("No se pudo completar la tarea");
-
-        console.log("Segundo paso completado correctamente");
+        console.log("✔️ Tarea completada correctamente:", res.data);
     } catch (err) {
-        console.error(err);
+        console.error("❌ Error en endFirstStepStartTwoStep:", err.response?.data || err);
+        throw err;
     }
 }
 
 export async function endTwoStepStartThreeStep(variables) {
     try {
-        let tareasRes = await fetch(`${API_BASE}/tasks/search`, {
+        let tareasRes = await api.post(`${API_BASE}/tasks/search`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({})

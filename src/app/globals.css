@@ -2757,7 +2757,7 @@ input[type="time"] {
 /*MODALBOX*/
 .modalBox {
   width: 80%;
-  height: 82vh;
+  height: 77vh;
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -2769,16 +2769,16 @@ input[type="time"] {
 
 .infoIzquierdaReq {
   padding: 25px;
+  height: 60%;
   background-color: #f5f5f5;
-  border-right: 1px solid #1d5da8;
+  border-top: 1px solid #1d5da8;
 }
 
 .contentIzquierda {
   display: flex;
-  width: 100%;
+  width: 50%;
   align-items: center;
-  justify-content: space-between;
-
+  gap: 20px;
 }
 
 .tittle {
@@ -2794,22 +2794,19 @@ input[type="time"] {
 }
 
 .detallesRequisicion {
-  margin-top: 20px;
-  padding: 10px;
-  color: #1d5da8;
-  background-color: blue;
+  margin-left: 20px;
+  color: #1d5da8;  
 }
 
 .detallesReqCompletos{
-  background-color: green;
   width: 50%;
+  padding: 10px;
 }
 
 .nameSpaceSolicitante {
   display: flex;
   margin-left: 20px;
   align-items: center;
-  margin-top: 10px;
 }
 
 .labelSolicitante {
@@ -2853,9 +2850,9 @@ input[type="time"] {
 .infoDerechaReq {
   padding: 0px;
   display: flex;
-  background-color: red;
+  height: 35%;
   width: 100%;
-  justify-content: space-evenly;
+  justify-content: space-between;
   align-items: center;
 }
 
@@ -2863,6 +2860,7 @@ input[type="time"] {
   color: #1d5da8;
   display: flex;
   padding: 25px;
+  justify-content: space-between;
   background-color: #f5f5f5;
   border-bottom: 1px solid #1d5da8;
   display: flex;
@@ -2900,8 +2898,11 @@ input[type="time"] {
 }
 
 .montoPrecioReq{
-  background-color: orange;
   height: 100%;
+  width: 60%;
+  padding: 20px;
+  place-content: center;
+  border-left: 1px solid #1d5da8;
 }
 
 .labelMonto {

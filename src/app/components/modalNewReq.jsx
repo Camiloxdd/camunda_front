@@ -383,25 +383,34 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     valor_total: getTotalEstimado(),
                 };
 
-                const metaRes = await fetch(`http://localhost:8000/api/requisiciones/${id}`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify(metaBody),
-                });
-                if (!metaRes.ok) throw new Error("Error actualizando requisición");
+                const metaRes = await api.put(
+                    `/api/requisiciones/${id}`,
+                    metaBody,
+                    {
+                        headers: { "Content-Type": "application/json" },
+                        withCredentials: true
+                    }
+                );
 
-                const prodRes = await fetch(`http://localhost:8000/api/requisiciones/${id}/productos`, {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify({ productos: productosPayload }),
-                });
-                if (!prodRes.ok) throw new Error("Error actualizando productos");
+                if (metaRes.status < 200 || metaRes.status >= 300) {
+                    throw new Error("Error actualizando requisición");
+                }
+
+                const prodRes = await api.put(
+                    `/api/requisiciones/${id}/productos`,
+                    { productos: productosPayload },
+                    {
+                        headers: { "Content-Type": "application/json" },
+                        withCredentials: true
+                    }
+                );
+                if (prodRes.status < 200 || prodRes.status >= 300) {
+                    throw new Error("Error actualizando productos");
+                }
 
                 if (typeof onCreated === "function") onCreated();
                 toast.success("Requisición actualizada correctamente");
-                onClose();
+
             } else {
                 // 🔹 --- MODO CREACIÓN + COMPLETAR TAREA EN CAMUNDA ---
                 const processInstanceKey = localStorage.getItem("processInstanceKey");
@@ -445,23 +454,37 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             toast.error("Hubo un error al guardar");
         }
     };
-
     const handleCancelWizard = async () => {
         const key = localStorage.getItem("processInstanceKey");
-        if (key) {
-            try {
-                await fetch(`http://localhost:8000/api/process/${key}/cancel`, { method: "POST" });
-                localStorage.removeItem("processInstanceKey");
-                toast.info("Requisicion cancelada correctamente.");
-                console.log(`Proceso Camunda ${key} cancelado.`);
-            } catch (err) {
-                console.error("Error al cancelar proceso:", err);
-                toast.error("No se pudo cancelar el proceso.");
-            }
-        } else {
+
+        if (!key) {
             console.log("No hay proceso en curso para cancelar.");
+            return;
+        }
+
+        try {
+            const res = await api.post(`/api/process/${key}/cancel`);
+
+            setOpen(false)
+            toast.info("Requisición cancelada correctamente.");
+
+            // Limpia solo cuando se cancela en serio
+            localStorage.removeItem("processInstanceKey");
+
+            console.log(`Proceso Camunda ${key} cancelado.`, res.data);
+
+        } catch (err) {
+            console.error("Error al cancelar proceso:", err.response?.data || err);
+
+            // mensajes más claros basados en respuesta de Camunda
+            const backendMsg = err.response?.data?.response?.detail
+                || err.response?.data?.error
+                || "No se pudo cancelar el proceso.";
+
+            toast.error(backendMsg);
         }
     };
+
 
     useEffect(() => {
         if (productoActivo3 >= formData.productos.length) {
@@ -586,7 +609,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         // evitar cerrar durante una transición/animación
         if (stepLoadingVisible) return;
         handleCancelWizard();
-        onClose();
     };
 
     return (

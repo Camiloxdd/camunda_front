@@ -613,9 +613,8 @@ function DashboardInner() {
   }, []);
 
   const abrirModalNuevaReq = () => {
-    /*handleStartProcessCamunda();*/
+    handleStartProcessCamunda();
     setOpen(true);
-
   }
 
   const handleStartProcessCamunda = async () => {
@@ -742,6 +741,102 @@ function DashboardInner() {
       default:
         return cargoId || "Usuario";
     }
+  };
+
+  const handleEditOpen = async (req) => {
+    // fetch details (optional)
+    try {
+      const res = await api.get(
+        `/api/requisiciones/${req.requisicion_id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.status < 200 || res.status >= 300) throw new Error("Error al obtener requisiciones del aprobador");
+      const data = res.data;
+      // abrir modal en modo edición (solo steps 2 y 3)
+      setModalInitialData(data);
+      setOpen(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("No se pudo obtener detalles");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    const toastId = toast.info(
+      <div
+        style={{
+          padding: "10px",
+          textAlign: "center",
+          color: "white",
+        }}
+      >
+        <strong style={{ display: "block", marginBottom: "8px" }}>
+          ¿Seguro que deseas eliminar esta requisición?
+        </strong>
+
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+          <button
+            style={{
+              backgroundColor: "#dc2626",
+              color: "white",
+              border: "none",
+              padding: "5px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+            onClick={async () => {
+              toast.dismiss(toastId);
+              try {
+                const res = await api.delete(
+                  `/api/requisiciones/${id}`,
+                  {
+                    headers: { "Content-Type": "application/json" },
+                    withCredentials: true
+                  }
+                );
+                if (res.status < 200 || res.status >= 300) throw new Error("Error al eliminar");
+                toast.success("Formulario eliminado correctamente.");
+                setOpenReqModal(false);
+                await fetchRequisiciones();
+              } catch (err) {
+                console.error(err);
+                toast.error("No se pudo eliminar ❌");
+              }
+            }}
+          >
+            Eliminar
+          </button>
+
+          <button
+            style={{
+              backgroundColor: "#e5e7eb",
+              color: "#111827",
+              border: "none",
+              padding: "5px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "500",
+            }}
+            onClick={() => toast.dismiss(toastId)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>,
+      {
+        position: "top-right", // 👈 esquina inferior derecha
+        autoClose: false, // No se cierra hasta que el usuario elija
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          background: "#3b82f6", // azul tipo “info”
+          borderRadius: "10px",
+        },
+        icon: "ℹ️",
+      }
+    );
   };
 
   return (
@@ -956,6 +1051,8 @@ function DashboardInner() {
                         <tr key={i}>
                           <td style={{ padding: 6 }}>{i + 1}</td>
                           <td style={{ padding: 6 }}>{p.nombre || p.productoOServicio || "—"}</td>
+                          <td style={{ padding: 6 }}>{p.cuenta_contable}</td>
+                          <td>{p.centro_costo}</td>
                           <td style={{ padding: 6 }}>{p.cantidad || "—"}</td>
                           <td style={{ padding: 6 }}>{/* valor estimado */}
                             {formatCOP(p.valor_estimado ?? p.valorEstimado)}
@@ -997,7 +1094,7 @@ function DashboardInner() {
                   100%{ background-position: -200% 0; }
                 }
               `}</style>
-              
+
               <div className="infoIzquierdaReq">
                 <div className="containerProductosAsociados">
                   <h2>Productos Asociados</h2>
@@ -1008,6 +1105,8 @@ function DashboardInner() {
                         <thead>
                           <tr>
                             <th>Producto / Servicio</th>
+                            <th>Cuenta Contable</th>
+                            <th>Centro Costo</th>
                             <th className="center">Cantidad</th>
                             <th className="right">Valor Unitario</th>
                             <th className="center">Tecnológico</th>
@@ -1022,6 +1121,12 @@ function DashboardInner() {
                               <tr key={"sk-" + sIdx} className={sIdx % 2 === 0 ? "fila-par" : "fila-impar"}>
                                 <td>
                                   <div className="skeleton-line" style={{ width: "60%", height: 14 }} />
+                                </td>
+                                <td className="center">
+                                  <div className="skeleton-line" style={{ width: "30%", height: 12 }} />
+                                </td>
+                                <td className="center">
+                                  <div className="skeleton-line" style={{ width: "30%", height: 12 }} />
                                 </td>
                                 <td className="center">
                                   <div className="skeleton-line" style={{ width: "30%", height: 12 }} />
@@ -1043,6 +1148,14 @@ function DashboardInner() {
                                 <td>
                                   <p className="prod-nombre">{producto.nombre}</p>
                                   <p className="prod-desc">{producto.descripcion}</p>
+                                </td>
+
+                                <td>
+                                  <p className="prod-cuenta">{producto.cuenta_contable}</p>
+                                </td>
+
+                                <td>
+                                  <p className="prod-centro">{producto.centro_costo}</p>
                                 </td>
 
                                 <td className="center">
@@ -1075,35 +1188,9 @@ function DashboardInner() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="infoDerechaReq">
                 <div className="detallesReqCompletos">
-                  <div className="contentIzquierda">
-                    {loadingSolicitante ? (
-                      <>
-                        <div className="tittle">
-                          <p style={{ fontSize: 18 }}>
-                            <span className="skeleton-line" style={{ width: 140, height: 20 }} />
-                          </p>
-                        </div>
-                        <div className="tagEstado" style={{ marginTop: 8 }}>
-                          <span className="skeleton-line" style={{ width: 80, height: 18, borderRadius: 12 }} />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="tittle">
-                          <p>REQUISICION #{solicitanteReq.requisicion_id}</p>
-                        </div>
-                        <div className="tagEstado">
-                          <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
-                            {getStatusLabel(estadoSolicitante)}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
                   <div className="detallesRequisicion">
                     <h1>Detalles</h1>
                     {loadingSolicitante ? (
@@ -1140,7 +1227,6 @@ function DashboardInner() {
                           <p className="labelTittle">¿Esta presupuestada?:</p>
                           <p className="textLabel">{solicitanteReq.presupuestada ? "Sí" : "No"}</p>
                         </div>
-                        <br />
                       </div>
                     )}
                   </div>
@@ -1152,57 +1238,78 @@ function DashboardInner() {
                     <p className="labelMontoText">Valor total estimado para esta requisición</p>
                   </div>
                 </div>
-                
               </div>
               <div className="headerInfoReq">
-                    <div className="tittleHeaderReq">
-                      <h2>Valor de la Requisición</h2>
-                    </div>
-                    <div className="buttonsHeaderInfoReq">
-                      <button
-                        title="Ver flujo"
-                        onClick={() => openTimeline(solicitanteReq.requisicion_id)}
-                        style={{ color: "#1d5da8", fontSize: "18px" }}
-                        className="iconTimeLone"
-                      >
-                        <FontAwesomeIcon icon={faTimeline} />
-                      </button>
-                      <button
-                        title="Word"
-                        onClick={() => handleDescargarPDF(solicitanteReq.requisicion_id)}
-                        style={{ color: "#1d5da8", fontSize: "18px" }}
-                        className="iconPdf"
-                      >
-                        <FontAwesomeIcon icon={faDownload} />
-                      </button>
-                      {permissions?.canCreateRequisition && (
-                        <button
-                          title="Editar"
-                          onClick={() => handleEditOpen(solicitanteReq)}
-                        >
-                          <FontAwesomeIcon icon={faPencil} style={{ color: "#1d5da8", fontSize: "18px" }} />
-                        </button>
-                      )}
-                      {permissions?.canCreateRequisition && (
-                        <button
-                          title="Eliminar"
-                          onClick={() => handleDelete(solicitanteReq.requisicion_id)}
-                        >
-                          <FontAwesomeIcon icon={faTrash} style={{ color: "red", fontSize: "18px" }} />
-                        </button>
-                      )}
-                      <button
-                        className="modalCloseReq"
-                        style={{ color: "#1d5da8", fontSize: "18px", }}
-                        onClick={() => {
-                          setOpenReqModal(false);
-                          setSolicitanteReq(null);
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faX} />
-                      </button>
-                    </div>
-                  </div>
+                <div className="contentIzquierda">
+                  {loadingSolicitante ? (
+                    <>
+                      <div className="tittle">
+                        <p style={{ fontSize: 18 }}>
+                          <span className="skeleton-line" style={{ width: 140, height: 20 }} />
+                        </p>
+                      </div>
+                      <div className="tagEstado" style={{ marginTop: 8 }}>
+                        <span className="skeleton-line" style={{ width: 80, height: 18, borderRadius: 12 }} />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="tittle">
+                        <p>REQUISICION #{solicitanteReq.requisicion_id}</p>
+                      </div>
+                      <div className="tagEstado">
+                        <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
+                          {getStatusLabel(estadoSolicitante)}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <div className="buttonsHeaderInfoReq">
+                  <button
+                    title="Ver flujo"
+                    onClick={() => openTimeline(solicitanteReq.requisicion_id)}
+                    style={{ color: "#1d5da8", fontSize: "18px" }}
+                    className="iconTimeLone"
+                  >
+                    <FontAwesomeIcon icon={faTimeline} />
+                  </button>
+                  <button
+                    title="Word"
+                    onClick={() => handleDescargarPDF(solicitanteReq.requisicion_id)}
+                    style={{ color: "#1d5da8", fontSize: "18px" }}
+                    className="iconPdf"
+                  >
+                    <FontAwesomeIcon icon={faDownload} />
+                  </button>
+                  {permissions?.canCreateRequisition && (
+                    <button
+                      title="Editar"
+                      onClick={() => handleEditOpen(solicitanteReq)}
+                    >
+                      <FontAwesomeIcon icon={faPencil} style={{ color: "#1d5da8", fontSize: "18px" }} />
+                    </button>
+                  )}
+                  {permissions?.canCreateRequisition && (
+                    <button
+                      title="Eliminar"
+                      onClick={() => handleDelete(solicitanteReq.requisicion_id)}
+                    >
+                      <FontAwesomeIcon icon={faTrash} style={{ color: "red", fontSize: "18px" }} />
+                    </button>
+                  )}
+                  <button
+                    className="modalCloseReq"
+                    style={{ color: "#1d5da8", fontSize: "18px", }}
+                    onClick={() => {
+                      setOpenReqModal(false);
+                      setSolicitanteReq(null);
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faX} />
+                  </button>
+                </div>
+              </div>
             </div>
             {/*
             <div className="modalBox">
