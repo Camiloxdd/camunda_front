@@ -402,3 +402,30 @@
 .status-default {
   background-color: #6c757d; 
 }
+
+.loading-cambios-approval {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 200px;
+  width: 100%;
+}
+
+.loading-cambios-approval .LogoCambios-approval {
+  width: 70px;
+  height: 70px;
+  animation: spinVaried 2s linear infinite;
+}
+
+.loading-cambios-approval .textLoading-approval {
+  font-size: 14px;
+  color: #032c59;
+}
+
+.loading-container {
+  display: grid;
+  align-items: center;
+  justify-content: center;
+}

@@ -411,6 +411,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 if (typeof onCreated === "function") onCreated();
                 toast.success("Requisición actualizada correctamente");
 
+                // Cerrar la modal al finalizar en modo edición
+                if (typeof onClose === "function") onClose();
             } else {
                 // 🔹 --- MODO CREACIÓN + COMPLETAR TAREA EN CAMUNDA ---
                 const processInstanceKey = localStorage.getItem("processInstanceKey");
@@ -465,7 +467,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         try {
             const res = await api.post(`/api/process/${key}/cancel`);
 
-            setOpen(false)
+            onClose()
             toast.info("Requisición cancelada correctamente.");
 
             // Limpia solo cuando se cancela en serio

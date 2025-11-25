@@ -34,7 +34,7 @@ export const Sidebar = ({ onToggle }) => {
     const canSeeRequisiciones = Boolean(
         permissions?.isSolicitante || permissions?.isAprobador || permissions?.isComprador || permissions?.isSuperAdmin
     );
-    const canSeeUsuarios = Boolean(permissions?.isSuperAdmin);
+    const canSeeUsuarios = Boolean(permissions?.isSuperAdmin || permissions?.isSolicitante);
 
     // construir navItems dinámicamente según permisos
     const navItems = [{ icon: faHome, label: "Inicio", path: "/dashboard" }]; // inicio siempre visible (puedes cambiar)

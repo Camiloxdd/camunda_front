@@ -1,0 +1,61 @@
+graph TB
+    subgraph Frontend["FRONTEND"]
+        UI[React App - Interfaz de usuario]
+    end
+    subgraph Auth["AUTENTICACION"]
+        JWT[JWT Service - Tokens]
+        Roles[Control de Roles]
+    end
+    subgraph Backend["BACKEND"]
+        API[Symfony API - Endpoints]
+        ReqService[Requisition Service]
+        ApprovalService[Approval Service]
+    end
+    subgraph BPM["MOTOR BPM"]
+        Camunda[Camunda Engine]
+        Process[Proceso de Aprobacion Multi-nivel]
+    end
+    subgraph Database["BASE DE DATOS"]
+        MySQL[(MySQL Database)]
+        ReqTable[Tabla Requisiciones]
+        UserTable[Tabla Usuarios]
+        ApprovalTable[Tabla Aprobaciones]
+    end
+    UI -->|1 Solicitud de Login| JWT
+    JWT -->|2 Validar Credenciales| API
+    API -->|3 Consultar Usuario| UserTable
+    UserTable -->|4 Datos de Usuario| API
+    API -->|5 Generar Token| JWT
+    JWT -->|6 Token JWT y Roles| UI
+    UI -->|7 Crear Requisicion| API
+    API -->|8 Validar Token| JWT
+    JWT -->|9 Verificar Roles| Roles
+    API -->|10 Procesar Solicitud| ReqService
+    ReqService -->|11 Guardar Datos| ReqTable
+    ReqService -->|12 Iniciar Workflow| Camunda
+    Camunda -->|13 Disparar Tarea Aprobacion| Process
+    Process -->|14 Notificar Aprobadores| ApprovalService
+    ApprovalService -->|15 Obtener Reglas| ApprovalTable
+    ApprovalService -->|16 Actualizar Estado| ReqTable
+    ApprovalService -->|17 Continuar Workflow| Camunda
+    UI -->|18 Obtener Requisiciones| API
+    API -->|19 Verificar Acceso| Roles
+    API -->|20 Consultar Datos| ReqService
+    ReqService -->|21 Obtener Datos| ReqTable
+    ReqTable -->|22 Datos| ReqService
+    ReqService -->|23 Respuesta| API
+    API -->|24 Retornar JSON| UI
+    MySQL -.->|Contiene| ReqTable
+    MySQL -.->|Contiene| UserTable
+    MySQL -.->|Contiene| ApprovalTable
+    Camunda -.->|Ejecuta| Process
+    classDef frontend fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
+    classDef auth fill:#00b4d8,stroke:#333,stroke-width:2px,color:#fff
+    classDef backend fill:#000,stroke:#333,stroke-width:2px,color:#fff
+    classDef bpm fill:#fc5d0d,stroke:#333,stroke-width:2px,color:#fff
+    classDef database fill:#00758f,stroke:#333,stroke-width:2px,color:#fff
+    class UI frontend
+    class JWT,Roles auth
+    class API,ReqService,ApprovalService backend
+    class Camunda,Process bpm
+    class MySQL,ReqTable,UserTable,ApprovalTable database

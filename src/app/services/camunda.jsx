@@ -96,38 +96,60 @@ export async function endFirstStepStartTwoStep(variables = {}) {
 }
 
 export async function endTwoStepStartThreeStep(variables) {
-    try {
-        let tareasRes = await api.post(`${API_BASE}/tasks/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({})
-        });
+        try {
+        // 1. BODY correcto para /v2/user-tasks/search
+        const searchPayload = {
+            filter: {
+                state: "CREATED",
+            },
+            page: {
+                limit: 50,
+                // after: "cursor..."  // opcional
+            },
+        };
 
-        let tareasData = await tareasRes.json();
-        let tareas = tareasData.items || [];
+        const tareasRes = await axios.post(
+            `${API_BASE}/tasks/search`,
+            searchPayload,
+            {
+                headers: { "Content-Type": "application/json" },
+                withCredentials: true,
+            }
+        );
 
-        const coincidenciaUno = tareas
-            .filter(t => t.elementId === "Activity_1nws0d8" && t.state === "CREATED")
+        const tareas = tareasRes.data?.items ?? [];
+
+        const primerPaso = tareas
+            .filter((t) => t.elementId === "Activity_0xnsgqx")
             .at(-1);
 
-        if (!coincidenciaUno) {
-            console.error("⚠️ No hay tareas en Activity_1nws0d8");
+        if (!primerPaso) {
+            console.warn("⏭️ No hay tareas pendientes en este paso. Ya fue completada.");
             return;
         }
 
-        const userTaskKeyUno = coincidenciaUno.userTaskKey;
+        const userTaskKey = primerPaso.userTaskKey;
 
-        const completeUno = await fetch(`${API_BASE}/tasks/${userTaskKeyUno}/complete`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ variables })
-        });
+        // 2. BODY correcto para completar una Camunda user task (v2)
+        const completePayload = {
+            variables: variables ?? {},   // objeto plano de variables
+            // action es opcional, pero soportado para describir el outcome
+            action: "complete",
+        };
 
-        if (!completeUno.ok) throw new Error("No se pudo completar la tarea");
+        const res = await axios.post(
+            `${API_BASE}/tasks/${userTaskKey}/complete`,
+            completePayload,
+            {
+                headers: { "Content-Type": "application/json" },
+                withCredentials: true,
+            }
+        );
 
-        console.log("✅ Tarea completada con éxito (Activity_1nws0d8)");
+        console.log("✔️ Tarea completada correctamente:", res.data);
     } catch (err) {
-        console.error("❌ Error en endTwoStepStartThreeStep:", err);
+        console.error("❌ Error en endFirstStepStartTwoStep:", err.response?.data || err);
+        throw err;
     }
 }
 
@@ -136,61 +158,95 @@ export async function startThreeStep(variables, options = {}) {
     try {
         const { role, processInstanceKey } = options || {};
 
-        // Mapea cargos/roles a elementId(s) en el proceso BPMN
+        // 🟦 Mapeo rol → elementId EXACTO del BPMN
         const roleToElementId = {
-            // Ajusta estas claves según tus cargos reales
-            gerAdmin: "Activity_00mm8pt",
-            gerGeneral: "Activity_1fpwffg",
-            dicTYP: "Activity_08exhj3",
-            gerTyC: "Activity_1msgoom",
-            dicSST: "Activity_08exhj3",
-            gerSST: "Activity_1msgoom",
-            analistaQA: "Activity_1l9e8gd",
-            analistaQA: "Activity_076dv9c",
+            gerAdmin:    "Activity_09tpl6b",
+            gerGeneral:  "Activity_07fx7j4",
+            dicTYP:      "Activity_18he80t",
+            gerTyC:      "Activity_0b50dmc",
+            dicSST:      "Activity_18he80t",
+            gerSST:      "Activity_0b50dmc",
+            analistaQA:  "Activity_1l9e8gd",
+            analistaCA:  "Activity_076dv9c",
         };
 
+        // 🟦 ElementId según el rol recibido
         const elementIdForRole = role ? roleToElementId[role] : null;
 
-        // Buscar tareas (backend devuelve todas las tareas; filtramos localmente)
-        const tareasRes = await fetch(`${API_BASE}/tasks/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({})
-        });
+        // 🟦 Payload PROPER v2 para buscar tareas
+        const searchPayload = {
+            filter: {
+                state: "CREATED",
+            },
+            page: {
+                limit: 50
+            }
+        };
 
-        const tareasData = await tareasRes.json();
-        const tareas = tareasData.items || [];
+        // 🔍 Buscar tareas activas
+        const tareasRes = await axios.post(
+            `${API_BASE}/tasks/search`,
+            searchPayload,
+            {
+                headers: { "Content-Type": "application/json" },
+                withCredentials: true,
+            }
+        );
 
-        // Filtrar por estado CREATED, por processInstanceKey (si viene) y por elementId (si se pudo mapear)
-        const coincidencias = tareas.filter(t =>
+        const tareas = tareasRes.data?.items ?? [];
+
+        // 🧠 Aplicar la misma lógica que endTwoStepStartThreeStep
+        // pero filtrando por:
+        //  1. rol (elementId)
+        //  2. processInstanceKey
+        //  3. en estado CREATED  
+        let coincidencias = tareas.filter(t =>
             t.state === "CREATED" &&
-            (processInstanceKey ? String(t.processInstanceKey) === String(processInstanceKey) : true) &&
+            (processInstanceKey
+                ? String(t.processInstanceKey) === String(processInstanceKey)
+                : true) &&
             (elementIdForRole ? t.elementId === elementIdForRole : true)
         );
 
-        if (coincidencias.length === 0) {
-            console.log("⚠️ No se encontraron userTasks para completar (startThreeStep) - revisar role/processInstanceKey");
+        if (!coincidencias.length) {
+            console.warn("⚠️ No hay tareas pendientes para este rol / proceso.");
             return;
         }
 
-        console.log("✅ UserTasks a completar (startThreeStep):", coincidencias.map(t => ({ userTaskKey: t.userTaskKey, elementId: t.elementId, processInstanceKey: t.processInstanceKey })));
+        // 🟦 MISMA LÓGICA: elegir siempre la última (orden correcto)
+        const tareaSeleccionada = coincidencias.at(-1);
+        const userTaskKey = tareaSeleccionada.userTaskKey;
 
-        await Promise.all(
-            coincidencias.map(tarea =>
-                fetch(`${API_BASE}/tasks/${tarea.userTaskKey}/complete`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ variables })
-                })
-            )
+        console.log("📌 TASK SELECCIONADA startThreeStep:", {
+            userTaskKey,
+            elementId: tareaSeleccionada.elementId,
+            processInstanceKey: tareaSeleccionada.processInstanceKey
+        });
+
+        // 🟦 Mismo payload de finalización de user-task (v2)
+        const completePayload = {
+            variables: variables ?? {},
+            action: "complete"
+        };
+
+        // ✔️ Completar solo ESA tarea específica
+        const res = await axios.post(
+            `${API_BASE}/tasks/${userTaskKey}/complete`,
+            completePayload,
+            {
+                headers: { "Content-Type": "application/json" },
+                withCredentials: true,
+            }
         );
 
-        console.log("🎉 Tareas completadas por rol/proceso (startThreeStep).");
+        console.log("🎉 startThreeStep → tarea completada:", res.data);
+
     } catch (err) {
-        console.error("❌ Error en startThreeStep:", err);
+        console.error("❌ Error en startThreeStep:", err.response?.data || err);
         throw err;
     }
 }
+
 
 export async function EndFourStep(variables) {
     try {
@@ -295,90 +351,171 @@ export async function EndFourStep(variables) {
 export async function approvePendingSingle(variables, options = {}) {
     try {
         const { processInstanceKey } = options || {};
-        const aprobacionesIds = ["Activity_08exhj3", "Activity_1msgoom", "Activity_00mm8pt", "Activity_1fpwffg"]; // ajustar ids según proceso
 
-        const tareasRes = await fetch(`${API_BASE}/tasks/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({})
-        });
+        // 🔵 Elementos de aprobación del paso "simple"
+        const aprobacionesIds = [
+            "Activity_18he80t",
+            "Activity_0b50dmc",
+            "Activity_09tpl6b",
+            "Activity_07fx7j4",
+        ];
 
-        const tareasData = await tareasRes.json();
-        const tareas = tareasData.items || [];
+        // 🔍 Payload correcto de búsqueda Camunda v2
+        const searchPayload = {
+            filter: {
+                state: "CREATED",
+            },
+            page: {
+                limit: 50,
+            },
+        };
 
+        // 🔍 Buscar tareas
+        const tareasRes = await axios.post(
+            `${API_BASE}/tasks/search`,
+            searchPayload,
+            {
+                headers: { "Content-Type": "application/json" },
+                withCredentials: true,
+            }
+        );
+
+        const tareas = tareasRes.data?.items ?? [];
+
+        // 🧠 Filtrar tareas de aprobación + estado CREATED + processInstanceKey
         const coincidencias = tareas.filter(
-            t =>
+            (t) =>
                 aprobacionesIds.includes(t.elementId) &&
                 t.state === "CREATED" &&
-                (processInstanceKey ? String(t.processInstanceKey) === String(processInstanceKey) : true)
+                (processInstanceKey
+                    ? String(t.processInstanceKey) === String(processInstanceKey)
+                    : true)
         );
 
         if (coincidencias.length === 0) {
-            console.log("⏳ No hay tareas de aprobación pendientes (one-step) para el proceso indicado.");
+            console.log("⏳ No hay tareas de aprobación pendientes (approvePendingSingle).");
             return;
         }
 
-        console.log("✅ Tareas pendientes encontradas (one-step):", coincidencias.map(t => ({ userTaskKey: t.userTaskKey, elementId: t.elementId })));
+        // 🔵 MISMA LÓGICA: se toma la ÚLTIMA del grupo
+        const tareaSeleccionada = coincidencias.at(-1);
+        const userTaskKey = tareaSeleccionada.userTaskKey;
 
-        await Promise.all(
-            coincidencias.map(tarea =>
-                fetch(`${API_BASE}/tasks/${tarea.userTaskKey}/complete`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ variables })
-                })
-            )
+        console.log("📌 Tarea seleccionada (approvePendingSingle):", {
+            userTaskKey,
+            elementId: tareaSeleccionada.elementId,
+            processInstanceKey: tareaSeleccionada.processInstanceKey,
+        });
+
+        // 🟢 Payload correcto para completar (Camunda v2)
+        const completePayload = {
+            variables: variables ?? {},
+            action: "complete",
+        };
+
+        // ✔ Completar solo la tarea correcta
+        const res = await axios.post(
+            `${API_BASE}/tasks/${userTaskKey}/complete`,
+            completePayload,
+            {
+                headers: { "Content-Type": "application/json" },
+                withCredentials: true,
+            }
         );
 
-        console.log("🎉 Todas las tareas pendientes fueron completadas (one-step).");
+        console.log("🎉 Tarea completada correctamente (approvePendingSingle):", res.data);
     } catch (err) {
-        console.error("❌ Error en approvePendingSingle:", err);
+        console.error("❌ Error en approvePendingSingle:", err.response?.data || err);
         throw err;
     }
 }
+
 
 export async function approveBuyerTask(variables = {}, options = {}) {
     try {
         const { processInstanceKey } = options || {};
 
-        // Buscar tareas desde el backend
-        const tareasRes = await fetch(`${API_BASE}/tasks/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({}) // no enviamos filtros por defecto; backend devuelve listado de user-tasks
-        });
+        // 1. Buscar tareas desde el backend (MISMO ORDEN)
+        const searchPayload = {
+            filter: {
+                state: "CREATED",
+            },
+            page: {
+                limit: 50,
+            },
+        };
 
-        const tareasData = await tareasRes.json();
-        const tareas = tareasData.items || [];
+        const tareasRes = await axios.post(
+            `${API_BASE}/tasks/search`,
+            searchPayload,
+            {
+                headers: { "Content-Type": "application/json" },
+                withCredentials: true,
+            }
+        );
 
-        // Filtrar sólo las userTasks del comprador (elementId especificado) y que estén en estado CREATED
+        const tareas = tareasRes.data?.items || [];
+
+        // 2. Filtrar sólo la tarea del comprador (MISMO ORDEN)
         const coincidencias = tareas.filter(t =>
-            t.elementId === "Activity_19kdsft" &&
+            t.elementId === "Activity_1tb4s1c" &&
             t.state === "CREATED" &&
             (processInstanceKey ? String(t.processInstanceKey) === String(processInstanceKey) : true)
         );
 
         if (coincidencias.length === 0) {
-            console.log("⏳ No se encontraron userTasks 'Activity_19kdsft' en estado CREATED para aprobar.");
+            console.log(
+                "⏳ No se encontraron userTasks 'Activity_1tb4s1c' en estado CREATED para aprobar."
+            );
             return;
         }
 
-        console.log("✅ UserTasks de comprador encontradas:", coincidencias.map(t => ({ userTaskKey: t.userTaskKey, processInstanceKey: t.processInstanceKey })));
-
-        await Promise.all(
-            coincidencias.map(tarea =>
-                fetch(`${API_BASE}/tasks/${tarea.userTaskKey}/complete`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ variables })
-                })
-            )
+        console.log(
+            "✅ UserTasks de comprador encontradas:",
+            coincidencias.map(t => ({
+                userTaskKey: t.userTaskKey,
+                processInstanceKey: t.processInstanceKey,
+            }))
         );
 
-        console.log("🎉 UserTask(s) 'Activity_19kdsft' aprobada(s) correctamente.");
+        // 3. MISMA LÓGICA NUEVA → se toma **SOLO LA ÚLTIMA**
+        const tareaSeleccionada = coincidencias.at(-1);
+        const userTaskKey = tareaSeleccionada.userTaskKey;
+
+        console.log("📌 Tarea seleccionada (approveBuyerTask):", {
+            userTaskKey,
+            elementId: tareaSeleccionada.elementId,
+            processInstanceKey: tareaSeleccionada.processInstanceKey,
+        });
+
+        // 4. Payload correcto para completar (MISMA LÓGICA NUEVA)
+        const completePayload = {
+            variables: variables ?? {},
+            action: "complete",
+        };
+
+        // 5. Completar tarea (SOLO UNA)
+        const res = await axios.post(
+            `${API_BASE}/tasks/${userTaskKey}/complete`,
+            completePayload,
+            {
+                headers: { "Content-Type": "application/json" },
+                withCredentials: true,
+            }
+        );
+
+        console.log("🎉 UserTask 'Activity_1tb4s1c' aprobada correctamente:", res.data);
+
+        return {
+            success: true,
+            userTaskKey,
+            processInstanceKey: tareaSeleccionada.processInstanceKey,
+        };
+
     } catch (err) {
-        console.error("❌ Error en approveBuyerTask:", err);
+        console.error("❌ Error en approveBuyerTask:", err.response?.data || err);
         throw err;
     }
 }
+
 

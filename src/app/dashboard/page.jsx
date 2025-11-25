@@ -13,6 +13,7 @@ import { approveBuyerTask, iniciarProceso } from "../services/camunda";
 import styles from "../dashboard/DashboardRequisiciones.module.css";
 import api from "../services/axios";
 import WizardModal from "../components/modalNewReq";
+import TimeLap from "../components/timeLap";
 
 function DashboardInner() {
   function getBadgeClass(estado) {
@@ -88,26 +89,15 @@ function DashboardInner() {
   const [token, setToken] = useState(null);
   const [openReqModal, setOpenReqModal] = useState(false);
   const [loadingSolicitante, setLoadingSolicitante] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [timelineReqId, setTimelineReqId] = useState(null);
 
   // Leer token desde localStorage al montar y actualizar si cambia en otra pestaña (event storage).
   useEffect(() => {
     if (typeof window === "undefined") return;
-
-    const readToken = () => {
-      const t = localStorage.getItem("token");
-      setToken(t);
-      console.debug("Token leído desde localStorage:", t);
-    };
-
+    const readToken = () => setToken(localStorage.getItem("token"));
     readToken();
-
-    const onStorage = (e) => {
-      if (e.key === "token") {
-        setToken(e.newValue);
-        console.debug("Token actualizado vía evento storage:", e.newValue);
-      }
-    };
-
+    const onStorage = (e) => { if (e.key === "token") setToken(e.newValue); };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
@@ -119,6 +109,15 @@ function DashboardInner() {
     return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
   };
 
+  // Normaliza un estado para comparaciones (minúsculas, trim)
+  const normalizeEstado = (s) => String(s || "").toLowerCase().trim();
+  const isApprovedState = (s) => {
+    const n = normalizeEstado(s);
+    return n.includes("aprob") || n === "totalmente aprobada" || n === "aprobada";
+  };
+  const isPendingState = (s) => normalizeEstado(s) === "pendiente";
+  const isDevueltaState = (s) => normalizeEstado(s) === "devuelta";
+
   const requisicionesFiltradas = requisiciones.filter((req) => {
     const matchesSearch = !searchQuery.trim()
       ? true
@@ -126,9 +125,8 @@ function DashboardInner() {
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
 
-    const estado = String(req.status || req.estado_aprobacion || "").toLowerCase();
-    const matchesStatus =
-      statusFilter === "todas" ? true : estado === statusFilter;
+    const estado = normalizeEstado(req.status || req.estado_aprobacion || "");
+    const matchesStatus = statusFilter === "todas" ? true : estado === String(statusFilter).toLowerCase();
 
     return matchesSearch && matchesStatus;
   });
@@ -138,38 +136,48 @@ function DashboardInner() {
       setLoading(true);
 
       if (permissions?.isAprobador && user?.nombre) {
-        const res = await api.get(
-          `http://localhost:8000/api/requisiciones/aprobador/${encodeURIComponent(user.nombre)}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        // axios lanza en non-2xx; no usar res.ok. Usar res.status si es necesario.
-        if (res.status < 200 || res.status >= 300) throw new Error("Error al obtener requisiciones del aprobador");
+        const res = await api.get(`/api/requisiciones/aprobador/${encodeURIComponent(user.nombre)}`, {
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
+        });
         const data = res.data;
         const lista = Array.isArray(data) ? data : [data];
         // 🧠 Añadir estado de aprobación según el orden (del timeLap)
         const completadas = await Promise.all(
           lista.map(async (req) => {
             try {
-              const r = await api.get(
-                `http://localhost:8000/api/requisiciones/${req.requisicion_id}/aprobacion`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              );
-              // comprobar status con axios
-              if (r.status < 200 || r.status >= 300) return { ...req, puedeAprobar: false };
-
+              const r = await api.get(`/api/requisiciones/${req.requisicion_id}/aprobacion`, {
+                headers: { Authorization: token ? `Bearer ${token}` : "" },
+              });
               const info = r.data;
               const { approvers, nextOrder } = info || {};
-              if (!approvers) return { ...req, puedeAprobar: false };
-              // ...resto inalterado...
-              const actual = approvers.find(
-                (a) =>
-                  a.nombre_aprobador?.toLowerCase() === user.nombre.toLowerCase() ||
-                  a.rol_aprobador?.toLowerCase() === user.rol?.toLowerCase()
-              );
-              const puedeAprobar = actual?.visible === true || actual?.orden === nextOrder;
-              return { ...req, puedeAprobar };
+               if (!approvers) return { ...req, puedeAprobar: false, yaAprobaste: false };
+ 
+               const actual = approvers.find(
+                 (a) =>
+                   a.nombre_aprobador?.toLowerCase() === user.nombre.toLowerCase() ||
+                   a.rol_aprobador?.toLowerCase() === user.rol?.toLowerCase()
+               );
+ 
+               const puedeAprobar = actual?.visible === true || actual?.orden === nextOrder;
+ 
+               // Detectar si el aprobador ya aprobó esta requisición
+               const yaAprobaste = !!(actual &&
+                 (actual.aprobado === true ||
+                   actual.approved === true ||
+                   String(actual.estado_aprobador || "").toLowerCase() === "aprobado")
+               );
+ 
+              // incluir approvers y flags útiles para la UI
+              return {
+                ...req,
+                approvers,
+                nextOrder,
+                puedeAprobar: !!puedeAprobar,
+                yaAprobaste: !!yaAprobaste,
+                isApprover: !!actual,
+              };
             } catch {
-              return { ...req, puedeAprobar: false };
+              return { ...req, puedeAprobar: false, yaAprobaste: false, isApprover: false, approvers: [] };
             }
           })
         );
@@ -177,19 +185,16 @@ function DashboardInner() {
         setRequisiciones(completadas);
       }
       else if (permissions?.isComprador) {
-        const res = await api.get("http://localhost:8000/api/requisiciones", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // No filtrar aquí: asignar la lista tal como venga del backend y loguear para debugging.
+        const res = await api.get("/api/requisiciones", { headers: { Authorization: token ? `Bearer ${token}` : "" } });
         const data = res.data;
-        const lista = (Array.isArray(data) ? data : [data]).filter(
-          (r) => (r.status || r.estado) === "aprobada" || (r.status || r.estado) === "devuelta"
-        );
-        setRequisiciones(lista);
+        const listaRaw = Array.isArray(data) ? data : (data ? [data] : []);
+        console.debug("fetchRequisiciones (comprador) - recibidos:", listaRaw.length, listaRaw.slice(0,3));
+        // Asignar la lista completa; la UI aplicará el filtrado/normalización si hace falta.
+        setRequisiciones(listaRaw);
       }
       else if (user?.nombre) {
-        const res = await api.get("http://localhost:8000/api/requisiciones", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await api.get("/api/requisiciones", { headers: { Authorization: token ? `Bearer ${token}` : "" } });
         const data = res.data;
         const lista = (Array.isArray(data) ? data : [data]).filter(
           (r) => r.nombre_solicitante?.toLowerCase() === user.nombre.toLowerCase()
@@ -213,8 +218,8 @@ function DashboardInner() {
         try {
           if (permissions?.isAprobador) {
             const resPendInit = await api.get(
-              "http://localhost:8000/api/requisiciones/pendientes",
-              { headers: { Authorization: `Bearer ${token}`, "X-User-Id": user?.id } }
+              "/api/requisiciones/pendientes",
+              { headers: { Authorization: token ? `Bearer ${token}` : "", "X-User-Id": user?.id } }
             );
             const dataPendInit = resPendInit.data;
 
@@ -225,8 +230,8 @@ function DashboardInner() {
 
           }
           const resAllInit = await api.get(
-            "http://localhost:8000/api/requisiciones",
-            { headers: { Authorization: `Bearer ${token}` } }
+            "/api/requisiciones",
+            { headers: { Authorization: token ? `Bearer ${token}` : "" } }
           );
 
           const allInit = resAllInit.data;
@@ -246,10 +251,10 @@ function DashboardInner() {
         try {
           // 1) Para aprobadores: comprobar pendientes y comparar ids
           if (permissions?.isAprobador) {
-            const resPend = await api.get("http://localhost:8000/api/requisiciones/pendientes", {
-              headers: { Authorization: `Bearer ${token}`, "X-User-Id": user?.id },
+            const resPend = await api.get("/api/requisiciones/pendientes", {
+              headers: { Authorization: token ? `Bearer ${token}` : "", "X-User-Id": user?.id },
             });
-            if (resPend.ok) {
+            if (resPend.status >= 200 && resPend.status < 300) {
               const dataPend = resPend.data;
               const pendingIds = new Set((Array.isArray(dataPend) ? dataPend : [dataPend]).map(r => r.requisicion_id));
               const prev = prevPendingIdsRef.current;
@@ -272,10 +277,8 @@ function DashboardInner() {
           }
 
           // 2) Comprobar cambios de status globales (devuelta/aprobada)
-          const resAll = await api.get("http://localhost:8000/api/requisiciones", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (resAll.ok) {
+          const resAll = await api.get("/api/requisiciones", { headers: { Authorization: token ? `Bearer ${token}` : "" } });
+          if (resAll.status >= 200 && resAll.status < 300) {
             const all = resAll.data;
             const prevStatuses = prevStatusesRef.current;
             if (!firstPollRef.current) {
@@ -339,12 +342,8 @@ function DashboardInner() {
         return;
       }
 
-      const res = await api.get(`http://localhost:8000/api/requisiciones/${req.requisicion_id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.status !== 200) throw new Error("Error al obtener detalles");
-
+      const res = await api.get(`/api/requisiciones/${req.requisicion_id}`, { headers: { Authorization: token ? `Bearer ${token}` : "" } });
+      if (res.status < 200 || res.status >= 300) throw new Error("Error al obtener detalles");
       const data = res.data;
 
       // 👇👇 AGREGA ESTO AQUÍ 👇👇
@@ -394,13 +393,8 @@ function DashboardInner() {
             onClick={async () => {
               toast.dismiss(toastId);
               try {
-                const res = await api.post(
-                  `http://localhost:8000/api/requisiciones/${id}/devolver`,
-                  {
-                    headers: { Authorization: `Bearer ${token}` },
-                  }
-                );
-                if (res.status !== 200) throw new Error("Error al devolver");
+                const res = await api.post(`/api/requisiciones/${id}/devolver`, {}, { headers: { Authorization: token ? `Bearer ${token}` : "" } });
+                if (res.status < 200 || res.status >= 300) throw new Error("Error al devolver");
                 toast.success("Requisición devuelta correctamente");
                 setVerifyModalReq(null);
                 await fetchRequisiciones();
@@ -472,13 +466,8 @@ function DashboardInner() {
               toast.dismiss(toastId);
               try {
                 setVerifyLoading(true);
-                const res = await api.post(
-                  `http://localhost:8000/api/requisiciones/${id}/aprobar-total`,
-                  {
-                    headers: { Authorization: `Bearer ${token}` },
-                  }
-                );
-                if (!res.ok) throw new Error("Error al aprobar");
+                const res = await api.post(`/api/requisiciones/${id}/aprobar-total`, {}, { headers: { Authorization: token ? `Bearer ${token}` : "" } });
+                if (res.status < 200 || res.status >= 300) throw new Error("Error al aprobar");
                 toast.success("Requisición aprobada correctamente");
                 setVerifyModalReq(null);
                 await fetchRequisiciones();
@@ -559,7 +548,7 @@ function DashboardInner() {
 
   useEffect(() => {
     // Mostrar notificación una sola vez (usar toastId para evitar duplicados)
-    if (!loading && permissions?.isAprobador && requisiciones.some(r => (r.status || r.estado_aprobacion) === "pendiente")) {
+    if (!loading && permissions?.isAprobador && requisiciones.some(r => isPendingState(r.status || r.estado_aprobacion))) {
       if (!toast.isActive(pendingToastIdRef.current)) {
         toast.info("Tienes requisiciones por aprobar", { toastId: pendingToastIdRef.current });
       }
@@ -570,7 +559,7 @@ function DashboardInner() {
       }
     }
 
-    if (!loading && permissions?.isComprador && requisiciones.some(r => (r.status || r.estado) === "aprobada")) {
+    if (!loading && permissions?.isComprador && requisiciones.some(r => isApprovedState(r.status || r.estado))) {
       if (!toast.isActive(compradorToastIdRef.current)) {
         toast.info("Tienes requisiciones por finalizar", { toastId: compradorToastIdRef.current });
       }
@@ -635,9 +624,9 @@ function DashboardInner() {
       }
 
       const res = await api.get(
-        `http://localhost:8000/api/requisiciones/${req.requisicion_id}`,
+        `/api/requisiciones/${req.requisicion_id}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
         }
       );
 
@@ -649,33 +638,47 @@ function DashboardInner() {
       let aprobadores = [];
       try {
         const apr = await api.get(
-          `http://localhost:8000/api/requisiciones/${req.requisicion_id}/aprobacion`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          `/api/requisiciones/${req.requisicion_id}/aprobacion`,
+          { headers: { Authorization: token ? `Bearer ${token}` : "" } }
         );
         const aprData = apr.data || {};
-        aprobadores = aprData.approvers || aprData.aprobadores || [];
-      } catch (e) {
-        console.warn("No se pudo obtener data de aprobadores:", e);
-      }
-
-      // Asegurar que siempre haya un campo `requisicion_id` (fallbacks)
-      setSolicitanteReq({
-        ...data.requisicion,
-        productos: data.productos,
-        requisicion_id:
-          data.requisicion?.requisicion_id ??
-          data.requisicion_id ??
-          req.requisicion_id,
-        aprobadores, // añadir lista de aprobadores al estado
-      });
-
-      setOpenReqModal(true);
-    } catch (err) {
-      console.error(err);
-      toast.error("No se pudo cargar la requisición");
-    } finally {
-      setLoadingSolicitante(false);
-    }
+        const rawApprovers = aprData.approvers || aprData.aprobadores || [];
+        // Mapear aprobadores para incluir si es el usuario actual y su estado
+        aprobadores = rawApprovers.map((a) => {
+          const isCurrent =
+            a.nombre_aprobador?.toLowerCase() === user?.nombre?.toLowerCase() ||
+            a.rol_aprobador?.toLowerCase() === user?.rol?.toLowerCase();
+          const userStatus = isCurrent
+            ? normalizeEstado(a.estado || a.estado_aprobador || a.estado_aprobacion || "")
+            : null;
+          return {
+            ...a,
+            isCurrent,
+            userStatus,
+          };
+        });
+       } catch (e) {
+         console.warn("No se pudo obtener data de aprobadores:", e);
+       }
+ 
+       // Asegurar que siempre haya un campo `requisicion_id` (fallbacks)
+       setSolicitanteReq({
+         ...data.requisicion,
+         productos: data.productos,
+         requisicion_id:
+           data.requisicion?.requisicion_id ??
+           data.requisicion_id ??
+           req.requisicion_id,
+         aprobadores, // añadir lista de aprobadores al estado
+       });
+ 
+       setOpenReqModal(true);
+     } catch (err) {
+       console.error(err);
+       toast.error("No se pudo cargar la requisición");
+     } finally {
+       setLoadingSolicitante(false);
+     }
   };
 
   // Calcular estado normalizado de la requisición seleccionada (para usar en el modal del solicitante)
@@ -748,7 +751,7 @@ function DashboardInner() {
     try {
       const res = await api.get(
         `/api/requisiciones/${req.requisicion_id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: token ? `Bearer ${token}` : "" } }
       );
       if (res.status < 200 || res.status >= 300) throw new Error("Error al obtener requisiciones del aprobador");
       const data = res.data;
@@ -788,13 +791,7 @@ function DashboardInner() {
             onClick={async () => {
               toast.dismiss(toastId);
               try {
-                const res = await api.delete(
-                  `/api/requisiciones/${id}`,
-                  {
-                    headers: { "Content-Type": "application/json" },
-                    withCredentials: true
-                  }
-                );
+                const res = await api.delete(`/api/requisiciones/${id}`, { headers: { Authorization: token ? `Bearer ${token}` : "" } });
                 if (res.status < 200 || res.status >= 300) throw new Error("Error al eliminar");
                 toast.success("Formulario eliminado correctamente.");
                 setOpenReqModal(false);
@@ -839,9 +836,15 @@ function DashboardInner() {
     );
   };
 
+  const openTimeline = (id) => {
+    setTimelineReqId(id);
+    setTimelineOpen(true);
+  };
+
   return (
     <div className="dashboard-container-requisiciones" style={{ display: "flex" }}>
       <Sidebar onToggle={setIsSidebarOpen} />
+      <TimeLap open={timelineOpen} onClose={() => setTimelineOpen(false)} requisicionId={timelineReqId} token={token} />
       <div
         className="dashboard-content"
         style={{
@@ -875,7 +878,7 @@ function DashboardInner() {
                   <div className="infoAprobarReq">
                     <p>Requisiciones aprobadas</p>
                     <h2>
-                      {requisiciones.filter((r) => (r.estado_aprobacion || r.status) === "Totalmente Aprobada").length}
+                      {requisiciones.filter((r) => isApprovedState(r.estado_aprobacion || r.status)).length}
                     </h2>
                   </div>
                   <div className="iconAprobarReq">
@@ -886,7 +889,7 @@ function DashboardInner() {
                   <div className="infoAprobarReq">
                     <p>Requisiciones pendientes</p>
                     <h2>
-                      {requisiciones.filter((r) => (r.estado_aprobacion || r.status) === "pendiente").length}
+                      {requisiciones.filter((r) => isPendingState(r.estado_aprobacion || r.status)).length}
                     </h2>
                   </div>
                   <div className="iconPendientesReq">
@@ -897,7 +900,7 @@ function DashboardInner() {
                   <div className="infoAprobarReq">
                     <p>Requisiciones rechazadas</p>
                     <h2>
-                      {requisiciones.filter((r) => (r.estado_aprobacion || r.status) === "rechazada").length}
+                      {requisiciones.filter((r) => normalizeEstado(r.estado_aprobacion || r.status) === "rechazada").length}
                     </h2>
                   </div>
                   <div className="iconRechazarReq">
@@ -957,18 +960,58 @@ function DashboardInner() {
                   const valor = req.valor_total || req.valor || 0;
 
                   return (
-                    <div key={req.requisicion_id} className="cardAccent" onClick={() => {
+                    <div key={req.requisicion_id} className="cardAccent" onClick={async () => {
                       if (permissions?.isComprador) {
                         handleVerifyOpen(req);  // modal comprador
+                        return;
                       }
-                      else if (permissions?.isAprobador) {
-                        setSelectedReq(req);    // ApprovalModal
+                      if (permissions?.isAprobador) {
+                        // Consultar endpoint para saber si puede aprobar
+                        try {
+                          const res = await api.get(`/api/requisiciones/${req.requisicion_id}/aprobacion-usuario`, {
+                            headers: {
+                              Authorization: token ? `Bearer ${token}` : "",
+                              "X-User-Name": user?.nombre || "",
+                            },
+                          });
+                          const aprobData = res.data;
+
+                          // Si ya aprobó
+                          if (aprobData.yaAprobaste) {
+                            toast.warn("Ya aprobaste esta requisición.");
+                            return;
+                          }
+
+                          // Si puede aprobar (es su turno)
+                          if (aprobData.puedeAprobar) {
+                            setSelectedReq(req); // abrir ApprovalModal
+                            return;
+                          }
+
+                          // Si no puede aprobar aún
+                          toast.info("Aún no es tu turno de aprobar esta requisición. Revisa el flujo en Timeline.");
+                          return;
+                        } catch (err) {
+                          console.error("Error al verificar aprobación:", err);
+                          // Si hay error, intentar comportamiento anterior
+                          if (req.isApprover) {
+                            if (req.yaAprobaste) {
+                              toast.warn("Esta requisición ya fue aprobada por ti.");
+                              return;
+                            }
+                            if (req.puedeAprobar) {
+                              setSelectedReq(req);
+                              return;
+                            }
+                            toast.info("Aún no es tu turno de aprobar esta requisición.");
+                            return;
+                          }
+                        }
                       }
-                      else {
-                        handleOpenSolicitanteModal(req);
-                        setSolicitanteReq(req); // modal solicitante
-                        setOpenReqModal(true);
-                      }
+                      // solicitante / otros roles
+                      handleOpenSolicitanteModal(req);
+                      setSolicitanteReq(req); // modal solicitante
+                      setOpenReqModal(true);
                     }}
                     >
                       <div className={`${styles.accentBar} ${getBadgeClassBar(estado)}`}></div>
@@ -984,6 +1027,34 @@ function DashboardInner() {
                             {getStatusLabel(estado)}
                           </span>
 
+                          {/* Badges para aprobadores: indicar si ya aprobó o si está por aprobar */}
+                          {permissions?.isAprobador && req.isApprover && (
+                            req.yaAprobaste ? (
+                              <span style={{
+                                marginLeft: 8,
+                                background: "#10b981", // verde
+                                color: "#fff",
+                                padding: "4px 8px",
+                                borderRadius: 8,
+                                fontSize: 12,
+                                fontWeight: 600
+                              }}>
+                                Ya la aprobaste
+                              </span>
+                            ) : (
+                              <span style={{
+                                marginLeft: 8,
+                                background: req.puedeAprobar ? "#1d4ed8" : "#f59e0b", // azul si es turno, naranja si pendiente
+                                color: "#fff",
+                                padding: "4px 8px",
+                                borderRadius: 8,
+                                fontSize: 12,
+                                fontWeight: 600
+                              }}>
+                                {req.puedeAprobar ? "Tu turno" : "Por aprobar"}
+                              </span>
+                            )
+                          )}
                         </div>
 
                         <div className={styles.accentFooter}>

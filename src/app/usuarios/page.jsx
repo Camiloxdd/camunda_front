@@ -206,12 +206,14 @@ function UsuariosInner() {
   const fetchUsuarios = async () => {
     try {
       setLoading(true);
-
-      const res = await api.get("/api/user/list");
-      setUserList(Array.isArray(res.data) ? res.data : [res.data]);
-
+      const token = localStorage.getItem("token");
+      const res = await api.get("/api/user/list", {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+      });
+      setUserList(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error(err);
+      setError(err?.message || "Error al obtener usuarios");
     } finally {
       setLoading(false);
     }
@@ -227,37 +229,29 @@ function UsuariosInner() {
 
     try {
       const token = localStorage.getItem("token");
-      const url = editingUser
-        ? `http://localhost:4000/api/user/update/${editingUser.id}`
-        : "http://localhost:4000/api/user/create";
-
-      const method = editingUser ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-        body: JSON.stringify(formData),
-      });
-
-      if (!res.ok) throw new Error("Error al guardar el usuario");
-
-      toast.success(
-        editingUser
-          ? "✅ Usuario actualizado correctamente"
-          : "✅ Usuario creado correctamente"
-      );
-
+      if (editingUser) {
+        await api.put(
+          `/api/user/update/${editingUser.id}`,
+          formData,
+          { headers: { Authorization: token ? `Bearer ${token}` : "" } }
+        );
+        toast.success("✅ Usuario actualizado correctamente");
+      } else {
+        await api.post(
+          `/api/user/create`,
+          formData,
+          { headers: { Authorization: token ? `Bearer ${token}` : "" } }
+        );
+        toast.success("✅ Usuario creado correctamente");
+      }
       await fetchUsuarios();
       setOpenModal(false);
       setEditingUser(null);
     } catch (err) {
       console.error(err);
-      setError(err.message);
-      toast.error(`❌ ${err.message}`);
+      const msg = err?.response?.data?.message || err?.message || "Error en la petición";
+      setError(msg);
+      toast.error(`❌ ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -268,21 +262,15 @@ function UsuariosInner() {
 
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:4000/api/user/delete/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
+      await api.delete(`/api/user/delete/${id}`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
-
-      if (!res.ok) throw new Error("Error al eliminar el usuario");
-
       toast.success("🗑️ Usuario eliminado correctamente");
       await fetchUsuarios();
     } catch (err) {
       console.error(err);
-      toast.error(`❌ ${err.message}`);
+      const msg = err?.response?.data?.message || err?.message || "Error al eliminar usuario";
+      toast.error(`❌ ${msg}`);
     }
   };
 

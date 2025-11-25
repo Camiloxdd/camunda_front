@@ -1722,10 +1722,11 @@ input[type="time"] {
 .listaReq>.loading-container {
   grid-column: 1 / -1;
   /* ocupa desde la primera hasta la última columna */
-  width: 100%;
+  width: 96%;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-left: auto;
   min-height: 260px;
   /* ajusta según altura deseada */
   background-color: transparent;

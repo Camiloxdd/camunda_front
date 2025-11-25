@@ -7,7 +7,7 @@ import { approvePendingSingle, startThreeStep } from "../services/camunda";
 
 export default function ApprovalModal({ requisicion, onClose, onApproved, user }) {
     const [detalles, setDetalles] = useState({
-        currentUser: user,        
+        currentUser: user,
         requisicion: {},
         productos: [],
     });
@@ -52,7 +52,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user }
                     const editable =
                         (technoRoles.includes(cargo) && !!p.compra_tecnologica) ||
                         (sstRoles.includes(cargo) && !!p.ergonomico) ||
-                        (!technoRoles.concat(sstRoles).includes(cargo)); 
+                        (!technoRoles.concat(sstRoles).includes(cargo));
 
                     if (editable) {
                         init[p.id] = (p.aprobado === "aprobado" || p.aprobado === 1 || p.aprobado === true) || false;
@@ -141,7 +141,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user }
                     };
                 }),
             };
-            
+
             const res = await api.put(
                 `/api/requisiciones/${requisicion.requisicion_id}/aprobar-items`,
                 body,
@@ -353,6 +353,11 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user }
         return (
             <div className="modal-overlay">
                 <div className="modal-content">
+                    <img
+                        src="/coopidrogas_logo_mini.png"
+                        className="LogoCambios"
+                        alt="Logo de carga"
+                    />
                     <p>Cargando detalles...</p>
                 </div>
             </div>

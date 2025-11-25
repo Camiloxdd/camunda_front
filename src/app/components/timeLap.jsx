@@ -3,8 +3,9 @@ import React, { useEffect, useState } from "react";
 import "../styles/views/timeLap.css"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle, faClock } from "@fortawesome/free-solid-svg-icons";
+import api from "../services/axios";
 
-export default function TimeLap({ open, onClose, requisicionId }) {
+export default function TimeLap({ open, onClose, requisicionId, token }) {
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(null);
     const [error, setError] = useState(null);
@@ -16,9 +17,11 @@ export default function TimeLap({ open, onClose, requisicionId }) {
             setLoading(true);
             setError(null);
             try {
-                const res = await fetch(`http://localhost:4000/api/requisiciones/${requisicionId}/aprobacion`, { credentials: "include" });
-                if (!res.ok) throw new Error("Error fetching progress");
-                const data = await res.json();
+                const res = await api.get(`/api/requisiciones/${requisicionId}/aprobacion`, {
+                    headers: { Authorization: token ? `Bearer ${token}` : "" },
+                });
+                if (res.status < 200 || res.status >= 300) throw new Error("Error fetching progress");
+                const data = res.data;
                 if (mounted) setProgress(data);
             } catch (err) {
                 console.error(err);
@@ -29,7 +32,7 @@ export default function TimeLap({ open, onClose, requisicionId }) {
         };
         fetchProgress();
         return () => { mounted = false; };
-    }, [open, requisicionId]);
+    }, [open, requisicionId, token]);
 
     if (!open) return null;
 
@@ -244,7 +247,7 @@ export default function TimeLap({ open, onClose, requisicionId }) {
 
     return (
         <div style={overlayStyle} role="dialog" aria-modal="true">
-            <div className="boxStyle">
+            <div style={boxStyle}>
                 <div className="headerTimeLap">
                     <div className="infoHeader">
                         <h2>Flujo de aprobaciones</h2>
