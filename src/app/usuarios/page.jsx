@@ -115,7 +115,7 @@ function UsuariosInner() {
         return "Gerente de Área SST";
       case "dicLeaderAreaTyC":
         return "Director / Líder de Área Tec y Proyectos";
-      case "dicLeaderAreaSST":
+      case "dicSST":
         return "Director / Líder de SST";
       case "CoordiDevWeb":
         return "Coordinador Desarrollo Web";
@@ -330,16 +330,25 @@ function UsuariosInner() {
                   <th>Cargo</th>
                   <th>Area</th>
                   <th>Sede</th>
-                  <th>Super Admin</th>
-                  <th>Rol Requisicion</th>
+                  <th>Admin</th>
+                  <th>Rol</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: "center" }}>
-                      Cargando usuarios...
+                    <td colSpan="8">
+                      <div className="loading-container-users">
+                        <div className="loading-cambios">
+                          <img
+                            src="/coopidrogas_logo_mini.png"
+                            className="LogoCambios"
+                            alt="Logo de carga"
+                          />
+                          <p className="textLoading">Cargando usuarios...</p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ) : error ? (
@@ -393,6 +402,7 @@ function UsuariosInner() {
                   </tr>
                 )}
               </tbody>
+
             </table>
           </div>
         </div>

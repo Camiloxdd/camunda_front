@@ -97,14 +97,12 @@ export async function endFirstStepStartTwoStep(variables = {}) {
 
 export async function endTwoStepStartThreeStep(variables) {
         try {
-        // 1. BODY correcto para /v2/user-tasks/search
         const searchPayload = {
             filter: {
                 state: "CREATED",
             },
             page: {
                 limit: 50,
-                // after: "cursor..."  // opcional
             },
         };
 

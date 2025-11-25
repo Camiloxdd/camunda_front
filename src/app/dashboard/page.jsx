@@ -962,55 +962,15 @@ function DashboardInner() {
                   return (
                     <div key={req.requisicion_id} className="cardAccent" onClick={async () => {
                       if (permissions?.isComprador) {
-                        handleVerifyOpen(req);  // modal comprador
+                        handleVerifyOpen(req);
                         return;
                       }
                       if (permissions?.isAprobador) {
-                        // Consultar endpoint para saber si puede aprobar
-                        try {
-                          const res = await api.get(`/api/requisiciones/${req.requisicion_id}/aprobacion-usuario`, {
-                            headers: {
-                              Authorization: token ? `Bearer ${token}` : "",
-                              "X-User-Name": user?.nombre || "",
-                            },
-                          });
-                          const aprobData = res.data;
-
-                          // Si ya aprobó
-                          if (aprobData.yaAprobaste) {
-                            toast.warn("Ya aprobaste esta requisición.");
-                            return;
-                          }
-
-                          // Si puede aprobar (es su turno)
-                          if (aprobData.puedeAprobar) {
-                            setSelectedReq(req); // abrir ApprovalModal
-                            return;
-                          }
-
-                          // Si no puede aprobar aún
-                          toast.info("Aún no es tu turno de aprobar esta requisición. Revisa el flujo en Timeline.");
-                          return;
-                        } catch (err) {
-                          console.error("Error al verificar aprobación:", err);
-                          // Si hay error, intentar comportamiento anterior
-                          if (req.isApprover) {
-                            if (req.yaAprobaste) {
-                              toast.warn("Esta requisición ya fue aprobada por ti.");
-                              return;
-                            }
-                            if (req.puedeAprobar) {
-                              setSelectedReq(req);
-                              return;
-                            }
-                            toast.info("Aún no es tu turno de aprobar esta requisición.");
-                            return;
-                          }
-                        }
+                        setSelectedReq(req);
+                        return;
                       }
-                      // solicitante / otros roles
                       handleOpenSolicitanteModal(req);
-                      setSolicitanteReq(req); // modal solicitante
+                      setSolicitanteReq(req);
                       setOpenReqModal(true);
                     }}
                     >
@@ -1027,34 +987,7 @@ function DashboardInner() {
                             {getStatusLabel(estado)}
                           </span>
 
-                          {/* Badges para aprobadores: indicar si ya aprobó o si está por aprobar */}
-                          {permissions?.isAprobador && req.isApprover && (
-                            req.yaAprobaste ? (
-                              <span style={{
-                                marginLeft: 8,
-                                background: "#10b981", // verde
-                                color: "#fff",
-                                padding: "4px 8px",
-                                borderRadius: 8,
-                                fontSize: 12,
-                                fontWeight: 600
-                              }}>
-                                Ya la aprobaste
-                              </span>
-                            ) : (
-                              <span style={{
-                                marginLeft: 8,
-                                background: req.puedeAprobar ? "#1d4ed8" : "#f59e0b", // azul si es turno, naranja si pendiente
-                                color: "#fff",
-                                padding: "4px 8px",
-                                borderRadius: 8,
-                                fontSize: 12,
-                                fontWeight: 600
-                              }}>
-                                {req.puedeAprobar ? "Tu turno" : "Por aprobar"}
-                              </span>
-                            )
-                          )}
+                          
                         </div>
 
                         <div className={styles.accentFooter}>

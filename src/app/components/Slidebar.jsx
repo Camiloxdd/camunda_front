@@ -43,10 +43,6 @@ export const Sidebar = ({ onToggle }) => {
         // dashboard ya incluido como "Inicio" por defecto, si prefieres camino distinto puedes ajustar
         // aquí lo dejamos consistente: Inicio -> /dashboard
     }
-
-    if (canSeeRequisiciones) {
-        navItems.push({ icon: faFile, label: "Requisiciones", path: "/requisiciones" });
-    }
     if (canSeeUsuarios) {
         navItems.push({ icon: faUser, label: "Usuarios", path: "/usuarios" });
     }

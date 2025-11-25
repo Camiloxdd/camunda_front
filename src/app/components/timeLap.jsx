@@ -8,40 +8,68 @@ import api from "../services/axios";
 export default function TimeLap({ open, onClose, requisicionId, token }) {
     const [loading, setLoading] = useState(false);
     const [progress, setProgress] = useState(null);
+    const [requisicion, setRequisicion] = useState(null);
     const [error, setError] = useState(null);
 
     useEffect(() => {
         if (!open || !requisicionId) return;
+
         let mounted = true;
-        const fetchProgress = async () => {
+
+        const fetchData = async () => {
             setLoading(true);
             setError(null);
+
             try {
-                const res = await api.get(`/api/requisiciones/${requisicionId}/aprobacion`, {
-                    headers: { Authorization: token ? `Bearer ${token}` : "" },
-                });
-                if (res.status < 200 || res.status >= 300) throw new Error("Error fetching progress");
-                const data = res.data;
-                if (mounted) setProgress(data);
+                // Petición paralela para ambos endpoints
+                const [progressRes, requisicionRes] = await Promise.all([
+                    api.get(`/api/requisiciones/${requisicionId}/aprobacion`, {
+                        headers: { Authorization: token ? `Bearer ${token}` : "" },
+                    }),
+                    api.get(`/api/requisiciones/${requisicionId}`, {
+                        headers: { Authorization: token ? `Bearer ${token}` : "" },
+                    })
+                ]);
+
+                if (progressRes.status < 200 || progressRes.status >= 300) {
+                    throw new Error("Error fetching progress");
+                }
+
+                if (requisicionRes.status < 200 || requisicionRes.status >= 300) {
+                    throw new Error("Error fetching requisicion");
+                }
+
+                if (mounted) {
+                    setProgress(progressRes.data);
+                    setRequisicion(requisicionRes.data.requisicion); // <-- CAMBIO AQUÍ
+                }
             } catch (err) {
                 console.error(err);
-                if (mounted) setError("No se pudo obtener el flujo de aprobaciones");
+                if (mounted) {
+                    setError("No se pudo obtener la información");
+                }
             } finally {
-                if (mounted) setLoading(false);
+                if (mounted) {
+                    setLoading(false);
+                }
             }
         };
-        fetchProgress();
-        return () => { mounted = false; };
+
+        fetchData();
+
+        return () => {
+            mounted = false;
+        };
     }, [open, requisicionId, token]);
 
     if (!open) return null;
 
     const overlayStyle = {
         position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex",
-        alignItems: "center", justifyContent: "center", zIndex: 9999
+        alignItems: "center", justifyContent: "center", zIndex: 9999, width: "100%"
     };
     const boxStyle = {
-        width: 760, maxWidth: "95%", background: "#fff", borderRadius: 8, padding: 18, boxShadow: "0 6px 20px rgba(0,0,0,0.2)"
+        width: "60%", maxWidth: "95%", background: "#fff", borderRadius: 8, padding: 18, boxShadow: "0 6px 20px rgba(0,0,0,0.2)"
     };
     const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 };
     const listStyle = { listStyle: "none", padding: 0, margin: 0 };
@@ -148,6 +176,23 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
         const Timeline = ({ aprobaciones }) => {
             return (
                 <div className="timeline-container">
+                    {/* Nodo del solicitante */}
+                    {requisicion?.nombre_solicitante && (
+                        <div className="timeline-node">
+                            <div className="timeline-circle aprobado">
+                                <FontAwesomeIcon icon={faCheckCircle} className="icon" />
+                            </div>
+                            <div className="timeline-line linea-aprobada"></div>
+                            <div className="timeline-info">
+                                <div className="timeline-nombre text-green">
+                                    {requisicion.nombre_solicitante}
+                                </div>
+                                <div className="timeline-fecha">Solicitante</div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Nodos de aprobadores */}
                     {aprobaciones.map((a, index) => {
                         const aprobado = a.estado === "aprobada";
                         const siguiente = a.visible === 1 || a.visible === true;
@@ -191,23 +236,6 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
 
         return (
             <div>
-                <div className="containerInfoTime">
-                    <div style={{ display: "flex", gap: 12, marginBottom: 8, alignItems: "center" }}>
-                        <div>
-                            <strong>Aprobadas</strong>
-                            <div>
-                                {approvedCount}/{totalApprovals}
-                                {fullyApproved ? <span style={{ marginLeft: 8, color: "#333", fontSize: 12 }}>• Demoró {approvalDays} {approvalDays === 1 ? "día" : "días"}</span> : null}
-                            </div>
-                        </div>
-                        <div>
-                            <strong>Pendientes</strong>
-                            <div>{pendientesCount}</div>
-                        </div>
-                    </div>
-
-                </div>
-
                 <div style={{ height: 10, background: "#eee", borderRadius: 6, overflow: "hidden" }}>
                     <div style={{ width: `${percent}%`, background: "#1d5da8", height: "100%" }} />
                 </div>
@@ -251,7 +279,9 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
                 <div className="headerTimeLap">
                     <div className="infoHeader">
                         <h2>Flujo de aprobaciones</h2>
-                        <div style={{ fontSize: 15, color: "#666" }}>{requisicionId ? `Requisición #${requisicionId}` : ""}</div>
+                        <div style={{ fontSize: 15, color: "#666" }}>
+                            {requisicionId ? `Requisición #${requisicionId}` : ""}
+                        </div>
                     </div>
                     <div className="spaceButtonTime">
                         <button onClick={onClose}>✕</button>
@@ -263,4 +293,3 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
         </div>
     );
 }
-

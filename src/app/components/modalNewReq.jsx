@@ -71,6 +71,10 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [mostrarModalProductos3, setMostrarModalProductos3] = useState(false);
     const [formData, setFormData] = useState(initialForm);
     const [token, setToken] = useState("");
+    const [catalogoProductos, setCatalogoProductos] = useState([]);
+    const [catalogoLoading, setCatalogoLoading] = useState(false);
+    const [catalogoError, setCatalogoError] = useState("");
+    
 
 
 
@@ -88,6 +92,34 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             setToken(t);
         }
     }, []);
+
+    useEffect(() => {
+        if (!open) return;
+        const fetchCatalogo = async () => {
+            try {
+                setCatalogoLoading(true);
+                setCatalogoError("");
+                const res = await api.get("/api/productos", { headers: { Authorization: token ? `Bearer ${token}` : "" } });
+                const data = res.data;
+                const lista = Array.isArray(data) ? data : (data ? [data] : []);
+                setCatalogoProductos(lista.map(p => ({
+                    id: p.id,
+                    nombre: p.nombre,
+                    descripcion: p.descripcion,
+                    cuenta_contable: p.cuenta_contable,
+                    centro_costo: p.centro_costo,
+                    es_tecnologico: Boolean(p.es_tecnologico ?? p.compra_tecnologica ?? false),
+                    ergonomico: p.ergonomico !== undefined ? Boolean(p.ergonomico) : !Boolean(p.es_tecnologico ?? false),
+                })));
+            } catch (err) {
+                setCatalogoError("No se pudo cargar el catálogo de productos");
+                setCatalogoProductos([]);
+            } finally {
+                setCatalogoLoading(false);
+            }
+        };
+        fetchCatalogo();
+    }, [open, token]);
 
     useEffect(() => {
         if (!open) return;
@@ -321,6 +353,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         }
 
         try {
+            setStepLoadingVisible(true);
+            setStepLoading(true);
             const requisicionId = initialData?.requisicion?.id;
             const ergonomicos = formData.productos.some((p) => Boolean(p.ergonomico));
             const tecnologicos = formData.productos.some((p) => Boolean(p.compraTecnologica));
@@ -454,6 +488,13 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         } catch (err) {
             console.error(err);
             toast.error("Hubo un error al guardar");
+        } finally {
+            setStepLoading(false);
+            setStepLoadingExiting(true);
+            setTimeout(() => {
+                setStepLoadingExiting(false);
+                setStepLoadingVisible(false);
+            }, 360);
         }
     };
     const handleCancelWizard = async () => {
@@ -642,33 +683,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 </div>
 
                 <div className="elpapadepapas">
-                    <div className="wizardModal-steps">
-                        {[
-                            "Datos del solicitante",
-                            "Detalles del producto",
-                            "Presupuesto",
-                            "Resumen y finalización",
-                        ].map((titulo, index) => (
-                            <div
-                                key={index}
-                                className={`wizardModal-step ${step === index + 1 ? "active" : ""}`}
-                            >
-                                <div className="wizardModal-circle">{index + 1}</div>
-                                <div className="wizardModal-stepContent">
-                                    <h3>
-                                        Paso {index + 1}: {titulo}
-                                    </h3>
-                                    <p>
-                                        {step === index + 1
-                                            ? "En progreso"
-                                            : step > index + 1
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
                     {/* === CONTENIDO DE CADA PASO === */}
                     <div className="wizardModal-body">
                         {step === 1 && (
@@ -835,139 +849,174 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         {step === 2 && (
                             <div className="papitoGugutata">
                                 <h1 className="tittleContentGugutata">Detalles del producto o servicio</h1>
-                                <div className="productoNav">
-                                    {formData.productos.slice(0, 3).map((prod, index) => (
-                                        <button
-                                            key={index}
-                                            className={`productoTab ${index === productoActivo ? "active" : ""}`}
-                                            onClick={() => setProductoActivo(index)}
-                                        >
-                                            <FontAwesomeIcon className="iconListFiles" icon={faFile} />{prod.nombre || `Producto ${index + 1}`}
-                                        </button>
-                                    ))}
-                                    {formData.productos.length > 3 && (
-                                        <button
-                                            className="productoTab verTodos"
-                                            onClick={() => setMostrarModalProductos(true)}
-                                        >
-                                            Ver todos ({formData.productos.length})
-                                        </button>
-                                    )}
-                                    <button
-                                        className="wizardModal-btn-remove"
-                                        disabled={formData.productos.length <= 1}
-                                        onClick={() => {
-                                            const productos = formData.productos.filter(
-                                                (_, i) => i !== productoActivo
-                                            );
-                                            setFormData({ ...formData, productos });
-                                            setProductoActivo((prev) =>
-                                                prev > 0 ? prev - 1 : 0
-                                            );
-                                        }}
-                                    >
-                                        <FontAwesomeIcon icon={faTrash} />
-                                    </button>
-                                    <button
-                                        className="wizardModal-btn-add"
-                                        onClick={() =>
-                                            setFormData({
-                                                ...formData,
-                                                productos: [
-                                                    ...formData.productos,
-                                                    {
-                                                        nombre: "",
-                                                        cantidad: 1,
-                                                        descripcion: "",
-                                                        compraTecnologica: false,
-                                                        ergonomico: false,
-                                                        valorEstimado: "",
-                                                        centroCosto: "",
-                                                        cuentaContable: "",
-                                                        aprobaciones: [],
-                                                    },
-                                                ],
-                                            })
-                                        }
-                                    >
-                                        <FontAwesomeIcon icon={faPlus} />
-                                    </button>
-                                </div>
-                                <div className="productoItem">
-                                    <div className="inputsContainers">
-                                        <div className="campoAdicional">
-                                            <label>Producto / Servicio<label className="obligatorio">*</label></label>
-                                            <div className="completeInputs">
-                                                <FontAwesomeIcon icon={faCubes} className="icon" />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Ej. Escritorio ergonómico"
-                                                    value={formData.productos[productoActivo].nombre}
-                                                    onChange={(e) => {
-                                                        const productos = [...formData.productos];
-                                                        productos[productoActivo].nombre = e.target.value;
-                                                        setFormData({ ...formData, productos });
-                                                    }}
-                                                />
-                                            </div>
+                                <div className="containerProductosSerios">
+                                    <div className="productoNavVertical">
+                                        <div className="productoListScroll">
+                                            {formData.productos.map((prod, index) => (
+                                                <button
+                                                    key={index}
+                                                    className={`productoTabVertical ${index === productoActivo ? "active" : ""}`}
+                                                    onClick={() => setProductoActivo(index)}
+                                                >
+                                                    <FontAwesomeIcon className="iconListFiles" icon={faFile} />
+                                                    {prod.nombre || `Producto ${index + 1}`}
+                                                </button>
+                                            ))}
                                         </div>
-                                        <div className="campoAdicional">
-                                            <label>Cantidad<label className="obligatorio">*</label></label>
-                                            <div className="completeInputs">
-                                                <FontAwesomeIcon icon={faListOl} className="icon" />
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    value={formData.productos[productoActivo].cantidad}
-                                                    onChange={(e) => {
-                                                        const productos = [...formData.productos];
-                                                        productos[productoActivo].cantidad = e.target.value;
-                                                        setFormData({ ...formData, productos });
-                                                    }}
-                                                />
-                                            </div>
+                                        <div className="containerButtonsProductos">
+                                            <button
+                                                className="wizardModal-btn-add fullWidth"
+                                                onClick={() =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        productos: [
+                                                            ...formData.productos,
+                                                            {
+                                                                nombre: "",
+                                                                cantidad: 1,
+                                                                descripcion: "",
+                                                                compraTecnologica: false,
+                                                                ergonomico: false,
+                                                                valorEstimado: "",
+                                                                centroCosto: "",
+                                                                cuentaContable: "",
+                                                                aprobaciones: [],
+                                                            },
+                                                        ],
+                                                    })
+                                                }
+                                            >
+                                                <FontAwesomeIcon icon={faPlus} />
+                                            </button>
+
+                                            {/* LISTA COMPLETA DE PRODUCTOS */}
+
+
+                                            {/* Botón eliminar */}
+                                            <button
+                                                className="wizardModal-btn-remove fullWidth"
+                                                disabled={formData.productos.length <= 1}
+                                                onClick={() => {
+                                                    const productos = formData.productos.filter(
+                                                        (_, i) => i !== productoActivo
+                                                    );
+                                                    setFormData({ ...formData, productos });
+                                                    setProductoActivo((prev) => (prev > 0 ? prev - 1 : 0));
+                                                }}
+                                            >
+                                                <FontAwesomeIcon icon={faTrash} />
+                                            </button>
                                         </div>
-                                        <div className="campoAdicional">
-                                            <label>Descripción<label className="obligatorio">*</label></label>
-                                            <div className="completeInputs">
-                                                <FontAwesomeIcon icon={faClipboard} className="icon" />
-                                                <TextareaAutosize
-                                                    className="textAreaCustom"
-                                                    placeholder="Detalles del producto solicitado"
-                                                    value={formData.productos[productoActivo].descripcion}
-                                                    onChange={(e) => {
-                                                        const productos = [...formData.productos];
-                                                        productos[productoActivo].descripcion = e.target.value;
-                                                        setFormData({ ...formData, productos });
-                                                    }}
-                                                />
+                                    </div>
+
+                                    <div className="productoItem">
+                                        <div className="inputsContainers">
+                                            <div className="campoAdicional">
+                                                <label>Producto / Servicio<label className="obligatorio">*</label></label>
+                                                <div className="completeInputs">
+                                                    <FontAwesomeIcon icon={faCubes} className="icon" />
+                                                    {catalogoLoading ? (
+                                                        <select disabled value="" onChange={() => { }}>
+                                                            <option value="">Cargando catálogo...</option>
+                                                        </select>
+                                                    ) : catalogoError ? (
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Ej. Escritorio ergonómico"
+                                                            value={formData.productos[productoActivo].nombre}
+                                                            onChange={(e) => {
+                                                                const productos = [...formData.productos];
+                                                                productos[productoActivo].nombre = e.target.value;
+                                                                setFormData({ ...formData, productos });
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <select
+                                                            value={formData.productos[productoActivo].nombre || ""}
+                                                            onChange={(e) => {
+                                                                const productos = [...formData.productos];
+                                                                const sel = catalogoProductos.find(p => p.nombre === e.target.value);
+                                                                if (sel) {
+                                                                    productos[productoActivo].nombre = sel.nombre;
+                                                                    productos[productoActivo].descripcion = sel.descripcion || "";
+                                                                    productos[productoActivo].centroCosto = sel.centro_costo || "";
+                                                                    productos[productoActivo].cuentaContable = sel.cuenta_contable || "";
+                                                                    productos[productoActivo].compraTecnologica = !!sel.es_tecnologico;
+                                                                    productos[productoActivo].ergonomico = !!sel.ergonomico;
+                                                                } else {
+                                                                    productos[productoActivo].nombre = e.target.value;
+                                                                }
+                                                                setFormData({ ...formData, productos });
+                                                            }}
+                                                            className="selectProducto"
+                                                        >
+                                                            <option value="">Seleccione un producto</option>
+                                                            {catalogoProductos.map((p) => (
+                                                                <option key={p.id} value={p.nombre}>{p.nombre}</option>
+                                                            ))}
+                                                            <option value={formData.productos[productoActivo].nombre || "Otro"}>Otro</option>
+                                                        </select>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="firsInfoTwo">
-                                            <label>
-                                                ¿Es un producto tecnológico?<label className="obligatorio">*</label>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.productos[productoActivo].compraTecnologica}
-                                                    onChange={(e) => {
-                                                        const productos = [...formData.productos];
-                                                        productos[productoActivo].compraTecnologica = e.target.checked;
-                                                        setFormData({ ...formData, productos });
-                                                    }}
-                                                />
-                                            </label>
-                                            <label>
-                                                ¿Es un producto ergonómico?<label className="obligatorio">*</label>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.productos[productoActivo].ergonomico}
-                                                    onChange={(e) => {
-                                                        const productos = [...formData.productos];
-                                                        productos[productoActivo].ergonomico = e.target.checked;
-                                                        setFormData({ ...formData, productos });
-                                                    }}
-                                                />
-                                            </label>
+                                            <div className="campoAdicional">
+                                                <label>Cantidad<label className="obligatorio">*</label></label>
+                                                <div className="completeInputs">
+                                                    <FontAwesomeIcon icon={faListOl} className="icon" />
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={formData.productos[productoActivo].cantidad}
+                                                        onChange={(e) => {
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo].cantidad = e.target.value;
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="campoAdicional">
+                                                <label>Descripción<label className="obligatorio">*</label></label>
+                                                <div className="completeInputs">
+                                                    <FontAwesomeIcon icon={faClipboard} className="icon" />
+                                                    <TextareaAutosize
+                                                        className="textAreaCustom"
+                                                        placeholder="Detalles del producto solicitado"
+                                                        value={formData.productos[productoActivo].descripcion}
+                                                        onChange={(e) => {
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo].descripcion = e.target.value;
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="firsInfoTwo">
+                                                <label>
+                                                    ¿Es un producto tecnológico?<label className="obligatorio">*</label>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.productos[productoActivo].compraTecnologica}
+                                                        onChange={(e) => {
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo].compraTecnologica = e.target.checked;
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                    />
+                                                </label>
+                                                <label>
+                                                    ¿Es un producto ergonómico?<label className="obligatorio">*</label>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.productos[productoActivo].ergonomico}
+                                                        onChange={(e) => {
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo].ergonomico = e.target.checked;
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                    />
+                                                </label>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1005,126 +1054,110 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 <h1 className="tittleContentGugutata">
                                     Presupuesto y características técnicas
                                 </h1>
-                                <div className="productoNav">
-                                    {formData.productos.slice(0, 3).map((prod, index) => (
-                                        <button
-                                            key={index}
-                                            className={`productoTab ${index === productoActivo3 ? "active" : ""}`}
-                                            onClick={() => setProductoActivo3(index)}
-                                        >
-                                            <FontAwesomeIcon icon={faSackDollar} className="iconListFiles" />
-                                            {prod.nombre || `Producto ${index + 1}`}
-                                        </button>
-                                    ))}
-
-                                    {formData.productos.length > 3 && (
-                                        <button
-                                            className={`productoTab verTodos ${productoActivo3 >= 3 ? "active" : ""
-                                                }`}
-                                            onClick={() => {
-                                                if (productoActivo3 < 3) {
-                                                    setMostrarModalProductos3(true);
-                                                } else {
-                                                    setMostrarModalProductos3(true);
-                                                }
-                                            }}
-                                        >
-                                            <FontAwesomeIcon icon={faSackDollar} className="iconListFiles" />
-                                            {productoActivo3 >= 3
-                                                ? formData.productos[productoActivo3].nombre ||
-                                                `Producto ${productoActivo3 + 1}`
-                                                : `Ver todos (${formData.productos.length})`}
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="productoItem">
-                                    <div className="inputsContainers">
-                                        <div className="campoAdicional">
-                                            <label>Valor estimado<label className="obligatorio">*</label></label>
-                                            <div className="completeInputs">
-                                                <FontAwesomeIcon icon={faMoneyBill} className="icon" />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Valor estimado"
-                                                    value={formData.productos[productoActivo3].valorEstimado || ""}
-                                                    onChange={(e) => {
-                                                        const raw = e.target.value;
-                                                        const num = parseCurrency(raw);
-                                                        const productos = [...formData.productos];
-                                                        productos[productoActivo3].valorEstimado = raw.trim() === "" ? "" : formatCurrency(num);
-                                                        setFormData({ ...formData, productos });
-                                                    }}
-                                                    onBlur={(e) => {
-                                                        const raw = e.target.value;
-                                                        const num = parseCurrency(raw);
-                                                        const productos = [...formData.productos];
-                                                        productos[productoActivo3].valorEstimado = raw.trim() === "" ? "" : formatCurrency(num);
-                                                        setFormData({ ...formData, productos });
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="campoAdicional">
-                                            <label>Anexos</label>
-                                            <div className="fileUploadContainer">
-                                                <FontAwesomeIcon icon={faPaperclip} className="icon" />
-                                                <label
-                                                    htmlFor={`fileUpload-${productoActivo3}`}
-                                                    className="customFileButton"
+                                <div className="containerProductosSeriosTwo">
+                                    <div className="productoNavVertical">
+                                        <div className="productoListScroll">
+                                            {formData.productos.map((prod, index) => (
+                                                <button
+                                                    key={index}
+                                                    className={`productoTabVertical ${index === productoActivo ? "active" : ""}`}
+                                                    onClick={() => setProductoActivo(index)}
                                                 >
-                                                    {formData.productos[productoActivo3].fileName
-                                                        ? formData.productos[productoActivo3].fileName
-                                                        : "Seleccionar archivo"}
-                                                </label>
-                                                <input
-                                                    type="file"
-                                                    id={`fileUpload-${productoActivo3}`}
-                                                    className="hiddenFileInput"
-                                                    onChange={(e) => {
-                                                        const file = e.target.files[0];
-                                                        if (file) {
+                                                    <FontAwesomeIcon icon={faFile} className="iconListFiles" />
+                                                    {prod.nombre || `Producto ${index + 1}`}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="productoItem">
+                                        <div className="inputsContainers">
+                                            <div className="campoAdicional">
+                                                <label>Valor estimado<label className="obligatorio">*</label></label>
+                                                <div className="completeInputs">
+                                                    <FontAwesomeIcon icon={faMoneyBill} className="icon" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Valor estimado"
+                                                        value={formData.productos[productoActivo].valorEstimado || ""}
+                                                        onChange={(e) => {
+                                                            const raw = e.target.value;
+                                                            const num = parseCurrency(raw);
                                                             const productos = [...formData.productos];
-                                                            productos[productoActivo3].fileName = file.name;
-                                                            productos[productoActivo3].file = file;
+                                                            productos[productoActivo].valorEstimado = raw.trim() === "" ? "" : formatCurrency(num);
                                                             setFormData({ ...formData, productos });
-                                                        }
-                                                    }}
-                                                />
+                                                        }}
+                                                        onBlur={(e) => {
+                                                            const raw = e.target.value;
+                                                            const num = parseCurrency(raw);
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo3].valorEstimado = raw.trim() === "" ? "" : formatCurrency(num);
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        <div className="campoAdicional">
-                                            <label>Centro de costo / Orden interna<label className="obligatorio">*</label></label>
-                                            <div className="completeInputs">
-                                                <FontAwesomeIcon icon={faClipboard} className="icon" />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Ej. CC-104 / OI-245"
-                                                    value={formData.productos[productoActivo3].centroCosto}
-                                                    onChange={(e) => {
-                                                        const productos = [...formData.productos];
-                                                        productos[productoActivo3].centroCosto = e.target.value;
-                                                        setFormData({ ...formData, productos });
-                                                    }}
-                                                />
+                                            <div className="campoAdicional">
+                                                <label>Anexos</label>
+                                                <div className="fileUploadContainer">
+                                                    <FontAwesomeIcon icon={faPaperclip} className="icon" />
+                                                    <label
+                                                        htmlFor={`fileUpload-${productoActivo}`}
+                                                        className="customFileButton"
+                                                    >
+                                                        {formData.productos[productoActivo].fileName
+                                                            ? formData.productos[productoActivo].fileName
+                                                            : "Seleccionar archivo"}
+                                                    </label>
+                                                    <input
+                                                        type="file"
+                                                        id={`fileUpload-${productoActivo}`}
+                                                        className="hiddenFileInput"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files[0];
+                                                            if (file) {
+                                                                const productos = [...formData.productos];
+                                                                productos[productoActivo].fileName = file.name;
+                                                                productos[productoActivo].file = file;
+                                                                setFormData({ ...formData, productos });
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
                                             </div>
-                                        </div>
 
-                                        <div className="campoAdicional">
-                                            <label>Cuenta contable o código de material<label className="obligatorio">*</label></label>
-                                            <div className="completeInputs">
-                                                <FontAwesomeIcon icon={faMoneyBill} className="icon" />
-                                                <input
-                                                    type="text"
-                                                    placeholder="Ej. 5120-Equipos"
-                                                    value={formData.productos[productoActivo3].cuentaContable}
-                                                    onChange={(e) => {
-                                                        const productos = [...formData.productos];
-                                                        productos[productoActivo3].cuentaContable = e.target.value;
-                                                        setFormData({ ...formData, productos });
-                                                    }}
-                                                />
+                                            <div className="campoAdicional">
+                                                <label>Centro de costo / Orden interna<label className="obligatorio">*</label></label>
+                                                <div className="completeInputs">
+                                                    <FontAwesomeIcon icon={faClipboard} className="icon" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Ej. CC-104 / OI-245"
+                                                        value={formData.productos[productoActivo].centroCosto}
+                                                        onChange={(e) => {
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo].centroCosto = e.target.value;
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="campoAdicional">
+                                                <label>Cuenta contable o código de material<label className="obligatorio">*</label></label>
+                                                <div className="completeInputs">
+                                                    <FontAwesomeIcon icon={faMoneyBill} className="icon" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Ej. 5120-Equipos"
+                                                        value={formData.productos[productoActivo].cuentaContable}
+                                                        onChange={(e) => {
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo].cuentaContable = e.target.value;
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1255,6 +1288,32 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 }}
                             />
                         )}
+                    </div>
+                    <div className="wizardModal-steps">
+                        {[
+                            "Datos del solicitante",
+                            "Detalles del producto",
+                            "Presupuesto",
+                            "Resumen y finalización",
+                        ].map((titulo, index) => (
+                            <div
+                                key={index}
+                                className={`wizardModal-step ${step === index + 1 ? "active" : ""}`}
+                            >
+                                <div className="wizardModal-circle">{index + 1}</div>
+                                <div className="wizardModal-stepContent">
+                                    <h3>
+                                        Paso {index + 1}: {titulo}
+                                    </h3>
+                                    <p>
+                                        {step === index + 1
+                                            ? "En progreso"
+                                            : step > index + 1
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
                 <div className="wizardModal-footer">

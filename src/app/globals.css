@@ -691,6 +691,7 @@
   flex-wrap: wrap;
   grid-template-columns: repeat(2, 1fr);
   gap: 20px;
+  width: 100%;
   padding: 10px;
 }
 
@@ -1713,8 +1714,8 @@ input[type="time"] {
 
 .loading-container {
   display: grid;
-  background-color: yellow;
   align-items: center;
+  width: 100%;
   justify-content: center;
 }
 
@@ -1733,6 +1734,10 @@ input[type="time"] {
   /* opcional: evitar color de fondo si no quieres amarillo */
 }
 
+
+.loading-container-users{
+  width: 100%;
+}
 /* Ajuste para loading interno (mantener estilos anteriores) */
 .listaReq>.loading-container .loading-cambios {
   /* centrar y permitir que el spinner/texto se vea correctamente */
@@ -2757,7 +2762,7 @@ input[type="time"] {
 
 /*MODALBOX*/
 .modalBox {
-  width: 80%;
+  width: 60%;
   height: 77vh;
   background-color: white;
   border-radius: 8px;
@@ -2770,7 +2775,7 @@ input[type="time"] {
 
 .infoIzquierdaReq {
   padding: 25px;
-  height: 60%;
+  height: 54%;
   background-color: #f5f5f5;
   border-top: 1px solid #1d5da8;
 }
@@ -2795,13 +2800,14 @@ input[type="time"] {
 }
 
 .detallesRequisicion {
-  margin-left: 20px;
-  color: #1d5da8;  
+  margin-left: 30px;
+  color: #1d5da8;
+  height: 100%;
 }
 
 .detallesReqCompletos{
-  width: 50%;
-  padding: 10px;
+  width: 35%;
+  height: 25vh;
 }
 
 .nameSpaceSolicitante {
@@ -2957,7 +2963,7 @@ input[type="time"] {
 
 .tabla-productos-container {
   max-height: 300px;
-  overflow-y: auto;
+  overflow-y: hidden;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
   background-color: #ffffff;
@@ -3034,6 +3040,8 @@ input[type="time"] {
     border-color: rgba(239, 68, 68, 0.3);
   }
 }
+
+
 
 /* Responsive adjustments */
 @media (max-width: 640px) {

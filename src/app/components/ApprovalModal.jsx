@@ -5,7 +5,7 @@ import "../styles/views/ApprovalModal.css";
 import api from "../services/axios";
 import { approvePendingSingle, startThreeStep } from "../services/camunda";
 
-export default function ApprovalModal({ requisicion, onClose, onApproved, user }) {
+export default function ApprovalModal({ requisicion, onClose, onApproved, user, token: tokenProp }) {
     const [detalles, setDetalles] = useState({
         currentUser: user,
         requisicion: {},
@@ -15,16 +15,22 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user }
     const [saving, setSaving] = useState(false);
     const [decisiones, setDecisiones] = useState({});
     const [token, setToken] = useState("");
+    const [puedeAprobar, setPuedeAprobar] = useState(false);
+    const [yaAprobaste, setYaAprobaste] = useState(false);
     const [actionLoadingVisible, setActionLoadingVisible] = useState(false);
     const [actionLoadingExiting, setActionLoadingExiting] = useState(false);
     const [rejectedIds, setRejectedIds] = useState(new Set());
 
     useEffect(() => {
+        if (tokenProp) {
+            setToken(tokenProp);
+            return;
+        }
         if (typeof window !== "undefined") {
             const storedToken = localStorage.getItem("token") || "";
             setToken(storedToken);
         }
-    }, []);
+    }, [tokenProp]);
 
     useEffect(() => {
         const fetchDetalles = async () => {
@@ -59,6 +65,42 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user }
                     }
                 });
                 setDecisiones(init);
+
+                try {
+                    const apr = await api.get(
+                        `/api/requisiciones/${requisicion.requisicion_id}/aprobacion`,
+                        { headers: { Authorization: token ? `Bearer ${token}` : "" } }
+                    );
+                    const aprData = apr.data || {};
+                    const approvers = aprData.approvers || aprData.aprobadores || [];
+                    const nextOrder = aprData.nextOrder;
+                    const uname = (user?.nombre || "").toLowerCase().trim();
+                    const urol = (user?.rol || "").toLowerCase().trim();
+                    const actual = approvers.find(a => (
+                        String(a.nombre_aprobador || "").toLowerCase().trim() === uname ||
+                        String(a.rol_aprobador || "").toLowerCase().trim() === urol
+                    ));
+
+                    const estadoAct = String(actual?.estado || actual?.estado_aprobador || "").toLowerCase().trim();
+                    const yaApr = !!(
+                        actual && (
+                            actual.aprobado === 1 || actual.aprobado === true ||
+                            estadoAct.includes("aprob") || !!actual.fecha_aprobacion
+                        )
+                    );
+                    const puede = !!(
+                        actual && !yaApr && (
+                            actual.visible === 1 || actual.visible === true ||
+                            (typeof actual.orden !== "undefined" && actual.orden === nextOrder)
+                        )
+                    );
+
+                    setPuedeAprobar(puede);
+                    setYaAprobaste(yaApr);
+                } catch (e) {
+                    setPuedeAprobar(false);
+                    setYaAprobaste(false);
+                }
             } catch (err) {
                 console.error("❌ Error cargando detalles:", err);
             } finally {
@@ -67,7 +109,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user }
         };
 
         fetchDetalles();
-    }, [requisicion]);
+    }, [requisicion, token, user]);
 
     const technoRoles = ["dicTYP", "gerTyC"];
     const sstRoles = ["dicSST", "gerSST"];
@@ -141,6 +183,8 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user }
                     };
                 }),
             };
+            console.log(detalles.currentUser?.nombre)
+            console.log(detalles.currentUser?.area)
 
             const res = await api.put(
                 `/api/requisiciones/${requisicion.requisicion_id}/aprobar-items`,
@@ -148,8 +192,8 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user }
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
-                        "X-User-Name": detalles.currentUser?.nombre || "",
-                        "X-User-Area": detalles.currentUser?.area || "",
+                        "X-User-Name": detalles.currentUser?.nombre,
+                        "X-User-Area": detalles.currentUser?.area,
                     },
                 }
             );
@@ -353,12 +397,14 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user }
         return (
             <div className="modal-overlay">
                 <div className="modal-content">
-                    <img
-                        src="/coopidrogas_logo_mini.png"
-                        className="LogoCambios"
-                        alt="Logo de carga"
-                    />
-                    <p>Cargando detalles...</p>
+                    <div className="content-loading">
+                        <img
+                            src="/coopidrogas_logo_mini.png"
+                            className="LogoCambios"
+                            alt="Logo de carga"
+                        />
+                        <p>Cargando detalles...</p>
+                    </div>
                 </div>
             </div>
         );
@@ -379,6 +425,12 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user }
                 return "Gerencia General";
         }
     };
+
+    const estadoNormalized = String(
+        detalles?.requisicion?.status ||
+        detalles?.requisicion?.estado_aprobacion ||
+        ""
+    ).toLowerCase().trim();
 
     return (
         <div className="modal-overlay">
@@ -460,15 +512,24 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user }
                         </table>
                     </div>
                 </div>
-
-                <div className="modal-actions">
-                    <button onClick={handleGuardar} disabled={saving || actionLoadingVisible} className="btn-approve">
-                        {saving ? "Aprobando..." : "Aprobar"}
-                    </button>
-                    <button onClick={handleRechazar} disabled={saving || actionLoadingVisible} className="btn-approve" style={{ marginLeft: 8 }}>
-                        {saving ? "Procesando..." : "Rechazar"}
-                    </button>
-                </div>
+                {estadoNormalized === "rechazada" ? (
+                    <div className="modal-actions"><p>Esta requisicion fue rechazada</p></div>
+                ) : estadoNormalized === "totalmente aprobada" ? (
+                    <div className="modal-actions"><p>Esta requisicion ya esta totalmente aprobada</p></div>
+                ) : puedeAprobar ? (
+                    <div className="modal-actions">
+                        <button onClick={handleGuardar} disabled={saving || actionLoadingVisible} className="btn-approve">
+                            {saving ? "Aprobando..." : "Aprobar"}
+                        </button>
+                        <button onClick={handleRechazar} disabled={saving || actionLoadingVisible} className="btn-approve" style={{ marginLeft: 8 }}>
+                            {saving ? "Procesando..." : "Rechazar"}
+                        </button>
+                    </div>
+                ) : yaAprobaste ? (
+                    <div className="modal-actions"><p>Esta requisicion ya fue aprobada por ti, faltan aprobadores</p></div>
+                ) : (
+                    <div className="modal-actions"><p>Aún no es tu turno de aprobar esta requisición</p></div>
+                )}
             </div>
         </div>
     );

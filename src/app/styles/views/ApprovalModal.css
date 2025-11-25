@@ -25,48 +25,54 @@
 
 /* overlay animado para aprobar/rechazar (con fade-in/out) */
 .approval-loading-overlay {
-	position: absolute;
-	inset: 0;
-	z-index: 60;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background: rgba(255,255,255,0.92);
-	opacity: 1;
-	transition: opacity 350ms ease, transform 350ms ease;
-	pointer-events: all;
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.92);
+  opacity: 1;
+  transition: opacity 350ms ease, transform 350ms ease;
+  pointer-events: all;
 }
 
 /* entrada y salida */
 .approval-loading-overlay.fade-in {
-	opacity: 1;
-	transform: translateY(0) scale(1);
+  opacity: 1;
+  transform: translateY(0) scale(1);
 }
+
 .approval-loading-overlay.fade-out {
-	opacity: 0;
-	transform: translateY(-8px) scale(0.995);
-	pointer-events: none;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.995);
+  pointer-events: none;
 }
 
 /* logo girando */
 .LogoCambios {
-	width: 80px;
-	height: 80px;
-	display: inline-block;
-	animation: logo-spin 900ms linear infinite;
+  width: 80px;
+  height: 80px;
+  display: inline-block;
+  animation: logo-spin 900ms linear infinite;
 }
 
 /* texto bajo logo */
 .textLoading {
-	margin-top: 10px;
-	color: #111827;
-	font-weight: 600;
+  margin-top: 10px;
+  color: #111827;
+  font-weight: 600;
 }
 
 /* keyframes */
 @keyframes logo-spin {
-	from { transform: rotate(0deg); }
-	to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .modal-header {
@@ -118,7 +124,7 @@
   margin: 5px 0;
 }
 
-.tabla-productos{
+.tabla-productos {
   padding: 20px;
   background-color: #f3f3f3;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
@@ -153,12 +159,6 @@
   color: white;
 }
 
-.modal-actions{
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
 
 .btn-approve {
   background-color: #1d5da8;
@@ -212,4 +212,53 @@
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.4);
   z-index: 999;
+}
+
+.content-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 200px;
+  width: 100%;
+  font-size: 15px;
+  font-weight: bold;
+  color: #1d5da8;
+}
+
+.LogoCambios {
+  width: 70px;
+  height: 70px;
+  animation: spinVaried 2s linear infinite;
+}
+
+.modal-actions{
+  text-align: center;
+  font-size: 20px;
+  margin-top: 20px;
+  font-weight: bold;
+  color: #1d5da8;
+}
+
+@keyframes spinVaried {
+  0% {
+    transform: rotate(0deg);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+
+  40% {
+    transform: rotate(200deg);
+    animation-timing-function: ease-out;
+  }
+
+  70% {
+    transform: rotate(270deg);
+    animation-timing-function: ease-in;
+  }
+
+  100% {
+    transform: rotate(360deg);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
 }
