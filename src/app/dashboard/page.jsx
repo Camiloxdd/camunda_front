@@ -14,6 +14,7 @@ import styles from "../dashboard/DashboardRequisiciones.module.css";
 import api from "../services/axios";
 import WizardModal from "../components/modalNewReq";
 import TimeLap from "../components/timeLap";
+import ExcelJS from "exceljs";
 
 function DashboardInner() {
   function getBadgeClass(estado) {
@@ -90,6 +91,7 @@ function DashboardInner() {
   const [openReqModal, setOpenReqModal] = useState(false);
   const [loadingSolicitante, setLoadingSolicitante] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
+  const [progress, setProgress] = useState(null);
   const [timelineReqId, setTimelineReqId] = useState(null);
 
   // Leer token desde localStorage al montar y actualizar si cambia en otra pestaña (event storage).
@@ -842,33 +844,40 @@ function DashboardInner() {
     setTimelineOpen(true);
   };
 
-  // ...existing code...
-  // ...existing code...
   const handleDescargarPDF = async (id) => {
     try {
-      // usar el axios instance (api) para respetar baseURL y headers compartidos
+      setProgress("Preparando datos...");
+
       const res = await api.get(`/api/requisiciones/${id}/pdf`, {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
         responseType: "blob",
+        onDownloadProgress: (progressEvent) => {
+          const total = progressEvent.total || 1;
+          const percent = Math.round((progressEvent.loaded * 100) / total);
+          setProgress(`Descargando PDF (${percent}%)...`);
+        }
       });
 
-      // crear blob y forzar descarga
+      setProgress("Finalizando...");
+
       const blob = new Blob([res.data], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
+      const blobUrl = URL.createObjectURL(blob);
+
       const link = document.createElement("a");
-      link.href = url;
+      link.href = blobUrl;
       link.download = `requisicion_${id}.pdf`;
-      document.body.appendChild(link);
       link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
+
+      URL.revokeObjectURL(blobUrl);
+
+      setProgress(null); // oculta barra
+      toast.success("PDF descargado correctamente.");
     } catch (err) {
-      console.error("Error descargando PDF:", err);
-      toast.error("No se pudo descargar el PDF");
+      console.error(err);
+      setProgress(null);
+      toast.error("Error descargando PDF.");
     }
   };
-  // ...existing code...
-  // ...existing code...
 
   return (
     <div className="dashboard-container-requisiciones" style={{ display: "flex" }}>
@@ -1275,6 +1284,12 @@ function DashboardInner() {
               </div>
               <div className="headerInfoReq">
                 <div className="contentIzquierda">
+                  {progress && (
+                    <div className="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg">
+                      {progress}
+                    </div>
+                  )}
+
                   {loadingSolicitante ? (
                     <>
                       <div className="tittle">
@@ -1308,6 +1323,7 @@ function DashboardInner() {
                   >
                     <FontAwesomeIcon icon={faTimeline} />
                   </button>
+                  {/*
                   <button
                     title="Word"
                     onClick={() => handleDescargarPDF(solicitanteReq.requisicion_id)}
@@ -1316,6 +1332,7 @@ function DashboardInner() {
                   >
                     <FontAwesomeIcon icon={faDownload} />
                   </button>
+                  */}
                   {permissions?.canCreateRequisition && (
                     <button
                       title="Editar"
