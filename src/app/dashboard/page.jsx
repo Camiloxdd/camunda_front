@@ -150,23 +150,23 @@ function DashboardInner() {
               });
               const info = r.data;
               const { approvers, nextOrder } = info || {};
-               if (!approvers) return { ...req, puedeAprobar: false, yaAprobaste: false };
- 
-               const actual = approvers.find(
-                 (a) =>
-                   a.nombre_aprobador?.toLowerCase() === user.nombre.toLowerCase() ||
-                   a.rol_aprobador?.toLowerCase() === user.rol?.toLowerCase()
-               );
- 
-               const puedeAprobar = actual?.visible === true || actual?.orden === nextOrder;
- 
-               // Detectar si el aprobador ya aprobó esta requisición
-               const yaAprobaste = !!(actual &&
-                 (actual.aprobado === true ||
-                   actual.approved === true ||
-                   String(actual.estado_aprobador || "").toLowerCase() === "aprobado")
-               );
- 
+              if (!approvers) return { ...req, puedeAprobar: false, yaAprobaste: false };
+
+              const actual = approvers.find(
+                (a) =>
+                  a.nombre_aprobador?.toLowerCase() === user.nombre.toLowerCase() ||
+                  a.rol_aprobador?.toLowerCase() === user.rol?.toLowerCase()
+              );
+
+              const puedeAprobar = actual?.visible === true || actual?.orden === nextOrder;
+
+              // Detectar si el aprobador ya aprobó esta requisición
+              const yaAprobaste = !!(actual &&
+                (actual.aprobado === true ||
+                  actual.approved === true ||
+                  String(actual.estado_aprobador || "").toLowerCase() === "aprobado")
+              );
+
               // incluir approvers y flags útiles para la UI
               return {
                 ...req,
@@ -189,7 +189,7 @@ function DashboardInner() {
         const res = await api.get("/api/requisiciones", { headers: { Authorization: token ? `Bearer ${token}` : "" } });
         const data = res.data;
         const listaRaw = Array.isArray(data) ? data : (data ? [data] : []);
-        console.debug("fetchRequisiciones (comprador) - recibidos:", listaRaw.length, listaRaw.slice(0,3));
+        console.debug("fetchRequisiciones (comprador) - recibidos:", listaRaw.length, listaRaw.slice(0, 3));
         // Asignar la lista completa; la UI aplicará el filtrado/normalización si hace falta.
         setRequisiciones(listaRaw);
       }
@@ -482,6 +482,7 @@ function DashboardInner() {
 
                   const vars = {
                     siExiste: (verifyModalReq?.productos?.length ?? 0) > 0,
+                    siExiste: (verifyModalReq?.productos || []).some(p => !!p.ergonomico),
                     purchaseAprobated: true,
                     purchaseTecnology: (verifyModalReq?.productos || []).some(
                       (p) =>
@@ -657,28 +658,28 @@ function DashboardInner() {
             userStatus,
           };
         });
-       } catch (e) {
-         console.warn("No se pudo obtener data de aprobadores:", e);
-       }
- 
-       // Asegurar que siempre haya un campo `requisicion_id` (fallbacks)
-       setSolicitanteReq({
-         ...data.requisicion,
-         productos: data.productos,
-         requisicion_id:
-           data.requisicion?.requisicion_id ??
-           data.requisicion_id ??
-           req.requisicion_id,
-         aprobadores, // añadir lista de aprobadores al estado
-       });
- 
-       setOpenReqModal(true);
-     } catch (err) {
-       console.error(err);
-       toast.error("No se pudo cargar la requisición");
-     } finally {
-       setLoadingSolicitante(false);
-     }
+      } catch (e) {
+        console.warn("No se pudo obtener data de aprobadores:", e);
+      }
+
+      // Asegurar que siempre haya un campo `requisicion_id` (fallbacks)
+      setSolicitanteReq({
+        ...data.requisicion,
+        productos: data.productos,
+        requisicion_id:
+          data.requisicion?.requisicion_id ??
+          data.requisicion_id ??
+          req.requisicion_id,
+        aprobadores, // añadir lista de aprobadores al estado
+      });
+
+      setOpenReqModal(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("No se pudo cargar la requisición");
+    } finally {
+      setLoadingSolicitante(false);
+    }
   };
 
   // Calcular estado normalizado de la requisición seleccionada (para usar en el modal del solicitante)
@@ -841,6 +842,34 @@ function DashboardInner() {
     setTimelineOpen(true);
   };
 
+  // ...existing code...
+  // ...existing code...
+  const handleDescargarPDF = async (id) => {
+    try {
+      // usar el axios instance (api) para respetar baseURL y headers compartidos
+      const res = await api.get(`/api/requisiciones/${id}/pdf`, {
+        headers: { Authorization: token ? `Bearer ${token}` : "" },
+        responseType: "blob",
+      });
+
+      // crear blob y forzar descarga
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `requisicion_${id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error descargando PDF:", err);
+      toast.error("No se pudo descargar el PDF");
+    }
+  };
+  // ...existing code...
+  // ...existing code...
+
   return (
     <div className="dashboard-container-requisiciones" style={{ display: "flex" }}>
       <Sidebar onToggle={setIsSidebarOpen} />
@@ -987,7 +1016,7 @@ function DashboardInner() {
                             {getStatusLabel(estado)}
                           </span>
 
-                          
+
                         </div>
 
                         <div className={styles.accentFooter}>
@@ -1047,7 +1076,7 @@ function DashboardInner() {
                   <table className="tablaResumen">
                     <thead>
                       <tr>
-                        <th>#</th><th>Producto</th><th>Cantidad</th><th>Valor estimado</th><th>Tecnológico</th><th>Ergonómico</th>
+                        <th>#</th><th>Producto</th><th>Cantidad</th><th>Valor estimado</th><th>Cuenta Contable</th><th>Centro Costo</th><th>Tecnológico</th><th>Ergonómico</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1055,12 +1084,13 @@ function DashboardInner() {
                         <tr key={i}>
                           <td style={{ padding: 6 }}>{i + 1}</td>
                           <td style={{ padding: 6 }}>{p.nombre || p.productoOServicio || "—"}</td>
-                          <td style={{ padding: 6 }}>{p.cuenta_contable}</td>
-                          <td>{p.centro_costo}</td>
                           <td style={{ padding: 6 }}>{p.cantidad || "—"}</td>
                           <td style={{ padding: 6 }}>{/* valor estimado */}
                             {formatCOP(p.valor_estimado ?? p.valorEstimado)}
                           </td>
+                          <td style={{ padding: 6 }}>{p.cuenta_contable}</td>
+                          <td>{p.centro_costo}</td>
+
                           <td style={{ padding: 6 }}>{(p.compra_tecnologica || p.compraTecnologica) ? "Sí" : "No"}</td>
                           <td style={{ padding: 6 }}>{(p.ergonomico) ? "Sí" : "No"}</td>
                         </tr>
