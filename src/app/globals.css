@@ -1728,7 +1728,10 @@ input[type="time"] {
   align-items: center;
   justify-content: center;
   margin-left: auto;
-  min-height: 260px;
+  justify-content: center;
+  place-content: center;
+  margin-top: 250px;
+  height: 30%;
   /* ajusta según altura deseada */
   background-color: transparent;
   /* opcional: evitar color de fondo si no quieres amarillo */

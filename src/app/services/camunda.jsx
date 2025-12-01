@@ -185,6 +185,7 @@ export async function startThreeStep(variables, options = {}) {
         const tareasRes = await axios.post(
             `${API_BASE}/tasks/search`,
             searchPayload,
+            variables,
             {
                 headers: { "Content-Type": "application/json" },
                 withCredentials: true,
@@ -226,6 +227,8 @@ export async function startThreeStep(variables, options = {}) {
             variables: variables ?? {},
             action: "complete"
         };
+
+        console.log(variables);
 
         // ✔️ Completar solo ESA tarea específica
         const res = await axios.post(
@@ -404,6 +407,8 @@ export async function approvePendingSingle(variables, options = {}) {
             elementId: tareaSeleccionada.elementId,
             processInstanceKey: tareaSeleccionada.processInstanceKey,
         });
+
+        console.log("Variables para completar:", variables);
 
         // 🟢 Payload correcto para completar (Camunda v2)
         const completePayload = {

@@ -11,24 +11,27 @@
 .wizardModal-container {
   background: #fff;
   border-radius: 16px;
-  width: 60%;
-
+  width: 70%;
   padding: 24px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   animation: wizardModal-scaleIn 0.3s ease;
   position: relative;
+  height: 80%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 /* overlay de carga (confined to container) */
 .loading-container {
   position: absolute;
   inset: 0;
+  border-radius: 16px;
   z-index: 40;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.92);
-  /* inica visible por defecto; las clases controlan animación */
   opacity: 1;
   transform: translateY(0) scale(1);
   transition: opacity 350ms ease, transform 350ms ease;
@@ -106,21 +109,22 @@
 }
 
 .wizardModal-steps {
-  display: flex;
+  display: grid;
   position: relative;
-  width: 100%;
+  width: 30%;
   gap: 20px;
+  height: 40%;
   justify-content: space-between;
 }
 
 .wizardModal-steps::before {
   content: "";
   position: absolute;
-  left: 16px;
+  left: 12px;
   top: 4px;
   bottom: 15px;
-  height: 2px;
-  width: 98%;
+  height: 180px;
+  width: 4px;
   background: #ddd;
   z-index: 0;
 }
@@ -170,34 +174,41 @@
 .wizardModal-body {
   background: #f9f9f9;
   padding: 14px;
-  height: 100%;
+  height: 96%;
+  width: 80%;
   text-align: center;
-  width: 100%;
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   display: flex;
+  box-sizing: border-box;
+}
+
+.campoPrespuestado{
+  width: 100%;
 }
 
 .elpapadepapas {
-  display: grid;
+  display: flex;
   justify-content: center;
   height: 100%;
-  gap: 20;
   padding: 20px;
-  width: 100%;
   align-items: center;
+  gap:1%;
 }
 
-.containerProductosSerios {
+.papitoGugutata {
+  width: 100%;
+  height: 100%;
   display: flex;
-  height: 80%;
+  flex-direction: column;
 }
 
+.containerProductosSerios,
 .containerProductosSeriosTwo {
   display: flex;
   height: 80%;
+  width: 100%;
   place-items: center;
-
 }
 
 .containerButtonsProductos{
@@ -224,7 +235,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 200px;   /* puedes aumentar si quieres */
+  max-height:380px;   /* puedes aumentar si quieres */
   overflow-y: auto;
   padding-right: 5px;
 }
@@ -255,9 +266,6 @@
   cursor: pointer;
 }
 
-
-
-
 .wizardModal-panel h4 {
   margin: 0 0 8px;
   color: #333;
@@ -266,7 +274,6 @@
 .wizardModal-footer {
   display: flex;
   justify-content: space-between;
-  margin-top: -30px;
 }
 
 .wizardModal-btn {
@@ -336,7 +343,6 @@
   display: flex;
   grid-template-columns: repeat(2, 1fr);
   gap: 25px;
-  /* separa las columnas */
   width: 100%;
   padding: 10px;
   justify-content: center;
@@ -346,7 +352,7 @@
 }
 
 .firsInfo p {
-  font-size: 18px;
+  font-size: 15px;
 }
 
 .firsInfo input {
@@ -523,11 +529,15 @@
 
 }
 
+.tablaProduc{
+  padding: 20px;
+}
+
 .modalSelectProductos {
   background: white;
   padding: 20px;
   border-radius: 12px;
-  width: 300px;
+  width: 80%;
   max-height: 400px;
   overflow-y: scroll;
   scrollbar-width: none;

@@ -60,7 +60,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [fileName, setFileName] = useState("");
     const [productoActivo, setProductoActivo] = useState(0);
     const [mostrarModalProductos, setMostrarModalProductos] = useState(false);
-    const [productoActivo3, setProductoActivo3] = useState(0);
     const [showAnimation, setShowAnimation] = useState(false);
     // nuevo estado: indica transición/carga entre pasos
     const [stepLoading, setStepLoading] = useState(false);
@@ -68,13 +67,13 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [stepLoadingVisible, setStepLoadingVisible] = useState(false);
     // controla la clase de salida (fade-out)
     const [stepLoadingExiting, setStepLoadingExiting] = useState(false);
-    const [mostrarModalProductos3, setMostrarModalProductos3] = useState(false);
     const [formData, setFormData] = useState(initialForm);
     const [token, setToken] = useState("");
     const [catalogoProductos, setCatalogoProductos] = useState([]);
     const [catalogoLoading, setCatalogoLoading] = useState(false);
     const [catalogoError, setCatalogoError] = useState("");
-    
+    const [showProductosModal, setShowProductosModal] = useState(false);
+
 
 
 
@@ -84,7 +83,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     );
 
     const minStep = isEditMode ? (startStep ?? 2) : 1;
-    const maxStep = isEditMode ? 3 : 4;
+    // Cambia el número máximo de pasos a 3 (ya no hay step 3 separado)
+    const maxStep = isEditMode ? 2 : 3;
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -105,7 +105,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 setCatalogoProductos(lista.map(p => ({
                     id: p.id,
                     nombre: p.nombre,
-                    descripcion: p.descripcion,
                     cuenta_contable: p.cuenta_contable,
                     centro_costo: p.centro_costo,
                     es_tecnologico: Boolean(p.es_tecnologico ?? p.compra_tecnologica ?? false),
@@ -229,9 +228,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             }
 
             setProductoActivo(0);
-            setProductoActivo3(0);
             setMostrarModalProductos(false);
-            setMostrarModalProductos3(false);
             setShowAnimation(false);
             setFileName("");
 
@@ -530,8 +527,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
 
 
     useEffect(() => {
-        if (productoActivo3 >= formData.productos.length) {
-            setProductoActivo3(0);
+        if (productoActivo >= formData.productos.length) {
+            setProductoActivo(0);
         }
     }, [formData.productos.length]);
 
@@ -539,7 +536,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         const next = Math.min(maxStep, step + 1);
         if (next === step) return;
         try {
-            // mostrar overlay
             setStepLoadingVisible(true);
             setStepLoading(true);
             const ok = await handleBeforeEnterStep(step, next);
@@ -547,13 +543,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         } catch (err) {
             console.error("Error en transición siguiente:", err);
         } finally {
-            // disparar animación de salida y limpiar después de su duración
             setStepLoading(false);
             setStepLoadingExiting(true);
             setTimeout(() => {
                 setStepLoadingExiting(false);
                 setStepLoadingVisible(false);
-            }, 360); // debe coincidir con la duración CSS (ej. 350ms)
+            }, 360);
         }
     };
 
@@ -579,8 +574,16 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
 
     const handleBeforeEnterStep = async (currentStep, nextStep) => {
         try {
-            // Validación al avanzar de Paso 2 -> Paso 3:
+            // Validación al avanzar de Paso 1 -> Paso 2:
+            if (currentStep === 1 && nextStep === 2) {
+                const payload = {
+                    bienvenida: "Inicio del proceso de compras",
+                };
+                await endFirstStepStartTwoStep(payload);
+            }
+            // Validación al avanzar de Paso 2 -> Paso 3 (ahora validaciones de productos y presupuesto)
             if (currentStep === 2 && nextStep === 3) {
+                // Validación: cada producto debe ser tecnológico o ergonómico (o ambos)
                 const invalid = formData.productos
                     .map((p, i) => ({ p, i }))
                     .filter(({ p }) => !Boolean(p.compraTecnologica) && !Boolean(p.ergonomico));
@@ -591,30 +594,19 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     toast.error(`Cada producto debe ser tecnológico o ergonómico. Revisa los ítems: ${names}`);
                     return false;
                 }
-            }
-
-            if (currentStep === 3 && nextStep === 4) {
+                // Validación: todos los productos deben tener valor estimado, centro de costo y cuenta contable
                 const productosIncompletos = formData.productos.filter(
                     (p) =>
                         !p.valorEstimado?.toString().trim() ||
                         !p.centroCosto?.toString().trim() ||
                         !p.cuentaContable?.toString().trim()
                 );
-
                 if (productosIncompletos.length > 0) {
                     toast.error(
                         "Todos los productos deben tener valor estimado, centro de costo y cuenta contable antes de continuar."
                     );
                     return false;
                 }
-            }
-
-            // 🔹 Inicio del proceso normal (ya existente)
-            if (currentStep === 1 && nextStep === 2) {
-                const payload = {
-                    bienvenida: "Inicio del proceso de compras",
-                };
-                await endFirstStepStartTwoStep(payload);
             }
         } catch (err) {
             console.error("Error al cambiar de paso:", err);
@@ -657,8 +649,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     return (
         <div className="wizardModal-overlay">
             {/* asegurar que el overlay interno quede confinado a este container */}
-            <div className="wizardModal-container" style={{ position: "relative" }}>
-                {/* Overlay de carga entre pasos (solo dentro del container) */}
+            <div className="wizardModal-container">
+                {/* Overlay de carga entre pasos */}
                 {stepLoadingVisible && (
                     <div
                         className={`loading-container ${stepLoadingExiting ? "fade-out" : "fade-in"}`} style={{ position: "absolute", inset: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.92)" }}
@@ -668,7 +660,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 src="/coopidrogas_logo_mini.png"
                                 className="LogoCambios"
                                 alt="Cargando..."
-                            // ancho/alto controlados en CSS; la rotación viene de .LogoCambios
                             />
                             <p className="textLoading" style={{ marginTop: 10 }}>Cargando...</p>
                         </div>
@@ -683,7 +674,31 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 </div>
 
                 <div className="elpapadepapas">
-                    {/* === CONTENIDO DE CADA PASO === */}
+                    <div className="wizardModal-steps">
+                        {[
+                            "Datos del solicitante",
+                            "Detalles del producto",
+                            "Resumen y finalización",
+                        ].map((titulo, index) => (
+                            <div
+                                key={index}
+                                className={`wizardModal-step ${step === index + 1 ? "active" : ""}`}
+                            >
+                                <div className="wizardModal-circle">{index + 1}</div>
+                                <div className="wizardModal-stepContent">
+                                    <h3>
+                                        Paso {index + 1}: {titulo}
+                                    </h3>
+                                    <p>
+                                        {step === index + 1
+                                            ? "En progreso"
+                                            : step > index + 1
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                     <div className="wizardModal-body">
                         {step === 1 && (
                             <div className="papitoGugutata">
@@ -692,7 +707,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 </h1>
                                 <div className="inputsContainers">
                                     <div className="campoAdicional">
-                                        <label>Nombre del solicitante<label className="obligatorio">*</label></label>
+                                        <label>Nombre del solicitante</label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faUser} className="icon" />
                                             <input type="text" placeholder="Ej. Juan Pérez" value={formData.solicitante.nombre}
@@ -708,7 +723,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         </div>
                                     </div>
                                     <div className="campoAdicional">
-                                        <label>Fecha de solicitud<label className="obligatorio">*</label></label>
+                                        <label>Fecha de solicitud</label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faCalendar} className="icon" />
                                             <input type="date" value={formData.solicitante.fecha}
@@ -761,7 +776,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                     </div>
                                     <div className="campoAdicional">
                                         <label>
-                                            Área <label className="obligatorio">*</label>
+                                            Área
                                         </label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faClipboard} className="icon" />
@@ -775,7 +790,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                     </div>
                                     <div className="campoAdicional">
                                         <label>
-                                            Sede <label className="obligatorio">*</label>
+                                            Sede
                                         </label>
                                         <div className="completeInputs">
                                             <FontAwesomeIcon icon={faBuilding} className="icon" />
@@ -823,33 +838,36 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 } />
                                         </div>
                                     </div>
+
                                 </div>
-                                <div className="firsInfo">
-                                    <label>
-                                        <label className="obligatorio">*</label><p>¿Está en presupuesto?</p>
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.solicitante.presupuestada}
-                                            onChange={(e) =>
-                                                setFormData({
-                                                    ...formData,
-                                                    solicitante: {
-                                                        ...formData.solicitante,
-                                                        presupuestada: e.target.checked,
-                                                    },
-                                                })
-                                            }
-                                        />
-                                    </label>
+                                <div className="campoPrespuestado">
+                                    <div className="firsInfo">
+                                        <label>
+                                            <label className="obligatorio">*</label><p>¿Está en presupuesto?</p>
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.solicitante.presupuestada}
+                                                onChange={(e) =>
+                                                    setFormData({
+                                                        ...formData,
+                                                        solicitante: {
+                                                            ...formData.solicitante,
+                                                            presupuestada: e.target.checked,
+                                                        },
+                                                    })
+                                                }
+                                            />
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 2: DETALLES DEL PRODUCTO */}
+                        {/* PASO 2: DETALLES DEL PRODUCTO + PRESUPUESTO */}
                         {step === 2 && (
                             <div className="papitoGugutata">
                                 <h1 className="tittleContentGugutata">Detalles del producto o servicio</h1>
-                                <div className="containerProductosSerios">
+                                <div className="containerProductosSerios" style={{ width: "100%" }}>
                                     <div className="productoNavVertical">
                                         <div className="productoListScroll">
                                             {formData.productos.map((prod, index) => (
@@ -866,25 +884,24 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         <div className="containerButtonsProductos">
                                             <button
                                                 className="wizardModal-btn-add fullWidth"
-                                                onClick={() =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        productos: [
-                                                            ...formData.productos,
-                                                            {
-                                                                nombre: "",
-                                                                cantidad: 1,
-                                                                descripcion: "",
-                                                                compraTecnologica: false,
-                                                                ergonomico: false,
-                                                                valorEstimado: "",
-                                                                centroCosto: "",
-                                                                cuentaContable: "",
-                                                                aprobaciones: [],
-                                                            },
-                                                        ],
-                                                    })
-                                                }
+                                                onClick={() => {
+                                                    const productos = [
+                                                        ...formData.productos,
+                                                        {
+                                                            nombre: "",
+                                                            cantidad: 1,
+                                                            descripcion: "",
+                                                            compraTecnologica: false,
+                                                            ergonomico: false,
+                                                            valorEstimado: "",
+                                                            centroCosto: "",
+                                                            cuentaContable: "",
+                                                            aprobaciones: [],
+                                                        },
+                                                    ];
+                                                    setFormData({ ...formData, productos });
+                                                    setProductoActivo(productos.length - 1); // Ir al nuevo producto
+                                                }}
                                             >
                                                 <FontAwesomeIcon icon={faPlus} />
                                             </button>
@@ -908,9 +925,9 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             </button>
                                         </div>
                                     </div>
-
-                                    <div className="productoItem">
+                                    <div className="productoItem" style={{ width: "100%" }}>
                                         <div className="inputsContainers">
+                                            {/* --- PRODUCTO / SERVICIO --- */}
                                             <div className="campoAdicional">
                                                 <label>Producto / Servicio<label className="obligatorio">*</label></label>
                                                 <div className="completeInputs">
@@ -938,7 +955,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                                 const sel = catalogoProductos.find(p => p.nombre === e.target.value);
                                                                 if (sel) {
                                                                     productos[productoActivo].nombre = sel.nombre;
-                                                                    productos[productoActivo].descripcion = sel.descripcion || "";
+                                                                    // No asignar descripción automática
                                                                     productos[productoActivo].centroCosto = sel.centro_costo || "";
                                                                     productos[productoActivo].cuentaContable = sel.cuenta_contable || "";
                                                                     productos[productoActivo].compraTecnologica = !!sel.es_tecnologico;
@@ -954,11 +971,30 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                             {catalogoProductos.map((p) => (
                                                                 <option key={p.id} value={p.nombre}>{p.nombre}</option>
                                                             ))}
-                                                            <option value={formData.productos[productoActivo].nombre || "Otro"}>Otro</option>
                                                         </select>
                                                     )}
                                                 </div>
                                             </div>
+                                            {/* --- DESCRIPCIÓN --- */}
+                                            <div className="campoAdicional">
+                                                <label>Descripción<label className="obligatorio">*</label></label>
+                                                <div className="completeInputs">
+                                                    <FontAwesomeIcon icon={faClipboard} className="icon" />
+                                                    <TextareaAutosize
+                                                        className="textAreaCustom"
+                                                        placeholder="Detalles del producto solicitado"
+                                                        value={formData.productos[productoActivo].descripcion}
+                                                        onChange={(e) => {
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo].descripcion = e.target.value;
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                        // Permitir siempre editar descripción
+                                                        disabled={false}
+                                                    />
+                                                </div>
+                                            </div>
+                                            {/* --- CANTIDAD --- */}
                                             <div className="campoAdicional">
                                                 <label>Cantidad<label className="obligatorio">*</label></label>
                                                 <div className="completeInputs">
@@ -975,25 +1011,11 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     />
                                                 </div>
                                             </div>
-                                            <div className="campoAdicional">
-                                                <label>Descripción<label className="obligatorio">*</label></label>
-                                                <div className="completeInputs">
-                                                    <FontAwesomeIcon icon={faClipboard} className="icon" />
-                                                    <TextareaAutosize
-                                                        className="textAreaCustom"
-                                                        placeholder="Detalles del producto solicitado"
-                                                        value={formData.productos[productoActivo].descripcion}
-                                                        onChange={(e) => {
-                                                            const productos = [...formData.productos];
-                                                            productos[productoActivo].descripcion = e.target.value;
-                                                            setFormData({ ...formData, productos });
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
+                                            {/* --- resto de campos... --- */}
+                                            {/* --- TIPO PRODUCTO --- */}
                                             <div className="firsInfoTwo">
                                                 <label>
-                                                    ¿Es un producto tecnológico?<label className="obligatorio">*</label>
+                                                    ¿Es un producto tecnológico?
                                                     <input
                                                         type="checkbox"
                                                         checked={formData.productos[productoActivo].compraTecnologica}
@@ -1005,7 +1027,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     />
                                                 </label>
                                                 <label>
-                                                    ¿Es un producto ergonómico?<label className="obligatorio">*</label>
+                                                    ¿Es un producto ergonómico?
                                                     <input
                                                         type="checkbox"
                                                         checked={formData.productos[productoActivo].ergonomico}
@@ -1016,6 +1038,95 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                         }}
                                                     />
                                                 </label>
+                                            </div>
+                                            {/* --- VALOR ESTIMADO --- */}
+                                            <div className="campoAdicional">
+                                                <label>Valor estimado<label className="obligatorio">*</label></label>
+                                                <div className="completeInputs">
+                                                    <FontAwesomeIcon icon={faMoneyBill} className="icon" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Valor estimado"
+                                                        value={formData.productos[productoActivo].valorEstimado || ""}
+                                                        onChange={(e) => {
+                                                            const raw = e.target.value;
+                                                            const num = parseCurrency(raw);
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo].valorEstimado = raw.trim() === "" ? "" : formatCurrency(num);
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                        onBlur={(e) => {
+                                                            const raw = e.target.value;
+                                                            const num = parseCurrency(raw);
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo].valorEstimado = raw.trim() === "" ? "" : formatCurrency(num);
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            {/* --- ANEXOS --- */}
+                                            <div className="campoAdicional">
+                                                <label>Anexos</label>
+                                                <div className="fileUploadContainer">
+                                                    <FontAwesomeIcon icon={faPaperclip} className="icon" />
+                                                    <label
+                                                        htmlFor={`fileUpload-${productoActivo}`}
+                                                        className="customFileButton"
+                                                    >
+                                                        {formData.productos[productoActivo].fileName
+                                                            ? formData.productos[productoActivo].fileName
+                                                            : "Seleccionar archivo"}
+                                                    </label>
+                                                    <input
+                                                        type="file"
+                                                        id={`fileUpload-${productoActivo}`}
+                                                        className="hiddenFileInput"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files[0];
+                                                            if (file) {
+                                                                const productos = [...formData.productos];
+                                                                productos[productoActivo].fileName = file.name;
+                                                                productos[productoActivo].file = file;
+                                                                setFormData({ ...formData, productos });
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            {/* --- CENTRO DE COSTO --- */}
+                                            <div className="campoAdicional">
+                                                <label>Centro de costo / Orden interna</label>
+                                                <div className="completeInputs">
+                                                    <FontAwesomeIcon icon={faClipboard} className="icon" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Ej. CC-104 / OI-245"
+                                                        value={formData.productos[productoActivo].centroCosto}
+                                                        onChange={(e) => {
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo].centroCosto = e.target.value;
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            {/* --- CUENTA CONTABLE --- */}
+                                            <div className="campoAdicional">
+                                                <label>Cuenta contable o código de material</label>
+                                                <div className="completeInputs">
+                                                    <FontAwesomeIcon icon={faMoneyBill} className="icon" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Ej. 5120-Equipos"
+                                                        value={formData.productos[productoActivo].cuentaContable}
+                                                        onChange={(e) => {
+                                                            const productos = [...formData.productos];
+                                                            productos[productoActivo].cuentaContable = e.target.value;
+                                                            setFormData({ ...formData, productos });
+                                                        }}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1047,149 +1158,9 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 )}
                             </div>
                         )}
-                        {/* PASO 3: PRESUPUESTO Y TECNOLOGÍA */}
+
+                        {/* PASO 3: RESUMEN */}
                         {step === 3 && (
-
-                            <div className="papitoGugutata">
-                                <h1 className="tittleContentGugutata">
-                                    Presupuesto y características técnicas
-                                </h1>
-                                <div className="containerProductosSeriosTwo">
-                                    <div className="productoNavVertical">
-                                        <div className="productoListScroll">
-                                            {formData.productos.map((prod, index) => (
-                                                <button
-                                                    key={index}
-                                                    className={`productoTabVertical ${index === productoActivo ? "active" : ""}`}
-                                                    onClick={() => setProductoActivo(index)}
-                                                >
-                                                    <FontAwesomeIcon icon={faFile} className="iconListFiles" />
-                                                    {prod.nombre || `Producto ${index + 1}`}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="productoItem">
-                                        <div className="inputsContainers">
-                                            <div className="campoAdicional">
-                                                <label>Valor estimado<label className="obligatorio">*</label></label>
-                                                <div className="completeInputs">
-                                                    <FontAwesomeIcon icon={faMoneyBill} className="icon" />
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Valor estimado"
-                                                        value={formData.productos[productoActivo].valorEstimado || ""}
-                                                        onChange={(e) => {
-                                                            const raw = e.target.value;
-                                                            const num = parseCurrency(raw);
-                                                            const productos = [...formData.productos];
-                                                            productos[productoActivo].valorEstimado = raw.trim() === "" ? "" : formatCurrency(num);
-                                                            setFormData({ ...formData, productos });
-                                                        }}
-                                                        onBlur={(e) => {
-                                                            const raw = e.target.value;
-                                                            const num = parseCurrency(raw);
-                                                            const productos = [...formData.productos];
-                                                            productos[productoActivo3].valorEstimado = raw.trim() === "" ? "" : formatCurrency(num);
-                                                            setFormData({ ...formData, productos });
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="campoAdicional">
-                                                <label>Anexos</label>
-                                                <div className="fileUploadContainer">
-                                                    <FontAwesomeIcon icon={faPaperclip} className="icon" />
-                                                    <label
-                                                        htmlFor={`fileUpload-${productoActivo}`}
-                                                        className="customFileButton"
-                                                    >
-                                                        {formData.productos[productoActivo].fileName
-                                                            ? formData.productos[productoActivo].fileName
-                                                            : "Seleccionar archivo"}
-                                                    </label>
-                                                    <input
-                                                        type="file"
-                                                        id={`fileUpload-${productoActivo}`}
-                                                        className="hiddenFileInput"
-                                                        onChange={(e) => {
-                                                            const file = e.target.files[0];
-                                                            if (file) {
-                                                                const productos = [...formData.productos];
-                                                                productos[productoActivo].fileName = file.name;
-                                                                productos[productoActivo].file = file;
-                                                                setFormData({ ...formData, productos });
-                                                            }
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="campoAdicional">
-                                                <label>Centro de costo / Orden interna<label className="obligatorio">*</label></label>
-                                                <div className="completeInputs">
-                                                    <FontAwesomeIcon icon={faClipboard} className="icon" />
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Ej. CC-104 / OI-245"
-                                                        value={formData.productos[productoActivo].centroCosto}
-                                                        onChange={(e) => {
-                                                            const productos = [...formData.productos];
-                                                            productos[productoActivo].centroCosto = e.target.value;
-                                                            setFormData({ ...formData, productos });
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="campoAdicional">
-                                                <label>Cuenta contable o código de material<label className="obligatorio">*</label></label>
-                                                <div className="completeInputs">
-                                                    <FontAwesomeIcon icon={faMoneyBill} className="icon" />
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Ej. 5120-Equipos"
-                                                        value={formData.productos[productoActivo].cuentaContable}
-                                                        onChange={(e) => {
-                                                            const productos = [...formData.productos];
-                                                            productos[productoActivo].cuentaContable = e.target.value;
-                                                            setFormData({ ...formData, productos });
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {mostrarModalProductos3 && (
-                                    <div className="modalOverlay">
-                                        <div className="modalSelectProductos">
-                                            <h3>Selecciona un producto</h3>
-                                            {formData.productos.map((prod, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="modalProductoItem"
-                                                    onClick={() => {
-                                                        setProductoActivo3(index);
-                                                        setMostrarModalProductos3(false);
-                                                    }}
-                                                >
-                                                    <FontAwesomeIcon icon={faSackDollar} className="iconListFiles" /> {prod.nombre || `Producto ${index + 1}`}
-                                                </div>
-                                            ))}
-                                            <button
-                                                className="closeModalBtn"
-                                                onClick={() => setMostrarModalProductos3(false)}
-                                            >
-                                                Cerrar
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        {step === 4 && (
                             <div className="papitoGugutata">
                                 <h1 className="tittleContentGugutata">Resumen de solicitud</h1>
 
@@ -1244,39 +1215,62 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         </ul>
                                     </div>
                                 </div>
-                                <div className="resumenSection">
-                                    <h2>Productos solicitados</h2>
-                                    <table className="tablaResumen">
-                                        <thead>
-                                            <tr>
-                                                <th>#</th>
-                                                <th>Producto / Servicio</th>
-                                                <th>Cantidad</th>
-                                                <th>Valor estimado</th>
-                                                <th>Compra tecnológica</th>
-                                                <th>Ergonómico</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {formData.productos.map((prod, index) => (
-                                                <tr key={index}>
-                                                    <td>{index + 1}</td>
-                                                    <td>{prod.nombre || "—"}</td>
-                                                    <td>{prod.cantidad}</td>
-                                                    <td>
-                                                        {prod.valorEstimado
-                                                            ? (typeof prod.valorEstimado === "string" && prod.valorEstimado.includes("$")
-                                                                ? prod.valorEstimado
-                                                                : formatCurrency(parseCurrency(prod.valorEstimado)))
-                                                            : "—"}
-                                                    </td>
-                                                    <td>{prod.compraTecnologica ? "Sí" : "No"}</td>
-                                                    <td>{prod.ergonomico ? "Sí" : "No"}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                <div className="resumenSection" style={{ textAlign: "center" }}>
+                                    <button
+                                        className="wizardModal-btn"
+                                        style={{ margin: "10px auto", minWidth: 180, backgroundColor: "#1d5da8", color: "#fff" }}
+                                        onClick={() => setShowProductosModal(true)}
+                                    >
+                                        Ver productos
+                                    </button>
                                 </div>
+                                {/* Modal de productos */}
+                                {showProductosModal && (
+                                    <div className="modalOverlay">
+                                        <div className="modalSelectProductos">
+                                            <h2 style={{ color: "#1d5da8" }}>Productos solicitados</h2>
+                                            <div className="tablaProduc">
+                                                <table className="tablaResumen">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>Producto / Servicio</th>
+                                                            <th>Cantidad</th>
+                                                            <th>Valor estimado</th>
+                                                            <th>Compra tecnológica</th>
+                                                            <th>Ergonómico</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {formData.productos.map((prod, index) => (
+                                                            <tr key={index}>
+                                                                <td>{index + 1}</td>
+                                                                <td>{prod.nombre || "—"}</td>
+                                                                <td>{prod.cantidad}</td>
+                                                                <td>
+                                                                    {prod.valorEstimado
+                                                                        ? (typeof prod.valorEstimado === "string" && prod.valorEstimado.includes("$")
+                                                                            ? prod.valorEstimado
+                                                                            : formatCurrency(parseCurrency(prod.valorEstimado)))
+                                                                        : "—"}
+                                                                </td>
+                                                                <td>{prod.compraTecnologica ? "Sí" : "No"}</td>
+                                                                <td>{prod.ergonomico ? "Sí" : "No"}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <button
+                                                className="closeModalBtn"
+                                                style={{ marginTop: 20 }}
+                                                onClick={() => setShowProductosModal(false)}
+                                            >
+                                                Cerrar
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                         {showAnimation && (
@@ -1288,32 +1282,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 }}
                             />
                         )}
-                    </div>
-                    <div className="wizardModal-steps">
-                        {[
-                            "Datos del solicitante",
-                            "Detalles del producto",
-                            "Presupuesto",
-                            "Resumen y finalización",
-                        ].map((titulo, index) => (
-                            <div
-                                key={index}
-                                className={`wizardModal-step ${step === index + 1 ? "active" : ""}`}
-                            >
-                                <div className="wizardModal-circle">{index + 1}</div>
-                                <div className="wizardModal-stepContent">
-                                    <h3>
-                                        Paso {index + 1}: {titulo}
-                                    </h3>
-                                    <p>
-                                        {step === index + 1
-                                            ? "En progreso"
-                                            : step > index + 1
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
                     </div>
                 </div>
                 <div className="wizardModal-footer">

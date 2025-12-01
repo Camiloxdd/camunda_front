@@ -140,7 +140,24 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
     };
 
     const renderBody = () => {
-        if (loading) return <div>Cargando flujo...</div>;
+        if (loading) return (
+            <div style={{
+                width: "100%",
+                minHeight: 220,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+            }}>
+                <div className="loading-cambios">
+                    <img
+                        src="/coopidrogas_logo_mini.png"
+                        className="LogoCambios"
+                        alt="Logo de carga"
+                    />
+                    <p className="textLoading">Cargando flujo...</p>
+                </div>
+            </div>
+        );
         if (error) return <div style={{ color: "red" }}>{error}</div>;
         if (!progress) return <div>No hay información.</div>;
 

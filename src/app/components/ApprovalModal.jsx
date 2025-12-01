@@ -97,6 +97,26 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
 
                     setPuedeAprobar(puede);
                     setYaAprobaste(yaApr);
+
+                    // 🔥 VERIFICACIÓN CON HEADERS CORRECTOS
+                    try {
+                        const verRes = await api.get(
+                            `/api/requisiciones/${requisicion.requisicion_id}/verificar-aprobacion`,
+                            { 
+                                headers: { 
+                                    Authorization: `Bearer ${token}`,
+                                    "X-User-Name": user?.nombre || "",
+                                    "X-User-Area": user?.area || ""
+                                } 
+                            }
+                        );
+                        const verData = verRes.data || {};
+                        setPuedeAprobar(verData.puedeAprobar || false);
+                        setYaAprobaste(verData.yaAprobaste || false);
+                    } catch (verErr) {
+                        console.error("Error al verificar aprobación:", verErr);
+                        // Mantener valores previos si falla la verificación
+                    }
                 } catch (e) {
                     setPuedeAprobar(false);
                     setYaAprobaste(false);
@@ -285,43 +305,56 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                 action: "reject",
             };
 
-            const res = await fetch(
-                `http://localhost:4000/api/requisiciones/${requisicion.requisicion_id}/aprobar-items`,
+            const res = await api.put(
+                `/api/requisiciones/${requisicion.requisicion_id}/aprobar-items`,
+                body,
                 {
-                    method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    credentials: "include",
-                    body: JSON.stringify(body),
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "X-User-Name": detalles.currentUser?.nombre,
+                        "X-User-Area": detalles.currentUser?.area,
+                    },
                 }
             );
-            if (!res.ok) throw new Error("Error al registrar rechazo");
-            const data = await res.json();
+            const data = res.data;
             toast.success(data.message || "Rechazo registrado correctamente");
 
+            // Eliminar los productos rechazados del estado local
+            setDetalles((prev) => ({
+                ...prev,
+                productos: prev.productos.filter((p) => !seleccionados.some((s) => s.id === p.id)),
+            }));
             setDecisiones((prev) => {
                 const copy = { ...prev };
-                decisionesParaEnviar.forEach((d) => {
-                    copy[d.id] = false;
-                });
+                seleccionados.forEach((p) => { delete copy[p.id]; });
                 return copy;
             });
-
             setRejectedIds((prev) => {
                 const newSet = new Set(prev);
-                decisionesParaEnviar.forEach((d) => newSet.add(d.id));
+                seleccionados.forEach((d) => newSet.add(d.id));
                 return newSet;
             });
 
-            setActionLoadingExiting(true);
+            // Si ya no quedan productos editables, cerrar modal y desbloquear siguiente aprobador
             setTimeout(() => {
-                setActionLoadingExiting(false);
                 setActionLoadingVisible(false);
-            }, 360);
+                setSaving(false);
+                if (
+                    detalles.productos.filter((p) => isEditableForUser(p) && !rejectedIds.has(p.id) && !seleccionados.some((s) => s.id === p.id)).length === 0
+                ) {
+                    setActionLoadingExiting(true);
+                    setTimeout(() => {
+                        setActionLoadingExiting(false);
+                        onApproved();
+                        onClose();
+                    }, 360);
+                }
+            }, 500);
+
         } catch (err) {
             console.error("Error al registrar rechazo:", err);
             toast.error("No se pudo registrar el rechazo");
             setActionLoadingVisible(false);
-        } finally {
             setSaving(false);
         }
     };
@@ -526,7 +559,32 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                         </button>
                     </div>
                 ) : yaAprobaste ? (
-                    <div className="modal-actions"><p>Esta requisicion ya fue aprobada por ti, faltan aprobadores</p></div>
+                    <div className="modal-actions">
+                        <p>Esta requisicion ya fue aprobada por ti, faltan aprobadores</p>
+                        {/* Botón para ver el timeline de aprobaciones */}
+                        <button
+                            style={{
+                                marginLeft: 12,
+                                background: "#1d5da8",
+                                color: "white",
+                                border: "none",
+                                borderRadius: 5,
+                                padding: "6px 14px",
+                                fontWeight: "bold",
+                                cursor: "pointer"
+                            }}
+                            onClick={() => {
+                                // Abrir el modal de TimeLap en la página principal
+                                if (typeof window !== "undefined" && window.dispatchEvent) {
+                                    window.dispatchEvent(new CustomEvent("openTimeLap", {
+                                        detail: { requisicionId: requisicion.requisicion_id }
+                                    }));
+                                }
+                            }}
+                        >
+                            Ver flujo de aprobaciones
+                        </button>
+                    </div>
                 ) : (
                     <div className="modal-actions"><p>Aún no es tu turno de aprobar esta requisición</p></div>
                 )}

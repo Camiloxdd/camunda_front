@@ -141,8 +141,10 @@ function DashboardInner() {
         const res = await api.get(`/api/requisiciones/aprobador/${encodeURIComponent(user.nombre)}`, {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
         });
-        const data = res.data;
-        const lista = Array.isArray(data) ? data : [data];
+        let data = res.data;
+        let lista = Array.isArray(data) ? data : [data];
+        // Ordenar por requisicion_id descendente (más reciente primero)
+        lista = lista.sort((a, b) => Number(b.requisicion_id) - Number(a.requisicion_id));
         // 🧠 Añadir estado de aprobación según el orden (del timeLap)
         const completadas = await Promise.all(
           lista.map(async (req) => {
@@ -187,20 +189,21 @@ function DashboardInner() {
         setRequisiciones(completadas);
       }
       else if (permissions?.isComprador) {
-        // No filtrar aquí: asignar la lista tal como venga del backend y loguear para debugging.
         const res = await api.get("/api/requisiciones", { headers: { Authorization: token ? `Bearer ${token}` : "" } });
-        const data = res.data;
-        const listaRaw = Array.isArray(data) ? data : (data ? [data] : []);
-        console.debug("fetchRequisiciones (comprador) - recibidos:", listaRaw.length, listaRaw.slice(0, 3));
-        // Asignar la lista completa; la UI aplicará el filtrado/normalización si hace falta.
+        let data = res.data;
+        let listaRaw = Array.isArray(data) ? data : (data ? [data] : []);
+        // Ordenar por requisicion_id descendente
+        listaRaw = listaRaw.sort((a, b) => Number(b.requisicion_id) - Number(a.requisicion_id));
         setRequisiciones(listaRaw);
       }
       else if (user?.nombre) {
         const res = await api.get("/api/requisiciones", { headers: { Authorization: token ? `Bearer ${token}` : "" } });
-        const data = res.data;
-        const lista = (Array.isArray(data) ? data : [data]).filter(
+        let data = res.data;
+        let lista = (Array.isArray(data) ? data : [data]).filter(
           (r) => r.nombre_solicitante?.toLowerCase() === user.nombre.toLowerCase()
         );
+        // Ordenar por requisicion_id descendente
+        lista = lista.sort((a, b) => Number(b.requisicion_id) - Number(a.requisicion_id));
         setRequisiciones(lista);
       }
       else {
@@ -549,6 +552,85 @@ function DashboardInner() {
     );
   };
 
+  // Nueva función para aprobar un producto individualmente
+  const handleAprobarProducto = async (requisicionId, productoId) => {
+    const toastId = toast.info(
+      <div
+        style={{
+          padding: "10px",
+          textAlign: "center",
+          color: "white",
+        }}
+      >
+        <strong style={{ display: "block", marginBottom: "8px" }}>
+          ¿Deseas aprobar este producto?
+        </strong>
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+          <button
+            style={{
+              backgroundColor: "#16a34a",
+              color: "white",
+              border: "none",
+              padding: "6px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+            onClick={async () => {
+              toast.dismiss(toastId);
+              try {
+                setVerifyLoading(true);
+                const res = await api.post(
+                  `/api/requisiciones/${requisicionId}/productos/${productoId}/aprobar`,
+                  {},
+                  { headers: { Authorization: token ? `Bearer ${token}` : "" } }
+                );
+                if (res.status < 200 || res.status >= 300) throw new Error("Error al aprobar producto");
+                toast.success("Producto aprobado correctamente");
+                // Refrescar detalles de la requisición
+                await handleVerifyOpen({ requisicion_id: requisicionId });
+                await fetchRequisiciones();
+              } catch (err) {
+                console.error(err);
+                toast.error("No se pudo aprobar el producto");
+              } finally {
+                setVerifyLoading(false);
+              }
+            }}
+          >
+            Aprobar
+          </button>
+          <button
+            style={{
+              backgroundColor: "#e5e7eb",
+              color: "#111827",
+              border: "none",
+              padding: "6px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "500",
+            }}
+            onClick={() => toast.dismiss(toastId)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>,
+      {
+        position: "top-right",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          background: "#3b82f6",
+          borderRadius: "10px",
+        },
+        icon: "ℹ️",
+      }
+    );
+  };
+
   useEffect(() => {
     // Mostrar notificación una sola vez (usar toastId para evitar duplicados)
     if (!loading && permissions?.isAprobador && requisiciones.some(r => isPendingState(r.status || r.estado_aprobacion))) {
@@ -844,6 +926,15 @@ function DashboardInner() {
     setTimelineOpen(true);
   };
 
+  useEffect(() => {
+    const handler = (e) => {
+      setTimelineReqId(e.detail.requisicionId);
+      setTimelineOpen(true);
+    };
+    window.addEventListener("openTimeLap", handler);
+    return () => window.removeEventListener("openTimeLap", handler);
+  }, []);
+
   const handleDescargarPDF = async (id) => {
     try {
       setProgress("Preparando datos...");
@@ -903,7 +994,11 @@ function DashboardInner() {
           <div className="containerOneDashboard">
             <div className="firstContainerDash">
               <div className="porcents">
-                <div className="totalRequisiciones">
+                <div
+                  className="totalRequisiciones"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setStatusFilter("todas")}
+                >
                   <div className="infoTotalReq">
                     <p>Requisiciones totales</p>
                     <h2>{requisiciones.length}</h2>
@@ -912,7 +1007,11 @@ function DashboardInner() {
                     <FontAwesomeIcon icon={faFile} />
                   </div>
                 </div>
-                <div className="porAprobarRequisiciones">
+                <div
+                  className="porAprobarRequisiciones"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setStatusFilter("aprobada")}
+                >
                   <div className="infoAprobarReq">
                     <p>Requisiciones aprobadas</p>
                     <h2>
@@ -923,7 +1022,11 @@ function DashboardInner() {
                     <FontAwesomeIcon icon={faFileCircleCheck} />
                   </div>
                 </div>
-                <div className="pendientesAprobaciones">
+                <div
+                  className="pendientesAprobaciones"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setStatusFilter("pendiente")}
+                >
                   <div className="infoAprobarReq">
                     <p>Requisiciones pendientes</p>
                     <h2>
@@ -934,7 +1037,11 @@ function DashboardInner() {
                     <FontAwesomeIcon icon={faFileCircleQuestion} />
                   </div>
                 </div>
-                <div className="rechazarAprobaciones">
+                <div
+                  className="rechazarAprobaciones"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setStatusFilter("rechazada")}
+                >
                   <div className="infoAprobarReq">
                     <p>Requisiciones rechazadas</p>
                     <h2>
@@ -992,10 +1099,12 @@ function DashboardInner() {
                   </div>
                 </div>
               ) : (
-                requisicionesFiltradas.map((req) => {
+                requisicionesFiltradas.map((req, idx) => {
                   const estado = String(req.status || req.estado_aprobacion || "").toLowerCase();
                   const fecha = req.fecha || req.created_at || "—";
                   const valor = req.valor_total || req.valor || 0;
+                  // Detectar si es la más reciente (primer requisicion_id más alto)
+                  const isNewest = idx === 0;
 
                   return (
                     <div key={req.requisicion_id} className="cardAccent" onClick={async () => {
@@ -1020,14 +1129,11 @@ function DashboardInner() {
                             <h3 className={styles.accentTitle}>Req. #{req.requisicion_id}</h3>
                             <p className={styles.accentCreator}>{req.nombre_solicitante}</p>
                           </div>
-
                           <span className={`${styles.badge} ${getBadgeClass(estado)}`}>
                             {getStatusLabel(estado)}
                           </span>
 
-
                         </div>
-
                         <div className={styles.accentFooter}>
                           <p className={styles.accentDate}>
                             {fecha}
@@ -1085,7 +1191,14 @@ function DashboardInner() {
                   <table className="tablaResumen">
                     <thead>
                       <tr>
-                        <th>#</th><th>Producto</th><th>Cantidad</th><th>Valor estimado</th><th>Cuenta Contable</th><th>Centro Costo</th><th>Tecnológico</th><th>Ergonómico</th>
+                        <th>#</th>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Valor estimado</th>
+                        <th>Cuenta Contable</th>
+                        <th>Centro Costo</th>
+                        <th>Tecnológico</th>
+                        <th>Ergonómico</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1094,14 +1207,14 @@ function DashboardInner() {
                           <td style={{ padding: 6 }}>{i + 1}</td>
                           <td style={{ padding: 6 }}>{p.nombre || p.productoOServicio || "—"}</td>
                           <td style={{ padding: 6 }}>{p.cantidad || "—"}</td>
-                          <td style={{ padding: 6 }}>{/* valor estimado */}
+                          <td style={{ padding: 6 }}>
                             {formatCOP(p.valor_estimado ?? p.valorEstimado)}
                           </td>
                           <td style={{ padding: 6 }}>{p.cuenta_contable}</td>
                           <td>{p.centro_costo}</td>
-
                           <td style={{ padding: 6 }}>{(p.compra_tecnologica || p.compraTecnologica) ? "Sí" : "No"}</td>
                           <td style={{ padding: 6 }}>{(p.ergonomico) ? "Sí" : "No"}</td>
+                          {/**/}
                         </tr>
                       )) || null}
                     </tbody>
@@ -1113,7 +1226,7 @@ function DashboardInner() {
                     {verifyLoading ? "Procesando..." : "Devolver"}
                   </button>
                   <button onClick={() => handleAprobar(verifyModalReq.requisicion_id)} disabled={verifyLoading}>
-                    {verifyLoading ? "Procesando..." : "Aprobar"}
+                    {verifyLoading ? "Procesando..." : "Aprobar Total"}
                   </button>
                 </div>
               </div>
