@@ -3,117 +3,133 @@ import "../styles/Slidebar.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faHome,
-    faLock,
     faUser,
-    faWrench,
     faCloud,
-    faEnvelope,
-    faCog,
     faBars,
     faTimes,
-    faFile,
-    faRightFromBracket
+    faRightFromBracket,
+    faUserGear,
+    faArrowLeft,
+    faArrowRight
 } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/axios";   
 
 export const Sidebar = ({ onToggle }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const router = useRouter();
-    const { permissions, logout } = useAuth(); // usar permisos y posible logout del contexto
+     const [isOpen, setIsOpen] = useState(false);
+     const router = useRouter();
+     const { permissions, logout, user } = useAuth(); // obtener user para mostrar nombre/rol
 
-    // Reglas solicitadas:
-    // - aprobador true  => puede ver /dashboard y /requisiciones
-    // - solicitante true => solo /requisiciones
-    // - comprador true   => /dashboard y /requisiciones
-    // - super_admin     => todo
-    const canSeeDashboard = Boolean(
-        permissions?.isAprobador || permissions?.isComprador || permissions?.isSuperAdmin
-    );
-    const canSeeRequisiciones = Boolean(
-        permissions?.isSolicitante || permissions?.isAprobador || permissions?.isComprador || permissions?.isSuperAdmin
-    );
-    const canSeeUsuarios = Boolean(permissions?.isSuperAdmin || permissions?.isSolicitante);
+     const canSeeDashboard = Boolean(
+         permissions?.isAprobador || permissions?.isComprador || permissions?.isSuperAdmin
+     );
+     const canSeeRequisiciones = Boolean(
+         permissions?.isSolicitante || permissions?.isAprobador || permissions?.isComprador || permissions?.isSuperAdmin
+     );
+     const canSeeUsuarios = Boolean(permissions?.isSuperAdmin || permissions?.isSolicitante);
 
-    // construir navItems dinámicamente según permisos
-    const navItems = [{ icon: faHome, label: "Inicio", path: "/dashboard" }]; // inicio siempre visible (puedes cambiar)
+     const navItems = [{ icon: faHome, label: "Inicio", path: "/dashboard" }];
 
-    if (canSeeDashboard && !navItems.find(i => i.path === "/dashboard")) {
-        // dashboard ya incluido como "Inicio" por defecto, si prefieres camino distinto puedes ajustar
-        // aquí lo dejamos consistente: Inicio -> /dashboard
-    }
-    if (canSeeUsuarios) {
-        navItems.push({ icon: faUser, label: "Usuarios", path: "/usuarios" });
-    }
+     if (canSeeUsuarios) {
+         navItems.push({ icon: faUserGear, label: "Usuarios", path: "/usuarios" });
+     }
 
-    const handleToggle = () => {
-        const newState = !isOpen;
-        setIsOpen(newState);
-        onToggle?.(newState); // Notifica al Dashboard solo si se pasó la prop
-    };
+     const handleToggle = () => {
+         const newState = !isOpen;
+         setIsOpen(newState);
+         onToggle?.(newState); // Notifica al Dashboard
+     };
 
-    const handleNavigate = (path) => {
-        router.push(path)
-    }
+     const handleNavigate = (path) => {
+         router.push(path)
+     }
 
-    const handleLogout = async () => {
-        try {
-            const token = localStorage.getItem("token");
-            // si el contexto provee logout, ejecutarlo
-            if (typeof logout === "function") {
-                try { logout(); } catch (e) { /* ignore */ }
-            }
+     const handleLogout = async () => {
+         try {
+             const token = localStorage.getItem("token");
+             if (typeof logout === "function") {
+                 try { logout(); } catch (e) { /* ignore */ }
+             }
+             await api.post("http://localhost:8000/api/auth/logout", {
+                 headers: { Authorization: `Bearer ${token}` },
+             });
+             router.push("/");
+         } catch (err) {
+             console.error("Error durante logout:", err);
+             router.push("/");
+         }
+     }
 
-            // informar al backend para borrar cookie/session
-            await api.post("http://localhost:8000/api/auth/logout", {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+     const isCollapsed = !isOpen;
 
-            // redirigir al login (ajusta ruta si tu app usa otra)
-            router.push("/");
-        } catch (err) {
-            console.error("Error durante logout:", err);
-            router.push("/");
-        }
-    }
+     return (
+         <aside
+             className={`sidebar ${isCollapsed ? "sidebarCollapsed" : "sidebarExpanded"}`}
+             aria-expanded={!isCollapsed}
+         >
+             {/* Toggle */}
+             <button onClick={handleToggle} className="toggleButton" aria-label="Toggle sidebar">
+                 <FontAwesomeIcon icon={isCollapsed ? faArrowRight : faArrowLeft} size="lg" />
+             </button>
 
-    return (
-        <section className="page sidebar-9-page">
-            <aside className={`sidebar-9 ${isOpen ? "open" : ""}`}>
-                <div className="inner">
-                    <header className="headerSidebar">
-                        <button
-                            type="button"
-                            className="sidebar-9-burger"
-                            onClick={handleToggle}
-                        >
-                            <FontAwesomeIcon icon={isOpen ? faTimes : faBars} size="lg" />
-                        </button>
-                    </header>
+             {/* Logo / Header */}
+             <div className={`logoSection ${isCollapsed ? "logoSectionCollapsed" : "logoSectionExpanded"}`}>
+                <div className={`logoContainer ${isCollapsed ? "logoContainerCollapsed" : ""}`}>
+                    {/* Imagen mini cuando está colapsado */}
+                    {isCollapsed ? (
+                        <img src="/coopidrogas_logo_mini.png" alt="Coopidrogas" className="logoImgMini" />
+                    ) : (
+                        // Logo grande con fondo blanco cuando está expandido
+                        <div className="logoIconWhite">
+                            <img src="/Logo_COOPIDROGAS.png" alt="Logo COOPIDROGAS" className="logoImgLarge" />
+                        </div>
+                    )}
 
-                    <nav>
-                        {navItems.map((item, index) => (
-                            <button key={index} type="button" title={item.label} onClick={() => handleNavigate(item.path)}>
-                                <FontAwesomeIcon icon={item.icon} size="lg" />
-                                {isOpen && <p>{item.label}</p>}
-                            </button>
-                            
-                        ))}
-
-                    </nav>
-                    <nav className="sidebar-9-footer">
-                        <button type="button" title="Cerrar sesión" onClick={handleLogout} >
-                            <FontAwesomeIcon icon={faRightFromBracket} size="lg" />
-                            {isOpen && <p>Cerrar sesión</p>}
-                        </button>
-                    </nav>
-                    
-                    
-
+                    {!isCollapsed && (
+                        <div className="logoText">
+                        </div>
+                    )}
                 </div>
-            </aside>
-        </section>
-    );
-};
+            </div>
+
+             {/* Navigation */}
+             <nav className="nav">
+                 {navItems.map((item, index) => (
+                     <button
+                         key={index}
+                         type="button"
+                         title={isCollapsed ? item.label : undefined}
+                         onClick={() => handleNavigate(item.path)}
+                         className={`navButton ${isCollapsed ? "navButtonCollapsed" : ""} navButtonInactive`}
+                     >
+                         <FontAwesomeIcon icon={item.icon} className="navIcon" />
+                         {!isCollapsed && <span>{item.label}</span>}
+                     </button>
+                 ))}
+                 {/* Opcional: otras entradas basadas en permisos */}
+             </nav>
+
+             {/* User / Footer */}
+             <div className="userSection">
+                 <div className={`userCard ${isCollapsed ? "userCardCollapsed" : ""}`}>
+                     <div className="userAvatar">
+                         <FontAwesomeIcon icon={faUser} style={{ color: "var(--textColor)" }}/>
+                     </div>
+                     {!isCollapsed && (
+                         <div className="userDetails">
+                             <div className="userInfo">
+                                 <p className="userName">{user?.nombre || "Usuario"}</p>
+                                 <p className="userRole">{user?.rol || user?.cargo || "—"}</p>
+                             </div>
+                             <button className="logoutButton" onClick={handleLogout} title="Cerrar sesión">
+                                 <FontAwesomeIcon icon={faRightFromBracket} />
+                             </button>
+                         </div>
+                     )}
+                 </div>
+             </div>
+         </aside>
+     );
+ };
 

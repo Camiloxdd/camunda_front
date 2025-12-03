@@ -4,7 +4,7 @@ import { Sidebar } from "../components/Slidebar";
 import Navbar from "../components/navbar";
 import SearchBar from "../components/searchBar";
 import ApprovalModal from "../components/ApprovalModal";
-import { faTrash, faPencil, faFilePdf, faTimeline, faX, faPlus, faRefresh, faFile, faFileCircleCheck, faFileCircleQuestion, faFileCircleXmark, faFileEdit, faFileExcel, faUserPen, faDownload, faBoxArchive } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faPencil, faUser, faFilePdf, faTimeline, faX, faPlus, faRefresh, faFile, faFileCircleCheck, faFileCircleQuestion, faFileCircleXmark, faFileEdit, faFileExcel, faUserPen, faDownload, faBoxArchive, faEye, faCalendarAlt, faCalendar } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Suspense } from "react";
 import { AuthProvider, useAuth } from "../context/AuthContext";
@@ -15,6 +15,7 @@ import api from "../services/axios";
 import WizardModal from "../components/modalNewReq";
 import TimeLap from "../components/timeLap";
 import ExcelJS from "exceljs";
+import { useRouter } from "next/navigation";
 
 function DashboardInner() {
   function getBadgeClass(estado) {
@@ -78,6 +79,7 @@ function DashboardInner() {
   // IDs para prevenir toasts duplicados
   const sessionToastIdRef = useRef("session-started");
   const pendingToastIdRef = useRef("pending-reqs");
+  const router = useRouter();
   const compradorToastIdRef = useRef("comprador-reqs");
   const newReqsToastIdRef = useRef("new-reqs");
   const devueltaToastIdRef = useRef("devuelta-reqs");
@@ -976,13 +978,12 @@ function DashboardInner() {
       <TimeLap open={timelineOpen} onClose={() => setTimelineOpen(false)} requisicionId={timelineReqId} token={token} />
       <div
         className="dashboard-content"
-        style={{
+        style={{ // quitar el espacio superior que empujaba la navbar hacia abajo
           flex: 1,
           transition: "margin-left 0.3s ease",
-          marginLeft: isSidebarOpen ? "210px" : "80px",
+          marginLeft: isSidebarOpen ? "288px" : "80px", // usar los anchos definidos en el css de la sidebar
         }}
       >
-        <Navbar />
         <WizardModal
           open={open}
           onClose={() => { setOpen(false); setModalInitialData(null); }}
@@ -990,163 +991,221 @@ function DashboardInner() {
           initialData={modalInitialData}
           startStep={modalInitialData ? 2 : undefined}
         />
-        <Suspense fallback={<div>Cargando...</div>}>
-          <div className="containerOneDashboard">
-            <div className="firstContainerDash">
-              <div className="porcents">
-                <div
-                  className="totalRequisiciones"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setStatusFilter("todas")}
-                >
-                  <div className="infoTotalReq">
-                    <p>Requisiciones totales</p>
-                    <h2>{requisiciones.length}</h2>
-                  </div>
-                  <div className="iconTotalReq">
-                    <FontAwesomeIcon icon={faFile} />
-                  </div>
-                </div>
-                <div
-                  className="porAprobarRequisiciones"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setStatusFilter("aprobada")}
-                >
-                  <div className="infoAprobarReq">
-                    <p>Requisiciones aprobadas</p>
-                    <h2>
-                      {requisiciones.filter((r) => isApprovedState(r.estado_aprobacion || r.status)).length}
-                    </h2>
-                  </div>
-                  <div className="iconAprobarReq">
-                    <FontAwesomeIcon icon={faFileCircleCheck} />
-                  </div>
-                </div>
-                <div
-                  className="pendientesAprobaciones"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setStatusFilter("pendiente")}
-                >
-                  <div className="infoAprobarReq">
-                    <p>Requisiciones pendientes</p>
-                    <h2>
-                      {requisiciones.filter((r) => isPendingState(r.estado_aprobacion || r.status)).length}
-                    </h2>
-                  </div>
-                  <div className="iconPendientesReq">
-                    <FontAwesomeIcon icon={faFileCircleQuestion} />
-                  </div>
-                </div>
-                <div
-                  className="rechazarAprobaciones"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setStatusFilter("rechazada")}
-                >
-                  <div className="infoAprobarReq">
-                    <p>Requisiciones rechazadas</p>
-                    <h2>
-                      {requisiciones.filter((r) => normalizeEstado(r.estado_aprobacion || r.status) === "rechazada").length}
-                    </h2>
-                  </div>
-                  <div className="iconRechazarReq">
-                    <FontAwesomeIcon icon={faFileCircleXmark} />
-                  </div>
-                </div>
-                <div className="floating-actions">
-                  <button onClick={fetchRequisiciones} className="fab-btn secondary">
-                    <FontAwesomeIcon icon={faRefresh} />
-                  </button>
-                  {permissions?.canCreateRequisition && (
-                    <button onClick={abrirModalNuevaReq} className="fab-btn primary">
-                      <FontAwesomeIcon icon={faPlus} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+        <div className="navbarDashboard"
+          style={{
+            left: isSidebarOpen ? "285px" : "80px",
+            width: `calc(100% - ${isSidebarOpen ? 285 : 80}px)`,
+            zIndex: 900,
+            transition: "left 0.28s ease, width 0.28s ease",
+          }}>
+          <div className="textoNavBar">
+            <h1>Requisiciones</h1>
+            <p>Gestiona todas las solicitudes de compra</p>
           </div>
-        </Suspense>
-        <div className="secondContainerDash">
-          <div className="containerTwoDash">
-            <div className="papaHeaderRequi">
-              <div className="barraDeNavegacion">
-                <SearchBar
-                  placeholder="Buscar por ID de requisición..."
-                  onQueryChange={setSearchQuery}
-                />
+          <div className="buttonsReq">
+            <button onClick={abrirModalNuevaReq} className="fab-btn primary">
+              <FontAwesomeIcon icon={faPlus} /> Nueva requisición
+            </button>
+          </div>
+        </div>
+        <div className="containerInfoRequisiciones">
+          <Suspense fallback={<div>Cargando...</div>}>
+            <div className="containerOneDashboard">
+              <div className="headerFiltros">
+                <p>FILTRAR POR ESTADO</p>
+              </div>
+              <div
+                className="campoFiltroReq"
+                style={{ cursor: "pointer" }}
+                onClick={() => setStatusFilter("todas")}
+              >
+                <div className="infoFiltroReq">
+                  <p>Requisiciones totales</p>
+                </div>
+                <div className="spaceCantidad">
+                  <p className="spaceCantidad">{requisiciones.length}</p>
+                </div>
+              </div>
+              <div
+                className="campoFiltroReq"
+                style={{ cursor: "pointer" }}
+                onClick={() => setStatusFilter("aprobada")}
+              >
+                <div className="infoFiltroReq">
+                  <p>Requisiciones aprobadas</p>
+                </div>
+                <div className="spaceCantida">
+                  <p className="spaceCantidad">
+                    {requisiciones.filter((r) => isApprovedState(r.estado_aprobacion || r.status)).length}
+                  </p>
+                </div>
+              </div>
+              <div
+                className="campoFiltroReq"
+                style={{ cursor: "pointer" }}
+                onClick={() => setStatusFilter("pendiente")}
+              >
+                <div className="infoFiltroReq">
+                  <p>Requisiciones pendientes</p>
+                </div>
+                <div className="spaceCantidad">
+                  <p>
+                    {requisiciones.filter((r) => isPendingState(r.estado_aprobacion || r.status)).length}
+                  </p>
+                </div>
+              </div>
+              <div
+                className="campoFiltroReq"
+                style={{ cursor: "pointer" }}
+                onClick={() => setStatusFilter("rechazada")}
+              >
+                <div className="infoFiltroReq">
+                  <p>Requisiciones rechazadas</p>
+                </div>
+                <div className="spaceCantidad">
+                  <p>
+                    {requisiciones.filter((r) => normalizeEstado(r.estado_aprobacion || r.status) === "rechazada").length}
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="listaReq">
-              {loading ? (
-                <div className="loading-container">
-                  <div className="loading-cambios">
-                    <img
-                      src="/coopidrogas_logo_mini.png"
-                      className="LogoCambios"
-                      alt="Logo de carga"
-                    />
-                    <p className="textLoading">Cargando requisiciones...</p>
-                  </div>
+          </Suspense>
+          <div className="secondContainerDash">
+            <div className="containerTwoDash">
+              <div className="papaHeaderRequi">
+                <div className="barraDeNavegacion">
+                  <SearchBar
+                    placeholder="Buscar por ID de requisición..."
+                    onQueryChange={setSearchQuery}
+                  />
                 </div>
-              ) : requisicionesFiltradas.length === 0 ? (
-                <div className="loading-container">
-                  <div className="loading-cambios">
-                    <p>
-                      {permissions?.isAprobador ? "No tienes requisiciones pendientes por aprobar." :
-                        permissions?.isComprador ? "No hay requisiciones aprobadas para verificar." :
-                          "No hay requisiciones para mostrar."}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                requisicionesFiltradas.map((req, idx) => {
-                  const estado = String(req.status || req.estado_aprobacion || "").toLowerCase();
-                  const fecha = req.fecha || req.created_at || "—";
-                  const valor = req.valor_total || req.valor || 0;
-                  // Detectar si es la más reciente (primer requisicion_id más alto)
-                  const isNewest = idx === 0;
-
-                  return (
-                    <div key={req.requisicion_id} className="cardAccent" onClick={async () => {
-                      if (permissions?.isComprador) {
-                        handleVerifyOpen(req);
-                        return;
-                      }
-                      if (permissions?.isAprobador) {
-                        setSelectedReq(req);
-                        return;
-                      }
-                      handleOpenSolicitanteModal(req);
-                      setSolicitanteReq(req);
-                      setOpenReqModal(true);
-                    }}
-                    >
-                      <div className={`${styles.accentBar} ${getBadgeClassBar(estado)}`}></div>
-
-                      <div className={styles.accentContent}>
-                        <div className={styles.accentHeader}>
-                          <div className={styles.accentLeft}>
-                            <h3 className={styles.accentTitle}>Req. #{req.requisicion_id}</h3>
-                            <p className={styles.accentCreator}>{req.nombre_solicitante}</p>
-                          </div>
-                          <span className={`${styles.badge} ${getBadgeClass(estado)}`}>
-                            {getStatusLabel(estado)}
-                          </span>
-
-                        </div>
-                        <div className={styles.accentFooter}>
-                          <p className={styles.accentDate}>
-                            {fecha}
-                          </p>
-                          <p className={styles.accentPrice}>
-                            {formatCOP(valor)}
-                          </p>
-                        </div>
-                      </div>
+              </div>
+              <div className="listaReq">
+                {loading ? (
+                  <div className="loading-container">
+                    <div className="loading-cambios">
+                      <img
+                        src="/coopidrogas_logo_mini.png"
+                        className="LogoCambios"
+                        alt="Logo de carga"
+                      />
+                      <p className="textLoading">Cargando requisiciones...</p>
                     </div>
-                  );
-                })
-              )}
+                  </div>
+                ) : requisicionesFiltradas.length === 0 ? (
+                  <div className="loading-container">
+                    <div className="loading-cambios">
+                      <p>
+                        {permissions?.isAprobador ? "No tienes requisiciones pendientes por aprobar." :
+                          permissions?.isComprador ? "No hay requisiciones aprobadas para verificar." :
+                            "No hay requisiciones para mostrar."}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  /* Tabla de requisiciones (usando clases del ejemplo de row) */
+                  <table className="requisitionsTable">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Solicitante</th>
+                        <th>Estado</th>
+                        <th>Fecha</th>
+                        <th>Valor</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {requisicionesFiltradas.map((req) => {
+                        const estado = String(req.status || req.estado_aprobacion || "").toLowerCase();
+                        const fecha = req.fecha || req.created_at || "—";
+                        const valor = req.valor_total || req.valor || 0;
+
+                        const onRowClick = async () => {
+                          if (permissions?.isComprador) {
+                            await handleVerifyOpen(req);
+                            return;
+                          }
+                          if (permissions?.isAprobador) {
+                            setSelectedReq(req);
+                            return;
+                          }
+                          await handleOpenSolicitanteModal(req);
+                          setSolicitanteReq(req);
+                          setOpenReqModal(true);
+                        };
+
+                        return (
+                          <tr key={req.requisicion_id} className="row" onClick={onRowClick} style={{ cursor: "pointer" }}>
+                            <td className="colSpan2 idCell">
+                              <div className="idBadge"><span className="idText">REQ-{req.requisicion_id}</span></div>
+                            </td>
+
+                            <td className="requesterCell">
+                              <div className="requesterDiv">
+                                <div className="requesterAvatar">
+                                  <FontAwesomeIcon icon={faUser || faUser /* fallback if not available */} />
+                                </div>
+                                <div className="requesterInfo">
+                                  <span className="requesterName">{req.nombre_solicitante || "—"}</span>
+                                  <span className="requesterLabel">Solicitante</span>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="colSpan2 statusCell">
+                              <div className="campoStatus">
+                                <div className={`${styles.badge} ${getBadgeClass(estado)} statusBadge`}>
+                                  {getStatusLabel(estado)}
+                                </div>
+                              </div>
+                            </td>
+
+                            <td className="colSpan2 dateCell">
+                              <div className="fecha">
+                                <FontAwesomeIcon icon={faCalendar} className="calendarIcon" />
+                                {fecha}
+                              </div>
+                            </td>
+
+                            <td className="colSpan2 amountCell">
+                              <div className="valor">
+                                {formatCOP(valor)}
+                              </div>
+                            </td>
+
+                            <td className="colSpan1 actionsCell">
+                              <div className="campoBotonesReq">
+                                <button
+                                  className="actionButton actionButtonVisible"
+                                  onClick={(e) => { e.stopPropagation(); onRowClick(); }}
+                                  title="Ver detalle"
+                                >
+                                  <FontAwesomeIcon icon={faEye} />
+                                </button>
+                                <button
+                                  className="actionButton actionButtonVisible"
+                                  onClick={(e) => { e.stopPropagation(); handleEditOpen(req); }}
+                                  title="Editar"
+                                >
+                                  <FontAwesomeIcon icon={faPencil} />
+                                </button>
+                                <button
+                                  className="actionButton actionButtonVisible"
+                                  onClick={(e) => { e.stopPropagation(); handleDelete(req.requisicion_id); }}
+                                  title="Eliminar"
+                                >
+                                  <FontAwesomeIcon icon={faTrash} style={{ color: "red" }} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>
           </div>
         </div>

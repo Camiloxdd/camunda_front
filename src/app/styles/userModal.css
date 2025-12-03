@@ -11,17 +11,6 @@
   z-index: 999;
 }
 
-.modal-container-user {
-  background: white;
-  border-radius: 15px;
-  width: 55%;
-  height: 85%;
-  max-width: 90%;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
-  text-align: center;
-  margin-top: 90px;
-}
-
 .fadeIn {
   animation: fadeIn 0.3s ease-in-out forwards;
 }
@@ -43,35 +32,28 @@
 }
 
 .btn-close {
-  background: white;
   color: #1d5da8;
   font-weight: bold;
   border: none;
   width: 35px;
   height: 35px;
-  border-color: #1d5da8;
-  border-width: 2px;
-  border-style: solid;
-  border-radius: 20px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
   cursor: pointer;
   transition: background 0.2s ease;
   margin-left: auto;
 }
 
 .btn-close:hover {
-  background-color: #1d5da8;
+  background-color: red;
   color: white;
-    border-color: #1d5da8;
+  border-color: red;
   border-width: 2px;
   border-style: solid;
-  border-radius: 20px;
+  border-radius: 8px;
 }
 
-.switch-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 
 .switch {
   position: relative;
@@ -110,34 +92,266 @@
   border-radius: 50%;
 }
 
-.switch input:checked + .slider {
+.switch input:checked+.slider {
   background-color: #1d5da8;
 }
 
-.switch input:checked + .slider::before {
+.switch input:checked+.slider::before {
   transform: translateX(22px);
 }
 
-.containerButtonModal{
-    padding: 20px;
+.containerButtonModal {
+  padding: 20px;
 }
 
+.headerUserModal {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid #ddd;
+  justify-content: center;
+}
+
+.leftInfoUser {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.textUser {
+  text-align: left;
+}
+
+.textUser h2 {
+  color: var(--textColor);
+}
+
+.textUser p {
+  color: var(--textColorP);
+}
+
+.iconUser {
+  background: linear-gradient(135deg, #002855, #1D5DA8);
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  color: white;
+  font-size: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.inputsDatos {
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  display: grid;
+}
+
+.tittleOneUserNew {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--textColor);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tittleOneUserNew::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background-color: #ddd;
+}
+
+.infoGestionUser {
+  width: 100%;
+  padding: 28px;
+}
+
+.papaContainerUserModal {
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0 0 8px 8px;
+}
+
+.inputAndLabelUsersGestion {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campoTextAndIcon {
+  display: flex;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 6px;
+  align-items: center;
+  color: var(--textColor);
+  display: flex;
+  justify-content: left;
+  text-align: center;
+  align-items: center;
+}
+
+.iconUserCreate {
+  color: #1D5DA8;
+}
+
+.inputAndIconUserGest input,
+.inputAndIconUserGest select {
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  color: var(--foreground);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  transition: all .2s;
+  width: 100%;
+}
+
+.inputAndIconUserGest input:focus,
+.inputAndIconUserGest select:focus {
+  outline: none;
+  border-color: var(--textColor);
+  box-shadow: 0 0 0 3px rgba(29, 93, 168, 0.2);
+}
+
+.otroCampoSelects {
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  display: grid;
+}
+
+.selectsRoles {
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  display: grid;
+  margin-top: 10px;
+}
+
+.infoCardAndIcon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.switch-container {
+  border: 1px solid #ddd;
+  background-color: #f5f5f5;
+  cursor: pointer;
+  border-radius: 12px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  transition: all .2s;
+  display: flex;
+}
+
+.IconCardSwitch {
+  border-radius: 10px;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  background: linear-gradient(135deg, #002855, #1D5DA8);
+  color: white;
+}
+
+.textSwitch span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--textColor);
+}
+
+.textSwitch p {
+  font-size: 12px;
+  color: var(--textColorP);
+}
+
+.footerButtonSave {
+  border-top: 2px solid #ddd;
+  background-color: #f5f5f5;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 28px;
+  display: flex;
+  width: 100%;
+  border-radius: 0 0 8px 8px;
+}
+
+.saveUsersReq {
+  background-color: #002855;
+  color: white;
+  padding: 10px 16px;
+  border-color: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s all ease;
+}
+
+.saveUsersReq:hover {
+  transform: translateY(-2px);
+}
+
+/*
+.modal-container-user{
+  margin-top: 85px;
+}
+*/
+
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes slideUp {
-  from { transform: translateY(50px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes slideDown {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(60px); opacity: 0; }
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateY(60px);
+    opacity: 0;
+  }
 }

@@ -64,6 +64,7 @@ export default function Navbar() {
             )}
           </div>
           <div className="imgUser">
+            <button></button>
             <FontAwesomeIcon icon={faUser} />
           </div>
         </div>

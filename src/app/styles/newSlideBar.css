@@ -1,0 +1,58 @@
+.containerSlideBar {
+    position: fixed;
+    top: 0;
+    width: 90px;
+    height: 100%;
+    background-color: #1d5da8;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.containerImage{
+    background-color: transparent; 
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    height: 80px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.logoSlideBar {
+    width: 60px;
+    height: 60px;
+    background-color: white;
+    border-radius: 8px;
+}
+
+.spaceButtons{
+    height: 84%;
+    display: flex;
+    padding: 20px;
+    align-items: flex-start;
+}
+
+.buttonsNavigation{
+    padding: 20px;
+    max-height: 500px;
+    gap: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content:flex-start;
+}
+
+.buttonsNavigation button{
+    background-color: transparent;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    border-radius: 8px;
+    height: 40px;
+    width: 40px;
+    color: #dddddd;
+}   
+
+.buttonsNavigation button:hover{
+    background-color: #2563eb;
+    color: white;
+}

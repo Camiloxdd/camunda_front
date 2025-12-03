@@ -11,8 +11,7 @@
 .wizardModal-container {
   background: #fff;
   border-radius: 16px;
-  width: 70%;
-  padding: 24px;
+  width: 60%;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   animation: wizardModal-scaleIn 0.3s ease;
   position: relative;
@@ -83,586 +82,103 @@
 }
 
 .wizardModal-header {
+  background-color: #f5f5f5;
   display: flex;
-  justify-content: space-between;
+  padding: 20px;
+  border-bottom: 3px solid #ddd;
+  border-radius: 8px 8px 0 0;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 20px;
-}
-
-.containerModalNewReq {
-  display: flex;
-  gap: 10px;
-}
-
-.wizardModal-header h2 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1d5da8;
+  width: 100%;
+  text-align: center;
+  justify-content: space-between;
 }
 
 .wizardModal-close {
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  color: #555;
-}
-
-.wizardModal-steps {
-  display: grid;
-  position: relative;
-  width: 30%;
-  gap: 20px;
-  height: 40%;
-  justify-content: space-between;
-}
-
-.wizardModal-steps::before {
-  content: "";
-  position: absolute;
-  left: 12px;
-  top: 4px;
-  bottom: 15px;
-  height: 180px;
-  width: 4px;
-  background: #ddd;
-  z-index: 0;
-}
-
-.wizardModal-step {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 20px;
-  position: relative;
-  z-index: 1;
-}
-
-.wizardModal-circle {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid #ccc;
-  display: flex;
+  background-color: white;
+  height: 35px;
+  width: 35px;
   justify-content: center;
-  align-items: center;
-  margin-right: 10px;
-  background: #1d5da8;
-  color: WHITE;
-  font-weight: 600;
-  transition: all 0.3s;
-}
-
-.wizardModal-step.active .wizardModal-circle {
-  background: white;
-  border-color: #1d5da8;
-  color: #1d5da8;
-}
-
-.wizardModal-stepContent h3 {
-  margin: 0;
-  margin-top: 7px;
-  font-size: 15px;
-  color: #222;
-}
-
-.wizardModal-stepContent p {
-  margin: 3px 0 0;
-  font-size: 13px;
-  color: #666;
-}
-
-.wizardModal-body {
-  background: #f9f9f9;
-  padding: 14px;
-  height: 96%;
-  width: 80%;
-  text-align: center;
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   display: flex;
-  box-sizing: border-box;
+  align-items: center;
+  font-size: 15px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  color: var(--textColorP);
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
-.campoPrespuestado{
-  width: 100%;
+.wizardModal-close:hover {
+  background-color: red;
+  color: white;
+  border: 2px solid red;
+  transition: all 0.3s ease;
+}
+
+.textHeaderNew {
+  display: grid;
+  text-align: left;
+}
+
+.textHeaderNew h2 {
+  margin: 0;
+  font-size: 24px;
+  color: var(--textColor);
+}
+
+.textHeaderNew p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--textColorP);
 }
 
 .elpapadepapas {
   display: flex;
-  justify-content: center;
   height: 100%;
-  padding: 20px;
-  align-items: center;
-  gap:1%;
 }
 
-.papitoGugutata {
-  width: 100%;
-  height: 100%;
+.wizardModal-steps {
+  padding: 32px;
+  width: 300px;
+  gap: 24px;
   display: flex;
   flex-direction: column;
 }
 
-.containerProductosSerios,
-.containerProductosSeriosTwo {
-  display: flex;
-  height: 80%;
+.wizardModal-stepContent {
   width: 100%;
-  place-items: center;
-}
-
-.containerButtonsProductos{
-  height: 10%;
-  justify-content: center;
-  place-items: center;  
-  display: flex;
-}
-
-.productoNavVertical {
-  display: flex;
-  flex-direction: column;
-  width: 400px;
+  background-color: yellow;
   gap: 10px;
-  justify-content: center;
-  align-items: center;
 }
 
-.fullWidth {
-  width: 100%;
+.wizardModal-stepContent h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--textColor);
 }
 
-.productoListScroll {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height:380px;   /* puedes aumentar si quieres */
-  overflow-y: auto;
-  padding-right: 5px;
-}
-
-.productoTabVertical {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  text-align: left;
-  padding: 10px 12px;
-  background: #f4f4f4;
-  border: 1px solid #dcdcdc;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.productoTabVertical:hover {
-  background: #e9e9e9;
-}
-
-.productoTabVertical.active {
-  background: #eef1ff;
-  border: 1px solid #3f51ff;
-}
-
-.productoNavVertical button {
-  cursor: pointer;
-}
-
-.wizardModal-panel h4 {
-  margin: 0 0 8px;
-  color: #333;
-}
-
-.wizardModal-footer {
-  display: flex;
-  justify-content: space-between;
-}
-
-.wizardModal-btn {
-  border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: 0.3s;
-}
-
-.wizardModal-prev {
-  border-width: 2px;
-  border-style: solid;
-  border-color: #1d5da8;
-  background: white;
-  color: #1d5da8;
-}
-
-.wizardModal-next {
-  border-width: 2px;
-  border-style: solid;
-  border-color: #1d5da8;
-  background: white;
-  color: #1d5da8;
-}
-
-.wizardModal-confirm {
-  border-width: 2px;
-  border-style: solid;
-  border-color: #1d5da8;
-  background: #1d5da8;
-  color: white;
-}
-
-.wizardModal-btn:hover {
-  opacity: 0.9;
-}
-
-.checkboxField {
-  display: flex;
-
-}
-
-.campoAdicionales {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 80px;
-  text-align: center;
-}
-
-.campoAdicionales input {
-  margin-left: -60px;
-  height: 20px;
-}
-
-.selectProducto {
-  width: 100%;
-  height: 45px;
-  border-radius: 8px;
-  border-color: transparent;
-  padding: 5px;
-}
-
-.firsInfo {
-  display: flex;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 25px;
-  width: 100%;
-  padding: 10px;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  font-size: 30px;
-}
-
-.firsInfo p {
-  font-size: 15px;
-}
-
-.firsInfo input {
-  width: 18px;
-  height: 18 px;
-}
-
-.firsInfoTwo {
-  display: flex;
-  grid-template-columns: repeat(2, 1fr);
-  width: 100%;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-.firsInfoTwo label {
+.wizardModal-stepContent p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--textColor);
+  background-color: #b4d7ff;
   font-weight: bold;
-  color: #05060f99;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-}
-
-.firsInfoTwo input {
-  width: 13px;
-  height: 13px;
-  width: 100%;
-  background-color: red;
-  display: flex;
-}
-
-.textAreaCustom {
-  width: clamp(10rem, 40vw, 15rem);
-  height: 45%;
-  border-radius: 0.5rem;
-  padding: 0 1rem;
-  border: 2px solid transparent;
-  font-size: clamp(0.9rem, 2vw, 1rem);
-  transition: border-color 0.3s ease, background 0.2s ease;
-  justify-content: center;
-  align-items: center;
+  width: 50%;
   text-align: center;
-  display: flex;
-}
-
-.textAreaCustom:focus {
-  outline: none;
-}
-
-.firsInfo label {
-  font-weight: bold;
-  color: #05060f99;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  /* 🔹 separa el texto del checkbox */
-  font-size: 14px;
-}
-
-.fileUploadContainer {
-  background-color: white;
+  padding: 3px;
   border-radius: 8px;
-  height: 35px;
+}
+
+.wizardModal-circle {
+  background-color: green;
+}
+
+.wizardModal-step {
+  background-color: purple;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
 }
-
-.hiddenFileInput {
-  display: none;
-  /* oculta el input nativo */
-}
-
-.customFileButton {
-  color: white;
-  border: none;
-  width: 200px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.productoNav {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
-  width: 100%;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 10px;
-}
-
-.iconListFiles {
-  color: #1d5da8;
-  font-size: 18px;
-}
-
-.productoTab {
-  background: #eee;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: 0.5s;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  display: flex;
-  gap: 5px;
-}
-
-.productoTab.active {
-  background: white;
-  color: #1d5da8;
-  font-weight: bold;
-  transition: 0.5s all;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-}
-
-.productoTab.verTodos {
-  background: white;
-  color: black;
-  border-color: #1d5da8;
-  border-width: 2px;
-  border-style: solid;
-}
-
-.wizardModal-btn-remove {
-  color: red;
-  background-color: transparent;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.3s all;
-}
-
-.wizardModal-btn-remove:hover {
-  transform: scale(1.1);
-}
-
-.wizardModal-btn-add {
-  color: #1d5da8;
-  background-color: transparent;
-  padding: 8px 12px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.3s all;
-}
-
-.wizardModal-btn-add:hover {
-  transform: scale(1.1);
-}
-
-.modalOverlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-
-}
-
-.tablaProduc{
-  padding: 20px;
-}
-
-.modalSelectProductos {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  width: 80%;
-  max-height: 400px;
-  overflow-y: scroll;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.modalProductoItem {
-  padding: 10px;
-  cursor: pointer;
-  border-bottom: 1px solid #ddd;
-}
-
-.modalProductoItem:hover {
-  background: #f3f4f6;
-}
-
-.modalSelectProductos h3 {
-  color: #1d5da8;
-}
-
-.closeModalBtn {
-  background: #1d5da8;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 12px;
-  margin-top: 10px;
-  cursor: pointer;
-  transition: 0.3s all;
-}
-
-.closeModalBtn:hover {
-  transform: scale(1.1);
-}
-
-.resumenSection {
-  max-height: 250px;
-  /* Ajusta según lo que quieras mostrar */
-  overflow-y: auto;
-  overflow-x: auto;
-  margin-bottom: 25px;
-  background: white;
-  padding: 15px 20px;
-  border-radius: 12px;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.05);
-  color: #1d5da8;
-}
-
-.resumenSectionOne {
-  margin-bottom: 25px;
-  background: white;
-  padding: 15px 20px;
-  border-radius: 12px;
-  display: flex;
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.05);
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  gap: 60px;
-}
-
-.resumenSectionOne h2 {
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-  color: #1d5da8;
-}
-
-.resumenSectionOne ul {
-  list-style: none;
-  padding-left: 0;
-}
-
-.resumenSectionOne ul li {
-  margin-bottom: 6px;
-}
-
-.infoSolicitanteFinal {
-  padding: 10px;
-  text-align: left;
-  color: #1d5da8;
-}
-
-.totalesProductos {
-  text-align: right;
-  padding: 10px;
-  color: #1d5da8;
-}
-
-.resumenSection h2 {
-  font-size: 1.2rem;
-  margin-bottom: 10px;
-  color: #1d5da8;
-}
-
-.resumenSection ul {
-  list-style: none;
-  padding-left: 0;
-}
-
-.resumenSection ul li {
-  margin-bottom: 6px;
-}
-
-.tablaResumen {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  overflow-y: auto;
-  color: #1d5da8;
-}
-
-.tablaResumen th,
-.tablaResumen td {
-  border: 1px solid #ddd;
-  padding: 6px 10px;
-  text-align: center;
-  color: #1d5da8;
-}
-
-.tablaResumen th {
-  background-color: #1d5da8;
-  font-weight: 600;
-  color: white;
-}
-
 
 @keyframes wizardModal-scaleIn {
   from {
@@ -674,4 +190,290 @@
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stepCircle {
+  height: 32px;
+  width: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.stepCompleted {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.stepActive {
+  background-color: var(--foreground);
+  color: var(--background);
+}
+
+.stepPending {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.stepLine {
+  width: 48px;
+  height: 2px;
+  margin: 0 4px;
+}
+
+.stepLineActive {
+  background-color: var(--accent);
+}
+
+.stepLineInactive {
+  background-color: var(--border);
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+}
+
+.stepsSidebar {
+  width: 270 px;
+  height: 100%;
+  border-right: 1px solid var(--border);
+  /* Updated sidebar */
+  background-color: var(--card);
+  padding: 32px;
+}
+
+.stepsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.stepItem {
+  position: relative;
+  padding-left: 40px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stepItemActive {
+  opacity: 1;
+}
+
+.stepItemInactive {
+  opacity: 0.5;
+}
+
+.stepItemInactive:hover {
+  opacity: 0.75;
+}
+
+.stepConnector {
+  position: absolute;
+  left: 15px;
+  top: 40px;
+  width: 2px;
+  height: 64px;
+}
+
+.stepConnectorActive {
+  background-color: var(--accent);
+}
+
+.stepConnectorInactive {
+  background-color: var(--border);
+}
+
+.stepNumber {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 32px;
+  width: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.stepNumberCompleted {
+  background-color: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.stepNumberActive {
+  background-color: var(--textColor);
+  color: var(--background);
+  /* Updated glow */
+  box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.1);
+}
+
+.stepNumberPending {
+  background-color: var(--muted);
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+}
+
+.stepTitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.stepSubtitle {
+  font-size: 13px;
+  color: var(--textColorP);
+  margin-top: 2px;
+}
+
+.stepTitleActive {
+  color: var(--textColor);
+}
+
+.stepTitleInactive {
+  color: var(--muted-foreground);
+}
+
+.stepDescription {
+  font-size: 12px;
+  color: var(--textColorP);
+  margin-top: 4px;
+}
+
+.stepBadge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  background-color: rgba(14, 165, 233, 0.1);
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.wizardModal-body {
+  padding: 20px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  display: flex;
+  width: 72.1%;
+}
+
+.papitoGugutata {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.tittleOneUserNew {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--textColor);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tittleOneUserNew::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  background-color: #ddd;
+}
+
+.inputNewUser {
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  color: var(--foreground);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  transition: all .2s;
+  width: 100%;
+}
+
+.campoTextAndIcon {
+  display: flex;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 6px;
+  align-items: center;
+  color: var(--textColor);
+  display: flex;
+  justify-content: left;
+  text-align: center;
+  align-items: center;
+}
+
+.inputAndLabelUsersGestion{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputsDatos {
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  display: grid;
+}
+
+.campoPrespuestado {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 20px;
+}
+
+.campoPrespuestado p{
+  color: var(--textColor);
+}
+
+.firsInfo{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.wizardModal-footer {
+  background-color: #f5f5f5;
+  padding: 20px;
+  border-top: 3px solid #ddd;
+  border-radius: 0 0 8px 8px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.wizardModal-footer button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  background-color: var(--textColor);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.wizardModal-footer button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }

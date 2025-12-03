@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../styles/userModal.css";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser } from "@fortawesome/free-solid-svg-icons";
 
 const Modal = ({ open, onClose, title, children }) => {
   const [closing, setClosing] = useState(false);
@@ -28,10 +30,18 @@ const Modal = ({ open, onClose, title, children }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="headerUserModal">
-            <h2>Gestion de usuario nuevo</h2>
-            <button className="btn-close" onClick={handleClose}>
-              X
-            </button>
+          <div className="leftInfoUser">
+            <div className="iconUser">
+              <FontAwesomeIcon icon={faUser} />
+            </div>
+            <div className="textUser">
+              <h2>Nuevo Usuario</h2>
+              <p>Completa los campos para crear un nuevo usuario</p>
+            </div>
+          </div>
+          <button className="btn-close" onClick={handleClose}>
+            X
+          </button>
         </div>
         <div className="modal-content-user">{children}</div>
       </div>

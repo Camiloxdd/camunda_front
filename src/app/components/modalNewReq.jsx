@@ -469,7 +469,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 // 🔸 Llamamos a Camunda para completar la tarea
                 try {
                     console.log("🔁 Completando tarea de Camunda (segundo paso)...");
-                    await endTwoStepStartThreeStep(finalPayload); // 👈 pasa tus variables del flujo
+                    /*await endTwoStepStartThreeStep(finalPayload);*/ // 👈 pasa tus variables del flujo
                     console.log("✅ Tarea completada correctamente en Camunda");
                 } catch (err) {
                     console.error("❌ Error completando tarea en Camunda:", err);
@@ -579,7 +579,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 const payload = {
                     bienvenida: "Inicio del proceso de compras",
                 };
-                await endFirstStepStartTwoStep(payload);
+                /*await endFirstStepStartTwoStep(payload);*/
             }
             // Validación al avanzar de Paso 2 -> Paso 3 (ahora validaciones de productos y presupuesto)
             if (currentStep === 2 && nextStep === 3) {
@@ -646,6 +646,21 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         handleCancelWizard();
     };
 
+    const pasos = [
+        {
+            title: "Datos del solicitante",
+            description: "Información básica de la solicitud.",
+        },
+        {
+            title: "Detalles del producto",
+            description: "Detalles de lo que necesitas.",
+        },
+        {
+            title: "Resumen y finalización",
+            description: "Revisa y confirma tu solicitud.",
+        },
+    ];
+
     return (
         <div className="wizardModal-overlay">
             {/* asegurar que el overlay interno quede confinado a este container */}
@@ -667,49 +682,88 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 )}
 
                 <div className="wizardModal-header">
-                    <h2>Solicitud de compra</h2>
-                    <button className="wizardModal-close" onClick={handleCloseModal}>
-                        ✕
-                    </button>
+                    <div className="textHeaderNew">
+                        <h2>Nueva Requisición</h2>
+                        <p>Crea una solicitud de compra</p>
+                    </div>
+                    <div className="buttonCloseReq">
+                        <button className="wizardModal-close" onClick={handleCloseModal}>
+                            ✕
+                        </button>
+                    </div>
                 </div>
 
                 <div className="elpapadepapas">
-                    <div className="wizardModal-steps">
-                        {[
-                            "Datos del solicitante",
-                            "Detalles del producto",
-                            "Resumen y finalización",
-                        ].map((titulo, index) => (
-                            <div
-                                key={index}
-                                className={`wizardModal-step ${step === index + 1 ? "active" : ""}`}
-                            >
-                                <div className="wizardModal-circle">{index + 1}</div>
-                                <div className="wizardModal-stepContent">
-                                    <h3>
-                                        Paso {index + 1}: {titulo}
-                                    </h3>
-                                    <p>
-                                        {step === index + 1
-                                            ? "En progreso"
-                                            : step > index + 1
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <aside className="stepsSidebar">
+                        <div className="stepsContainer">
+                            {pasos.map((paso, index) => {
+                                const id = index + 1;
+                                const esActivo = step === id;
+                                const esCompletado = step > id;
+
+                                return (
+                                    <div
+                                        key={id}
+                                        className={`stepItem ${esActivo ? "stepItemActive" : "stepItemInactive"}`}
+                                    >
+                                        {/* Line connector */}
+                                        {index < pasos.length - 1 && (
+                                            <div
+                                                className={`stepConnector ${esCompletado ? "stepConnectorActive" : "stepConnectorInactive"
+                                                    }`}
+                                            />
+                                        )}
+
+                                        {/* Step circle */}
+                                        <div
+                                            className={`stepNumber ${esCompletado
+                                                ? "stepNumberCompleted"
+                                                : esActivo
+                                                    ? "stepNumberActive"
+                                                    : "stepNumberPending"
+                                                }`}
+                                        >
+                                            {esCompletado ? <Check size={16} /> : id}
+                                        </div>
+
+                                        {/* Content */}
+                                        <div>
+                                            <h3
+                                                className={`stepTitle ${step >= id ? "stepTitleActive" : "stepTitleInactive"
+                                                    }`}
+                                            >
+                                                {paso.title}
+                                            </h3>
+
+                                            {/* ⭐ Nueva descripción debajo del título */}
+                                            <p className="stepSubtitle">
+                                                {paso.description}
+                                            </p>
+
+                                            {/* Mantiene la lógica del primer código */}
+                                            <p className="stepDescription">
+                                                {esActivo ? "" : esCompletado ? true : ""}
+                                            </p>
+
+                                            {esActivo && <span className="stepBadge">En progreso</span>}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </aside>
                     <div className="wizardModal-body">
                         {step === 1 && (
                             <div className="papitoGugutata">
-                                <h1 className="tittleContentGugutata">
-                                    Datos generales del solicitante
-                                </h1>
-                                <div className="inputsContainers">
-                                    <div className="campoAdicional">
-                                        <label>Nombre del solicitante</label>
-                                        <div className="completeInputs">
-                                            <FontAwesomeIcon icon={faUser} className="icon" />
+                                <h3 className="tittleOneUserNew">Información Personal</h3>
+                                <div className="inputsDatos">
+                                    <div className="inputAndLabelUsersGestion">
+                                        <div className="campoTextAndIcon">
+                                            <FontAwesomeIcon icon={faUser} className="iconUserCreate" />
+                                            <label>Nombre del solicitante</label>
+                                        </div>
+                                        <div className="inputAndIconUserGest">
+
                                             <input type="text" placeholder="Ej. Juan Pérez" value={formData.solicitante.nombre}
                                                 onChange={(e) =>
                                                     setFormData({
@@ -722,10 +776,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 } />
                                         </div>
                                     </div>
-                                    <div className="campoAdicional">
-                                        <label>Fecha de solicitud</label>
-                                        <div className="completeInputs">
-                                            <FontAwesomeIcon icon={faCalendar} className="icon" />
+                                    <div className="inputAndLabelUsersGestion">
+                                        <div className="campoTextAndIcon">
+                                            <FontAwesomeIcon icon={faCalendar} className="iconUserCreate" />
+                                            <label>Fecha de solicitud</label>
+                                        </div>
+                                        <div className="inputAndIconUserGest">
                                             <input type="date" value={formData.solicitante.fecha}
                                                 onChange={(e) =>
                                                     setFormData({
@@ -738,10 +794,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 } />
                                         </div>
                                     </div>
-                                    <div className="campoAdicional">
-                                        <label>Fecha requerida de entrega<label className="obligatorio">*</label></label>
-                                        <div className="completeInputs">
-                                            <FontAwesomeIcon icon={faCalendar} className="icon" />
+                                    <div className="inputAndLabelUsersGestion">
+                                        <div className="campoTextAndIcon">
+                                            <FontAwesomeIcon icon={faCalendar} className="iconUserCreate" />
+                                            <label>Fecha requerida de entrega<label className="obligatorio">*</label></label>
+                                        </div>
+                                        <div className="inputAndIconUserGest">
                                             <input type="date" value={formData.solicitante.fechaRequeridoEntrega}
                                                 onChange={(e) =>
                                                     setFormData({
@@ -754,13 +812,15 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 } />
                                         </div>
                                     </div>
-                                    <div className="campoAdicional">
-                                        <label>Tiempo aproximado de gestión (SLA)<label className="obligatorio">*</label></label>
-                                        <div className="completeInputs">
+                                    <div className="inputAndLabelUsersGestion">
+                                        <div className="campoTextAndIcon">
                                             <FontAwesomeIcon
-                                                icon={faCalendar}
-                                                className="icon"
+                                                icon={faClock}
+                                                className="iconUserCreate"
                                             />
+                                            <label>Tiempo aproximado de gestión (SLA)<label className="obligatorio">*</label></label>
+                                        </div>
+                                        <div className="inputAndIconUserGest">
                                             <input type="text" placeholder="(cantidad) días hábiles"
                                                 value={formData.solicitante.tiempoAproximadoGestion}
                                                 onChange={(e) =>
@@ -774,12 +834,14 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 } />
                                         </div>
                                     </div>
-                                    <div className="campoAdicional">
-                                        <label>
-                                            Área
-                                        </label>
-                                        <div className="completeInputs">
-                                            <FontAwesomeIcon icon={faClipboard} className="icon" />
+                                    <div className="inputAndLabelUsersGestion">
+                                        <div className="campoTextAndIcon">
+                                            <FontAwesomeIcon icon={faClipboard} className="iconUserCreate" />
+                                            <label>
+                                                Área
+                                            </label>
+                                        </div>
+                                        <div className="inputAndIconUserGest">
                                             <input
                                                 type="text"
                                                 placeholder="Ej. Compras"
@@ -788,12 +850,14 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             />
                                         </div>
                                     </div>
-                                    <div className="campoAdicional">
-                                        <label>
-                                            Sede
-                                        </label>
-                                        <div className="completeInputs">
-                                            <FontAwesomeIcon icon={faBuilding} className="icon" />
+                                    <div className="inputAndLabelUsersGestion">
+                                        <div className="campoTextAndIcon">
+                                            <FontAwesomeIcon icon={faBuilding} className="iconUserCreate" />
+                                            <label>
+                                                Sede
+                                            </label>
+                                        </div>
+                                        <div className="inputAndIconUserGest">
                                             <input
                                                 type="text"
                                                 placeholder="Ej. Cundinamarca"
@@ -802,14 +866,16 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             />
                                         </div>
                                     </div>
-                                    <div className="campoAdicional">
-                                        <label>Urgencia<label className="obligatorio">*</label></label>
-                                        <div className="completeInputs">
+                                    <div className="inputAndLabelUsersGestion">
+                                        <div className="campoTextAndIcon">
                                             <FontAwesomeIcon
                                                 icon={faExclamationTriangle}
-                                                className="icon"
+                                                className="iconUserCreate"
                                             />
-                                            <input type="text" placeholder="Alta / Media / Baja"
+                                            <label>Urgencia<label className="obligatorio">*</label></label>
+                                        </div>
+                                        <div className="inputAndIconUserGest">
+                                            <select
                                                 value={formData.solicitante.urgencia}
                                                 onChange={(e) =>
                                                     setFormData({
@@ -819,13 +885,22 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                             urgencia: e.target.value,
                                                         },
                                                     })
-                                                } />
+                                                }
+                                            >
+                                                <option value="">Seleccione urgencia</option>
+                                                <option value="Alta">Alta</option>
+                                                <option value="Media">Media</option>
+                                                <option value="Baja">Baja</option>
+                                            </select>
                                         </div>
                                     </div>
-                                    <div className="campoAdicional">
-                                        <label>Justificación de la compra</label>
-                                        <div className="completeInputs">
-                                            <FontAwesomeIcon icon={faBalanceScale} className="icon" />
+                                    <div className="inputAndLabelUsersGestion">
+                                        <div className="campoTextAndIcon">
+                                            <FontAwesomeIcon icon={faBalanceScale} className="iconUserCreate" />
+                                            <label>Justificación de la compra</label>
+                                        </div>
+                                        <div className="inputAndIconUserGest">
+
                                             <input type="text" placeholder="Solo si la urgencia es alta" value={formData.solicitante.justificacion}
                                                 onChange={(e) =>
                                                     setFormData({
@@ -842,22 +917,20 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 </div>
                                 <div className="campoPrespuestado">
                                     <div className="firsInfo">
-                                        <label>
-                                            <label className="obligatorio">*</label><p>¿Está en presupuesto?</p>
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.solicitante.presupuestada}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        solicitante: {
-                                                            ...formData.solicitante,
-                                                            presupuestada: e.target.checked,
-                                                        },
-                                                    })
-                                                }
-                                            />
-                                        </label>
+                                        <label className="obligatorio">*</label><p>¿Está en presupuesto?</p>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.solicitante.presupuestada}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    solicitante: {
+                                                        ...formData.solicitante,
+                                                        presupuestada: e.target.checked,
+                                                    },
+                                                })
+                                            }
+                                        />
                                     </div>
                                 </div>
                             </div>

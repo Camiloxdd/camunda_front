@@ -25,7 +25,7 @@ import TimeLap from "../components/timeLap";
 import { iniciarProceso } from "../services/camunda";
 import api from "../services/axios";
 import SearchBar from "../components/searchBar";
-
+ 
 function RequisicionesInner({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [requisiciones, setRequisiciones] = useState([]);
@@ -37,38 +37,38 @@ function RequisicionesInner({ children }) {
   const [timelineReqId, setTimelineReqId] = useState(null);
   const [token, setToken] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
-
+ 
   const { role, permissions } = useAuth();
   useEffect(() => {
     if (typeof window !== "undefined") {
       const t = localStorage.getItem("token");
       setToken(t);
-
+ 
       if (!t) {
         setUser(null);
       }
     }
   }, []);
-
+ 
   const fetchAll = async () => {
     try {
       setLoading(true);
-
+ 
       const res = await api.get("/api/requisiciones");
       setRequisiciones(Array.isArray(res.data) ? res.data : [res.data]);
-
+ 
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
-
-
+ 
+ 
   useEffect(() => {
     fetchAll();
   }, []);
-
+ 
   // Reemplaza downloadBlob por una versión con fallback
   const downloadBlobTryUrls = async (urls = [], filename) => {
     let lastError = null;
@@ -100,14 +100,14 @@ function RequisicionesInner({ children }) {
     console.error("Todas las descargas fallaron:", lastError);
     toast.error("Error en la descarga");
   };
-
+ 
   const handleDescargarPDF = async (id) => {
     const urls = [
       `http://localhost:4000/requisiciones/${id}/pdf`,
     ];
     downloadBlobTryUrls(urls, `requisicion_${id}.pdf`);
   };
-
+ 
   const handleDelete = async (id) => {
     const toastId = toast.info(
       <div
@@ -120,7 +120,7 @@ function RequisicionesInner({ children }) {
         <strong style={{ display: "block", marginBottom: "8px" }}>
           ¿Seguro que deseas eliminar esta requisición?
         </strong>
-
+ 
         <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
           <button
             style={{
@@ -153,7 +153,7 @@ function RequisicionesInner({ children }) {
           >
             Eliminar
           </button>
-
+ 
           <button
             style={{
               backgroundColor: "#e5e7eb",
@@ -184,7 +184,7 @@ function RequisicionesInner({ children }) {
       }
     );
   };
-
+ 
   const handleEditOpen = async (req) => {
     // fetch details (optional)
     try {
@@ -202,7 +202,7 @@ function RequisicionesInner({ children }) {
       toast.error("No se pudo obtener detalles");
     }
   };
-
+ 
   const handleEditSave = async () => {
     try {
       const body = {
@@ -231,12 +231,12 @@ function RequisicionesInner({ children }) {
       toast.error("No se pudo actualizar");
     }
   };
-
+ 
   const openTimeline = (id) => {
     setTimelineReqId(id);
     setTimelineOpen(true);
   };
-
+ 
   const getCargoNombre = (cargo) => {
     switch (cargo) {
       case "managerGeneral":
@@ -267,7 +267,7 @@ function RequisicionesInner({ children }) {
         return cargo || "Usuario";
     }
   };
-
+ 
   const getAreaNombre = (area) => {
     switch (area) {
       case "TyP":
@@ -280,7 +280,7 @@ function RequisicionesInner({ children }) {
         return "Gerencia General";
     }
   };
-
+ 
   const handleStartProcessCamunda = async () => {
     try {
       await iniciarProceso({
@@ -290,22 +290,22 @@ function RequisicionesInner({ children }) {
       console.log("Error al iniciar el proceso: ", error)
     }
   }
-
+ 
   const abrirModalNuevaReq = () => {
     handleStartProcessCamunda();
     setOpen(true);
   }
-
+ 
   const getStatusClass = (status) => {
     const s = status?.toLowerCase();
-
+ 
     if (s.includes("apro")) return "status-aprobada";
     if (s.includes("pend")) return "status-pendiente";
     if (s.includes("rechazada")) return "status-devuelta";
-
+ 
     return "status-default";
   };
-
+ 
   return (
     <div style={{ display: "flex" }}>
       <TimeLap open={timelineOpen} onClose={() => setTimelineOpen(false)} requisicionId={timelineReqId} />
@@ -318,7 +318,7 @@ function RequisicionesInner({ children }) {
         startStep={modalInitialData ? 2 : undefined}
       />
       <Sidebar onToggle={setIsSidebarOpen} />
-
+ 
       <div
         style={{
           marginTop: "100px",
@@ -327,7 +327,7 @@ function RequisicionesInner({ children }) {
           marginLeft: isSidebarOpen ? "210px" : "80px",
         }}
       >
-
+ 
         <div className="tablaGestionUsuarios">
           <div className="firstContainerDash">
                       <div className="porcents">
@@ -340,7 +340,7 @@ function RequisicionesInner({ children }) {
                             <FontAwesomeIcon icon={faFile} />
                           </div>
                         </div>
-          
+         
                         <div className="porAprobarRequisiciones">
                           <div className="infoAprobarReq">
                             <p>Requisiciones aprobadas</p>
@@ -351,7 +351,7 @@ function RequisicionesInner({ children }) {
                           <div className="iconAprobarReq">
                             <FontAwesomeIcon icon={faFileCircleCheck} />
                           </div>
-                        </div> 
+                        </div>
                         <div className="pendientesAprobaciones">
                           <div className="infoAprobarReq">
                             <p>Requisiciones pendientes</p>
@@ -590,11 +590,11 @@ function RequisicionesInner({ children }) {
           </div>
         </div>
       )}
-
+ 
     </div>
   );
 }
-
+ 
 export default function RequisicionesPage() {
   return (
     <AuthProvider>

@@ -14,10 +14,11 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    border-color: #1d5da8;
+    border-color: var(--textColor);
     border-width: 2px;
     border-style: solid;
     border-radius: 8px;
+    background-color: white;
     height: 45px;
     gap: 10px;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
@@ -35,5 +36,5 @@
 }
 
 .inputAndIconSearch .searchIcon{
-    color: #1d5da8;
+    color: var(--textColor);
 }

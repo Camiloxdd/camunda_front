@@ -1,5 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
 
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --textColor: #002855;
+  --textColorP: #4D6988;
+  --azulContainers: #1d5da8;
+  --bordeImagen: #ea7600;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -10,46 +19,43 @@
 * ::-webkit-scrollbar {
   width: 8px;
 }
+
 * ::-webkit-scrollbar-track {
   background: #b4d7ff;
 }
+
 * ::-webkit-scrollbar-thumb {
   background: #1d5da8;
   border-radius: 4px;
 }
 
-
-
-/*LOGIN*/
 .background-img {
-  width: 100%;
-  height: 100vh;
-  background: radial-gradient(circle at top left, #ffd7d2, #ffffff, #c4e4fa);
-  justify-content: center;
-  align-items: center;
   display: flex;
-  flex-direction: column;
+  height: 100vh;
+  place-items: center;
+  justify-content: center;
 }
 
-.login {
-  width: 80%;
-  height: 80vh;
-  background-color: white;
-  border-radius: 0 16 16 0px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+.login-container {
+  height: 100vh;
+  place-items: center;
   display: flex;
-  flex-direction: row;
-  overflow: hidden;
+  background: radial-gradient(circle at top left, #ffd7d2, #ffffff, #c4e4fa);
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  max-width: 560px;
+  padding: 48px;
 }
 
 .background-img-left {
-  width: 100%;
-  height: 100%;
+  height: 100vh;
+  place-items: center;
   display: flex;
+  flex-direction: column;
   justify-content: center;
-  align-items: center;
-  background-color: #1d5da8;
-  border-right: 3px solid #ea7600;
+  flex: 1.2;
+  border-left: 3px solid var(--bordeImagen);
 }
 
 .background-img-left img {
@@ -59,47 +65,16 @@
   margin-left: auto;
 }
 
-.login-right {
-  width: 60%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-}
-
-.login-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  /* ajusta el espacio entre elementos */
-  text-align: center;
-  background: radial-gradient(circle at top left, #e3f2fd, #ffffff, #fbe9e7);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-}
-
 .login-header {
-  text-align: left;
-  margin: 5px;
   display: flex;
-  justify-content: center;
+  text-align: left;
   align-items: center;
-  gap: 20px;
+  color: var(--textColor);
+  gap: 5px;
 }
 
-.login-header .logoCoopiLogin {
-  width: 50px;
-  height: 50px;
-}
-
-.login-text {
-  color: #1d5da8;
+.login-header img {
+  height: 70px;
 }
 
 .login-form {
@@ -130,7 +105,7 @@
   text-align: left;
   font-size: 15px;
   margin-left: 8px;
-  color: #1d5da8;
+  color: var(--textColor);
 }
 
 .inputAndIcon {
@@ -173,7 +148,7 @@
 
 .eyeIcon {
   cursor: pointer;
-  color: #1d5da8;
+  color: var(--textColor);
   transition: color 0.3s;
 }
 
@@ -211,14 +186,14 @@
 .forgoutUser .LinkForgot {
   text-decoration: none;
   font-size: 13px;
-  color: #1d5da8;
+  color: var(--textColor);
 }
 
 .cyberpunk-checkbox {
   appearance: none;
   width: 16px;
   height: 16px;
-  border: 2px solid #1d5da8;
+  border: 2px solid var(--textColor);
   border-radius: 5px;
   background-color: transparent;
   display: inline-block;
@@ -231,7 +206,7 @@
 
 .cyberpunk-checkbox:before {
   content: "";
-  background-color: #1d5da8;
+  background-color: var(--textColor);
   display: block;
   position: absolute;
   top: 50%;
@@ -273,13 +248,13 @@
   color: white;
   font-size: 15px;
   font-weight: bold;
-  background-color: #1d5da8;
+  background-color: var(--textColor);
   border-radius: 4px;
   transition: 0.3s all;
 }
 
 .buttonsLogin button:hover {
-  background-color: #3498db;
+  background-color: var(--textColorP);
 }
 
 .buttonsMicrosoft {
@@ -297,21 +272,21 @@
   height: 60px;
   border: none;
   cursor: pointer;
-  color: #1d5da8;
+  color: var(--textColor);
   font-size: 15px;
   font-weight: bold;
   background-color: transparent;
-  border: 5px 12px #1d5da8;
+  border: 5px 12px var(--textColor);
   border-radius: 4px;
   transition: 0.3s all;
   justify-content: center;
   align-items: center;
   gap: 5px;
-  border: 2px solid #1d5da8;
+  border: 2px solid var(--textColor);
 }
 
 .buttonsMicrosoft button:hover {
-  background-color: #1d5da8;
+  background-color: var(--textColor);
   color: white;
 }
 
@@ -348,21 +323,31 @@
   margin: 40px 0 15px 0;
 }
 
+
 /* NAVBAR */
-.navbar {
+.navbarDashboard {
   position: fixed;
   top: 0;
-  left: 0;
-  width: 100%;
+  width: 96%;
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: white;
-  padding: 12px;
-  border-bottom: 3px solid #1d5da8;
+  padding: 16px;
+  border-bottom: 3px solid var(--textColor);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
+.buttonsReq {
+  display: flex;
+}
+
+.textoNavBar {
+  margin-left: 10px;
+  font-size: 15px;
+  color: var(--textColor);
+}
+
 
 .nav-links .tittle {
   font-size: clamp(1rem, 2vw, 1.6rem);
@@ -798,7 +783,7 @@
 }
 
 .iconLogin {
-  color: #1d5da8;
+  color: var(--textColor);
   font-size: 25px;
   padding: 7px;
 }
@@ -1694,7 +1679,7 @@ input[type="time"] {
 .loading-cambios {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   gap: 10px;
   height: 200px;
@@ -1713,41 +1698,54 @@ input[type="time"] {
 }
 
 .loading-container {
-  display: grid;
-  align-items: center;
-  width: 100%;
-  justify-content: center;
-}
-
-/* Ensure loading covers entire .listaReq grid (span all columns) */
-.listaReq>.loading-container {
-  grid-column: 1 / -1;
-  /* ocupa desde la primera hasta la última columna */
-  width: 96%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
-  justify-content: center;
-  place-content: center;
-  margin-top: 250px;
-  height: 30%;
-  /* ajusta según altura deseada */
-  background-color: transparent;
-  /* opcional: evitar color de fondo si no quieres amarillo */
-}
-
-
-.loading-container-users{
   width: 100%;
+  min-height: 160px;
+  padding: 8px 0;
+  box-sizing: border-box;
+  background-color: transparent; /* quitar colores de depuración */
 }
-/* Ajuste para loading interno (mantener estilos anteriores) */
-.listaReq>.loading-container .loading-cambios {
-  /* centrar y permitir que el spinner/texto se vea correctamente */
+
+/* Ajustes: centrar loader dentro de .listaReq y eliminar saltos fuera del contenedor */
+.listaReq {
+  /* antes era display: grid; ahora flex para centrar children fácilmente */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  position: relative; /* permite overlays si los necesitas después */
+  min-height: 220px; /* espacio reservado para la lista */
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+/* Selector específico para .listaReq > .loading-container: asegurar centrado */
+.listaReq > .loading-container {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  box-sizing: border-box;
+}
+
+/* Asegurar que el bloque interno también esté centrado y sin fondo */
+.loading-cambios {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 10px;
+  min-height: 80px;
+  width: auto;
+  background-color: transparent;
+  padding: 12px;
 }
 
 @keyframes spinVaried {
@@ -1910,22 +1908,74 @@ input[type="time"] {
   font-size: 15px;
 }
 
+.headerFiltros {
+  width: 100%;
+  font-weight: bold;
+  font-size: 15px;
+  padding: 15px;
+  color: var(--textColor);
+}
+
+.headerFiltros p {
+  margin-top: 12px;
+}
+
 .containerOneDashboard {
   display: flex;
+  flex-direction: column;
+  place-items: center;
+  gap: 20px;
+  height: 90.1vh;
+  margin-top: auto;
+  width: 17%;
+  border-right: 3px solid var(--textColor);
+}
+
+.campoFiltroReq {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  width: 90%;
+  padding: 15px;
+  display: flex;
   border-radius: 8px;
-  height: 140px;
-  width: 100%;
-  margin-top: 10px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  justify-content: space-between;
+  transition: 0.3s all;
+}
+
+.campoFiltroReq:hover {
+  cursor: pointer;
+  transform: translateY(-2px);
+  transition: 0.3s all;
+}
+
+.spaceCantidad {
+  background-color: var(--textColor);
+  width: 25px;
+  height: 25px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  display: flex;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+  border-radius: 50%;
+}
+
+.infoFiltroReq {
+  display: flex;
+  font-size: 15px;
+  text-align: center;
 }
 
 .firstContainerDash {
-  margin: 10px;
-  border-radius: 10px;
-  width: 100%;
+  background-color: blue;
   display: flex;
-  gap: 500px;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
+
 }
 
 .infoGeneralUserDash {
@@ -1939,16 +1989,21 @@ input[type="time"] {
 }
 
 .porcents {
+  display: grid;
+  gap: 30px;
+  place-items: center;
+  justify-content: center;
+  background-color: red;
+}
+
+.containerInfoRequisiciones {
   display: flex;
   width: 100%;
-  height: 90%;
-  gap: 30px;
-  justify-content: right;
 }
 
 .totalRequisiciones {
   width: 40%;
-  color: #1d5da8;
+  color: #b4d7ff;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1956,10 +2011,21 @@ input[type="time"] {
   gap: 30px;
   font-weight: bold;
   border-radius: 8px;
-  border-width: 3px;
-  border-style: solid;
-  border-color: #1d5da8;
-  background-color: #b4d7ff;
+  background-color: #fafafa;
+  border-left: 3px solid #1d5da8;
+  cursor: pointer;
+  transition: 0.3s all;
+}
+
+.totalRequisiciones:hover {
+  transform: translateY(-2px);
+  transition: 0.3s all;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.totalRequisiciones p,
+.totalRequisiciones h2 {
+  color: #1d5da8;
 }
 
 .porAprobarRequisiciones {
@@ -1972,12 +2038,21 @@ input[type="time"] {
   text-align: center;
   gap: 30px;
   border-radius: 8px;
-  border-width: 3px;
-  border-style: solid;
   font-weight: bold;
-  border-color:
-    #1E611E;
-  background-color: #9DE09D;
+  border-left: 3px solid #1E611E;
+  background-color: #fafafa;
+  transition: 0.3s all;
+}
+
+.porAprobarRequisiciones p,
+.porAprobarRequisiciones h2 {
+  color: #1E611E;
+}
+
+.porAprobarRequisiciones:hover {
+  transform: scale(1.02);
+  transition: 0.3s all;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .rechazarAprobaciones {
@@ -1990,11 +2065,22 @@ input[type="time"] {
   text-align: center;
   gap: 30px;
   border-radius: 8px;
-  border-width: 3px;
-  border-style: solid;
-  background-color: #B67D85;
-  border-color: #862633;
+  border-left: 3px solid #862633;
+  background-color: #fafafa;
+  transition: 0.3s all;
 }
+
+.rechazarAprobaciones p,
+.rechazarAprobaciones h2 {
+  color: #862633;
+}
+
+.rechazarAprobaciones:hover {
+  transform: scale(1.02);
+  transition: 0.3s all;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
 
 .pendientesAprobaciones {
   width: 40%;
@@ -2006,14 +2092,24 @@ input[type="time"] {
   text-align: center;
   gap: 30px;
   border-radius: 8px;
-  border-width: 3px;
-  border-style: solid;
-  border-color: #F0B323;
-  background-color: #efdfba;
+  border-left: 3px solid #F0B323;
+  background-color: #fafafa;
+  transition: 0.3s all;
+}
+
+.pendientesAprobaciones p,
+.pendientesAprobaciones h2 {
+  color: #F0B323;
+}
+
+.pendientesAprobaciones:hover {
+  transform: scale(1.02);
+  transition: 0.3s all;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
 .iconRechazarReq {
-  background-color: #862633;
+  background-color: #B67D85;
   font-size: 30px;
   border-radius: 40px;
   height: 70px;
@@ -2022,11 +2118,11 @@ input[type="time"] {
   align-items: center;
   text-align: center;
   display: flex;
-  color: #B67D85;
+  color: #862633;
 }
 
 .iconPendientesReq {
-  background-color: #F0B323;
+  background-color: #efdfba;
   font-size: 30px;
   border-radius: 40px;
   height: 70px;
@@ -2035,11 +2131,11 @@ input[type="time"] {
   align-items: center;
   text-align: center;
   display: flex;
-  color: #efdfba;
+  color: #F0B323;
 }
 
 .iconAprobarReq {
-  color: #9DE09D;
+  color: #1E611E;
   font-size: 30px;
   border-radius: 40px;
   height: 70px;
@@ -2048,11 +2144,10 @@ input[type="time"] {
   align-items: center;
   text-align: center;
   display: flex;
-  background-color: #1E611E;
+  background-color: #9DE09D;
 }
 
 .iconTotalReq {
-  color: #b4d7ff;
   font-size: 30px;
   border-radius: 40px;
   height: 70px;
@@ -2061,19 +2156,23 @@ input[type="time"] {
   align-items: center;
   text-align: center;
   display: flex;
-  background-color: #1d5da8;
+  background-color: #b4d7ff;
 }
 
 .secondContainerDash {
   display: flex;
-  border-radius: 8px;
-  height: 100%;
-  width: 100%;
+  height: 90.1vh;
+  margin-top: auto;
+  width: 85%;
+  display: flex;
+  justify-content: center;
+  background-color: #f5f5f5;
 }
 
+
 .containerTwoDash {
-  margin: 10px;
-  width: 100%;
+  width: 95%;
+  margin-top: 15px;
 }
 
 .papaHeaderRequi {
@@ -2097,10 +2196,14 @@ input[type="time"] {
 }
 
 .listaReq {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 30px;
-  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  position: relative; /* permite overlays si los necesitas después */
+  min-height: 220px; /* espacio reservado para la lista */
+  padding: 12px;
+  box-sizing: border-box;
 }
 
 .requisicion {
@@ -2151,9 +2254,13 @@ input[type="time"] {
   font-weight: normal;
 }
 
-.dashboard-container-requisiciones {
-  margin-top: 90px;
+.dashboard-content {
+  justify-content: end;
+  align-items: end;
+  display: flex;
+  height: 100vh;
 }
+
 
 .resumenSectionOne {
   text-align: center;
@@ -2689,6 +2796,13 @@ input[type="time"] {
   flex-shrink: 0;
 }
 
+.campoStatus {
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .statusApproved {
   background-color: rgba(16, 185, 129, 0.05);
   color: rgb(5, 126, 82);
@@ -2732,9 +2846,9 @@ input[type="time"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
+  width: 200px;
+  height: 40px;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -2751,9 +2865,11 @@ input[type="time"] {
 }
 
 .fab-btn.primary {
-  background-color: #1d5da8;
-  font-size: 20px;
+  background-color: var(--textColor);
+  font-size: 15px;
   color: white;
+  font-weight: bold;
+  gap: 10px;
 }
 
 .fab-btn.secondary {
@@ -2808,7 +2924,7 @@ input[type="time"] {
   height: 100%;
 }
 
-.detallesReqCompletos{
+.detallesReqCompletos {
   width: 35%;
   height: 25vh;
 }
@@ -2907,7 +3023,7 @@ input[type="time"] {
   flex-direction: column;
 }
 
-.montoPrecioReq{
+.montoPrecioReq {
   height: 100%;
   width: 60%;
   padding: 20px;
@@ -3066,5 +3182,222 @@ input[type="time"] {
   .headerTitle {
     order: -1;
     flex-basis: 100%;
+  }
+}
+
+/* =========================
+   Requisitions table styles
+   ========================= */
+
+/* Table base */
+.requisitionsTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* Header */
+.requisitionsTable thead th {
+  background: var(--textColor);
+  color: #fff;
+  padding: 12px 14px;
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.06);
+  text-align: center;
+}
+
+/* Body rows */
+.requisitionsTable tbody tr {
+  transition: background 0.18s ease, transform 0.12s ease;
+  background: transparent;
+}
+
+.requisitionsTable tbody tr:hover {
+  background: rgba(29, 93, 168, 0.04);
+  transform: translateY(-2px);
+}
+
+/* If some code uses .row on the <tr> keep compatibility */
+.row {
+  display: block;
+  /* neutral; table rows will be forced below for the requisitions table */
+}
+
+/* Forzar filas de tabla para las tr con clase row dentro de la tabla de requisiciones */
+.requisitionsTable tbody tr.row {
+  display: table-row;
+}
+
+/* Asegurar que th/td se comporten como celdas de tabla */
+.requisitionsTable th,
+.requisitionsTable td {
+  display: table-cell;
+  padding: 12px 18px;
+  background-color: white;
+  vertical-align: middle;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.04);
+}
+
+/* Column widths (ajusta a tu gusto) */
+.requisitionsTable thead th:first-child {
+  width: 80px;
+}
+
+/* ID pequeño */
+.requisitionsTable thead th:nth-child(2) {
+  width: 40%;
+}
+
+/* Solicitante */
+.requisitionsTable thead th:nth-child(3) {
+  width: 14%;
+}
+
+/* Estado */
+.requisitionsTable thead th:nth-child(4) {
+  width: 12%;
+}
+
+/* Fecha */
+.requisitionsTable thead th:nth-child(5) {
+  width: 12%;
+}
+
+/* Valor */
+.requisitionsTable thead th:nth-child(6) {
+  width: 10%;
+}
+
+/* Acciones */
+
+/* Mejoras visuales para filas */
+.requisitionsTable tbody tr {
+  transition: background 0.18s ease, transform 0.12s ease;
+  background: transparent;
+}
+
+.requisitionsTable tbody tr:hover {
+  background: rgba(29, 93, 168, 0.04);
+  transform: translateY(-2px);
+}
+
+/* Ajustes para celdas específicas (ya existían: idCell, requesterCell, etc.) */
+.idCell {
+  padding-left: 16px;
+}
+
+.requesterInfo {
+  display: grid;
+  width: 80%;
+}
+
+.requesterName {
+  font-weight: 600;
+  color: var(--textColor);
+}
+
+.requesterLabel {
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.requesterDiv {
+  width: 100%;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.requesterAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border-color: transparent;
+  background-color: var(--textColor);
+  color: white;
+  object-fit: cover;
+  text-align: center;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+}
+
+.fecha {
+  color: var(--textColor);
+  justify-content: center;
+  text-align: center;
+  place-items: center;
+  gap: 5px;
+  display: flex;
+}
+.valor {
+  font-weight: bold;
+  color: var(--textColor);
+  justify-content: center;
+  text-align: center;
+}
+
+.campoBotonesReq {
+  justify-content: center;
+  display: flex;
+}
+
+/* Estilo de los botones de acción (iconos en píldoras) */
+.actionButton {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f9ff;
+  border: 1px solid rgba(29, 93, 168, 0.06);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.06s ease;
+  margin-left: 6px;
+}
+
+.actionButton svg,
+.actionButton .svg-inline--fa {
+  color: #1d5da8;
+}
+
+.actionButton:hover {
+  background: #e8f3ff;
+  transform: none;
+}
+
+.idBadge {
+  background-color: #b4d7ff;
+  color: #1d5da8;
+  font-weight: bold;
+  width: 100px;
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.idText {
+  font-weight: bold;
+  color: #1d5da8;
+}
+
+/* Asegura que acciones no rompan diseño en pantallas pequeñas */
+@media (max-width: 900px) {
+
+  .requisitionsTable thead th:nth-child(5),
+  .requisitionsTable thead th:nth-child(6),
+  .requisitionsTable tbody td:nth-child(5),
+  .requisitionsTable tbody td:nth-child(6) {
+    display: none;
   }
 }

@@ -1,335 +1,448 @@
+/* Container / header */
 .headerUsers {
   background-color: #f3f3f3;
-  padding: 10px;
-  width: 99%;
-  height: 100px;
+  padding: 16px 20px;
+  width: 100%;
   border-radius: 10px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
   color: #1d5da8;
   display: flex;
-}
-
-.tablaGestionUsuarios {
-  background-color: #f3f3f3;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-  margin-top: 15px;
-  width: 99%;
-  border-radius: 10px;
-  padding: 10px;
-}
-
-.tableGestUsers {
-  padding: 15px;
-  justify-content: center;
   align-items: center;
-  text-align: center;
-  display: flex;
-}
-
-.tableGestUsers table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 8px; /* 👈 espacio entre filas */
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.tableGestUsers thead {
-  height: 60px;
-  border-radius: 15px;
-  background-color: #1d5da8;
-  color: white;
-}
-
-.tableGestUsers tbody tr {
-  transition: background-color 0.2s ease;
-}
-
-/* 👇 filas alternadas (efecto zebra) */
-.tableGestUsers tbody tr:nth-child(odd) {
-  background-color: #ffffff;
-}
-
-.tableGestUsers tbody tr:nth-child(even) {
-  background-color: #f0f0f0;
-}
-
-/* 👇 borde o línea separadora entre filas */
-.tableGestUsers tbody tr {
-  border-bottom: 1px solid #ccc;
-}
-
-/* 👇 efecto hover opcional */
-.tableGestUsers tbody tr:hover {
-  background-color: #e8f0ff;
-}
-
-.tableGestUsers tbody td {
-  padding: 10px 8px;
-
-  font-weight: bold;
-}
-
-.tableGestUsers tbody input {
-  background-color: transparent;
-  border: none;
-  width: 90%;
-  height: 35px;
-}
-
-.tableGestUsers tbody input:focus {
-  outline: none;
-}
-
-.tableGestUsers button {
-  background-color: transparent;
-  gap: 20px;
-  cursor: pointer;
-  border: none;
-  transition: 0.3s all;
-}
-
-.tableGestUsers button:hover {
-  transform: scale(1.2);
-}
-
-.tableGestUsers button .iconEditUser {
-  color: #1d5da8;
-}
-
-.tableGestUsers button .iconDeleteUser {
-  color: red;
-}
-
-.spaceButtonsGestUsers {
-  gap: 10px;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  height: 35px;
-  display: flex;
-}
-
-.papaContainerUserModal {
-  padding: 20px;
-}
-
-.headerUserModal {
-  color: #1d5da8;
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-.headerUserModal h2 {
-  position: fixed;
-}
-
-.tittleModalHeaderUser {
-  width: 100%;
-  justify-content: center;
-  background-color: orange;
-  align-items: center;
-  text-align: center;
-  display: flex;
-}
-
-.buttonCloseModalUser {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  justify-content: center;
-  background-color: yellow;
-  margin-left: auto;
-}
-
-.inputsDatos {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-  padding: 10px;
-  box-sizing: border-box;
-  background-color: #f3f3f3;
-  border-radius: 8px;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
-  margin-top: -30px;
-}
-
-.inputAndIconUserGest {
-  background-color: white;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  gap: 10px;
-}
-
-.inputAndLabelUsersGestion {
-  justify-content: center;
-  align-items: left;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  padding: 10px;
-}
-
-.inputAndLabelUsersGestion label {
-  color: #1d5da8;
-}
-
-.inputAndLabelUsersGestion input {
-  background-color: transparent;
-  border: none;
-  height: 45px;
-  border-radius: 10px;
-  width: 100%;
-}
-
-.inputAndLabelUsersGestion input:focus {
-  outline: none;
-}
-
-.selectsRoles {
-  background-color: #f3f3f3;
-  margin-top: 20px;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 30px;
-}
-
-.superAdmin {
-  display: flex;
-  flex-direction: column;
-  background-color: white;
-  padding: 20px;
-  border-radius: 10px;
-  color: #1d5da8;
-}
-
-.saveUsersReq {
-  margin-top: 20px;
-  padding: 10px;
-  background-color: #1d5da8;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  transition: 0.3s all;
-  cursor: pointer;
-  border-color: transparent;
-}
-
-.saveUsersReq:hover {
-  transform: scale(1.1);
-}
-
-.custom-select-container {
-  position: relative;
-  width: 100%;
-  font-family: "Poppins", sans-serif;
-}
-
-.custom-select {
-  background-color: #fff;
-  border-radius: 12px;
-  height: 45px;
-  display: flex;
+  gap: 12px;
   justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: 0.3s ease;
-  padding: 10px;
 }
 
-.custom-select:hover {
-  border-color: #75b5ff;
-}
-
-.custom-select.open {
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.arrow {
-  transition: transform 0.3s ease;
-  color: #333;
-}
-
-.arrow.rotate {
-  transform: rotate(180deg);
-}
-
-.custom-options {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: white;
-  border: 2px solid #1d5da8;
-  border-top: none;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  z-index: 100;
-}
-
-.option {
-  padding: 10px 14px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.option:hover {
-  background-color: #e0eeff;
-}
-
-.option.selected {
-  background-color: #a5d6d1;
-  color: white;
-}
-
+/* Title column */
 .infoHeaderUsers {
-  justify-content: center;
-  align-items: center;
-  text-align: center;
   display: flex;
   flex-direction: column;
-  width: 95%;
-  padding: 0;
-  margin: 0;
-  line-height: 1; /* elimina espacio alrededor */
+  gap: 6px;
 }
 
+.infoHeaderUsers h2 {
+  margin: 0;
+  color: #1d5da8;
+  font-size: 20px;
+}
+
+.infoHeaderUsers p {
+  margin: 0;
+  color: #4d6988;
+  font-size: 14px;
+}
+
+/* New user button */
 .newUserButton {
-  width: 5%;
-  place-items: center;
-  justify-content: center;
   display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .newUserButton button {
-  background-color: #1d5da8;
-  padding: 10px;
-  border-radius: 8;
+  background-color: var(--textColor);
+  color: #fff;
   border: none;
-  gap: 100px;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  display: flex;
-  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: 0.3s all;
+  display: flex;
+  text-align: center;
+  gap: 15px;
+  align-items: center;
+  transition: 0.3s ease all;
+  width: 160px;
 }
 
 .newUserButton button:hover {
-  transform: scale(1.1);
+  transform: translateY(-2px);
+  transition: 0.3s ease all;
 }
+
+/* Main table wrapper (grid-based rows) */
+.tablaGestionUsuarios {
+  width: 90%;
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  justify-content: center;
+  align-items: center;
+  display: flex;
+}
+
+/* table component (design from Untitled-2) */
+.table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 99%;
+}
+
+.campoTablaFondo {
+  justify-content: center;
+  display: flex;
+}
+
+/* header row (labels) */
+.tableHeader {
+  display: grid;
+  grid-template-columns: 72px 1fr 220px 180px 140px 120px;
+  gap: 16px;
+  padding: 12px 16px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-bottom: 1px solid #eef2f7;
+  align-items: center;
+  background: #f7fafc;
+  border-radius: 8px;
+  text-align: center;
+}
+
+/* body container with scroll */
+.tableBody {
+  display: flex;
+  flex-direction: column;
+  max-height: 56vh;
+  overflow: auto;
+}
+
+/* rows */
+.tableRow {
+  display: grid;
+  grid-template-columns: 72px 1fr 220px 180px 140px 120px;
+  gap: 12px;
+  padding: 12px 16px;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color .12s ease, transform .08s ease;
+}
+
+.tableRow:hover {
+  background: #fbfdff;
+  transform: translateY(-2px);
+}
+
+/* placeholder row (loading) */
+.tableRow.placeholder {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+  grid-column: 1/-1;
+}
+
+.avatarContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* avatar */
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #1d5da8, #60a5fa);
+}
+
+/* variants kept for compatibility */
+.avatarAdmin {
+  background: linear-gradient(135deg, #002855, #1D5DA8);
+}
+
+.avatarApprover {
+  background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+}
+
+.avatarRequester {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+}
+
+/* user info */
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 50%;
+}
+
+.userName {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.userEmail {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* department text */
+.departmentText {
+  color: #374151;
+  font-size: 14px;
+  text-align: center;
+}
+
+.badgeEstado {
+  display: flex;
+  justify-content: center;
+}
+
+/* role badge */
+.roleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 13px;
+  width: 120px;
+  text-align: center;
+  justify-content: center;
+}
+
+.roleAdmin {
+  background: #B67D85;
+  color: #862633;
+}
+
+.roleApprover {
+  background: #efdfba;
+  color: #F0B323;
+}
+
+.roleRequester {
+  background: #9DE09D;
+  color: #1E611E;
+}
+
+/* status badge */
+.statusBadge {
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 13px;
+  width: 100px;
+  text-align: center;
+}
+
+.statusActive {
+  background: rgba(16, 185, 129, 0.08);
+  color: #059669;
+}
+
+.statusInactive {
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+}
+
+/* actions */
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.actionButton {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: #f8fafc;
+  cursor: pointer;
+  transition: background .12s ease, transform .08s ease;
+}
+
+.actionButton:hover {
+  background: #eef9ff;
+  transform: none;
+  color: #1d5da8;
+}
+
+.actionButtonDanger {
+  color: #ef4444;
+}
+
+.actionButtonDanger:hover {
+  background: rgba(239, 68, 68, 0.06);
+}
+
+/* ====== Estadísticas (cards) ====== */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 12px;
+}
+
+.statCard {
+  padding: 18px;
+  border-radius: 12px;
+  background: #0f172a10;
+  border: 1px solid #e6eef8;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.statLabel {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+.statTrend {
+  font-size: 13px;
+  color: #10b981;
+}
+
+/* ====== Search bar & filter tabs ====== */
+.searchBar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.searchInputWrapper {
+  position: relative;
+  flex: 1;
+  width: 100%;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--textColor);
+}
+
+.searchInput {
+  width: 100%;
+  background: #fff;
+  border: 2px solid var(--textColor);
+  border-radius: 12px;
+  padding: 12px 16px 12px 40px;
+  font-size: 14px;
+  color: #0f172a;
+  transition: 0.3s ease all;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #1d5da8;
+  box-shadow: 0 0 0 3px rgba(29, 93, 168, 0.2);
+  transition: 0.3s ease all;
+}
+
+/* filter tabs */
+.filterTabs {
+  display: flex;
+  gap: 8px;
+}
+
+.filterTab {
+  padding: 8px 14px;
+  border-radius: 9999px;
+  border: 1px solid #e6eef8;
+  background: transparent;
+  cursor: pointer;
+  color: #374151;
+  font-weight: 600;
+}
+
+.filterTabActive {
+  background: #00335a;
+  color: #fff;
+  border-color: #00335a;
+}
+
+/* responsive: shrink columns on small screens */
+@media (max-width: 980px) {
+
+  .tableHeader,
+  .tableRow {
+    grid-template-columns: 48px 1fr 140px 120px 100px 80px;
+    padding: 10px;
+  }
+
+  .tableBody {
+    max-height: 60vh;
+  }
+
+  .avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .searchBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+}
+
+/* loading helpers reused */
+.loading-container-users {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.loading-cambios {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.LogoCambios {
+  width: 48px;
+  height: 48px;
+}
+
+/* small utilities */
+.tittleModalHeaderUser {
+  text-align: center;
+}
+
+.spaceButtonsGestUsers {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.iconEditUser {
+  color: #1d5da8;
+}
+
+.iconDeleteUser {
+  color: #ef4444;
+}
+
