@@ -66,6 +66,13 @@ function DashboardInner() {
     }
   }
 
+  const getSedeNombre = (sede) => {
+    switch (sede) {
+      case "cota":
+        return "Cota";
+    }
+  };
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [requisiciones, setRequisiciones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +102,7 @@ function DashboardInner() {
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [progress, setProgress] = useState(null);
   const [timelineReqId, setTimelineReqId] = useState(null);
+  const [productosSolicitante, setProductosSolicitante] = useState([]);
 
   // Leer token desde localStorage al montar y actualizar si cambia en otra pestaña (event storage).
   useEffect(() => {
@@ -329,6 +337,116 @@ function DashboardInner() {
   }, [permissions]);
 
   useEffect(() => {
+    let intervalId;
+    const startPolling = () => {
+      const init = async () => {
+        try {
+          if (permissions?.isAprobador) {
+            const resPendInit = await api.get(
+              "/api/requisiciones/pendientes",
+              { headers: { Authorization: token ? `Bearer ${token}` : "", "X-User-Id": user?.id } }
+            );
+            const dataPendInit = resPendInit.data;
+
+
+            prevPendingIdsRef.current = new Set(
+              (Array.isArray(dataPendInit) ? dataPendInit : [dataPendInit]).map(r => r.requisicion_id)
+            );
+
+          }
+          const resAllInit = await api.get(
+            "/api/requisiciones",
+            { headers: { Authorization: token ? `Bearer ${token}` : "" } }
+          );
+
+          const allInit = resAllInit.data;
+          prevStatusesRef.current = new Map(
+            (Array.isArray(allInit) ? allInit : [allInit]).map(r => [r.requisicion_id, r.status])
+          );
+
+          firstPollRef.current = false;
+        } catch (err) {
+          console.error("Error inicializando polling:", err);
+        }
+      };
+
+      init(); // inicializamos antes de setInterval()
+
+      intervalId = setInterval(async () => {
+        try {
+          // 1) Para aprobadores: comprobar pendientes y comparar ids
+          if (permissions?.isAprobador) {
+            const resPend = await api.get("/api/requisiciones/pendientes", {
+              headers: { Authorization: token ? `Bearer ${token}` : "", "X-User-Id": user?.id },
+            });
+            if (resPend.status >= 200 && resPend.status < 300) {
+              const dataPend = resPend.data;
+              const pendingIds = new Set((Array.isArray(dataPend) ? dataPend : [dataPend]).map(r => r.requisicion_id));
+              const prev = prevPendingIdsRef.current;
+              if (!firstPollRef.current) {
+                const newIds = [...pendingIds].filter(id => !prev.has(id));
+                if (newIds.length > 0) {
+                  // notificar nuevas y refrescar lista (evitar duplicados)
+                  try {
+                    if (!toast.isActive(newReqsToastIdRef.current)) {
+                      toast.info("Tienes nuevas requisiciones", { toastId: newReqsToastIdRef.current });
+                    }
+                    // opcional: quitar notificación previo cuando se actualice lista
+                    // toast.dismiss(newReqsToastIdRef.current);
+                    await fetchRequisiciones();
+                  } catch (e) { console.warn(e); }
+                }
+              }
+              prevPendingIdsRef.current = pendingIds;
+            }
+          }
+
+          // 2) Comprobar cambios de status globales (devuelta/aprobada)
+          const resAll = await api.get("/api/requisiciones", { headers: { Authorization: token ? `Bearer ${token}` : "" } });
+          if (resAll.status >= 200 && resAll.status < 300) {
+            const all = resAll.data;
+            const prevStatuses = prevStatusesRef.current;
+            if (!firstPollRef.current) {
+              for (const r of Array.isArray(all) ? all : [all]) {
+                const prev = prevStatuses.get(r.requisicion_id);
+                const curr = r.status;
+                if (prev && prev !== curr) {
+                  const lower = String(curr || "").toLowerCase();
+                  if (lower === "devuelta") {
+                    try {
+                      if (!toast.isActive(devueltaToastIdRef.current)) {
+                        toast.warn("Han devuelto requisiciones, revísalas", { toastId: devueltaToastIdRef.current });
+                      }
+                      await fetchRequisiciones();
+                    } catch (e) { console.warn(e); }
+                  } else if (lower === "aprobada" || lower === "totalmente aprobada") {
+                    try {
+                      if (!toast.isActive(aprobadaToastIdRef.current)) {
+                        toast.success("Se han aprobado requisiciones", { toastId: aprobadaToastIdRef.current });
+                      }
+                      await fetchRequisiciones();
+                    } catch (e) { console.warn(e); }
+                  } else {
+                    // otros estados posibles: refrescar para sincronizar UI
+                    await fetchRequisiciones();
+                  }
+                }
+              }
+            }
+            // actualizar mapa de estados (siempre)
+            prevStatusesRef.current = new Map((Array.isArray(all) ? all : [all]).map(r => [r.requisicion_id, r.status]));
+          }
+        } catch (err) {
+          console.error("Error en polling de notificaciones:", err);
+        }
+      }, 10000); // cada 10s
+    };
+    if (!permissions || !token) return;
+    startPolling();
+    return () => clearInterval(intervalId);
+  }, [permissions]);
+
+  useEffect(() => {
     if (permissions) fetchRequisiciones();
   }, [permissions, user]);
 
@@ -349,18 +467,23 @@ function DashboardInner() {
         return;
       }
 
+      // 1. Obtener datos de la requisición (cabecera)
       const res = await api.get(`/api/requisiciones/${req.requisicion_id}`, { headers: { Authorization: token ? `Bearer ${token}` : "" } });
       if (res.status < 200 || res.status >= 300) throw new Error("Error al obtener detalles");
       const data = res.data;
 
+      // 2. Obtener productos usando el nuevo endpoint dedicado
+      const resProd = await api.get(`/api/requisiciones/${req.requisicion_id}/productos`, { headers: { Authorization: token ? `Bearer ${token}` : "" } });
+      const productos = resProd.data?.productos || [];
+
       // 👇👇 AGREGA ESTO AQUÍ 👇👇
       console.log("🔵 DATA COMPLETA:", data);
-      console.log("🟦 Productos recibidos:", data.productos);
+      console.log("🟦 Productos recibidos (endpoint dedicado):", productos);
       console.log("🟩 Requisición recibida:", data.requisicion);
 
       setVerifyModalReq({
         ...data.requisicion,
-        productos: data.productos,
+        productos: productos,
         requisicion_id: req.requisicion_id
       });
 
@@ -710,16 +833,23 @@ function DashboardInner() {
         return;
       }
 
+      // 1. Obtener datos de la requisición (cabecera)
       const res = await api.get(
         `/api/requisiciones/${req.requisicion_id}`,
         {
           headers: { Authorization: token ? `Bearer ${token}` : "" },
         }
       );
-
       const data = res.data;
 
-      console.log("🔵 Req solicitante:", data);
+      // 2. Obtener productos usando el endpoint dedicado
+      const resProd = await api.get(
+        `/api/requisiciones/${req.requisicion_id}/productos`,
+        { headers: { Authorization: token ? `Bearer ${token}` : "" } }
+      );
+      const productos = resProd.data?.productos || [];
+      setProductosSolicitante(productos);
+
 
       // Intentar obtener información de aprobadores (flujo)
       let aprobadores = [];
@@ -751,7 +881,6 @@ function DashboardInner() {
       // Asegurar que siempre haya un campo `requisicion_id` (fallbacks)
       setSolicitanteReq({
         ...data.requisicion,
-        productos: data.productos,
         requisicion_id:
           data.requisicion?.requisicion_id ??
           data.requisicion_id ??
@@ -978,19 +1107,12 @@ function DashboardInner() {
       <TimeLap open={timelineOpen} onClose={() => setTimelineOpen(false)} requisicionId={timelineReqId} token={token} />
       <div
         className="dashboard-content"
-        style={{ // quitar el espacio superior que empujaba la navbar hacia abajo
+        style={{
           flex: 1,
           transition: "margin-left 0.3s ease",
-          marginLeft: isSidebarOpen ? "288px" : "80px", // usar los anchos definidos en el css de la sidebar
+          marginLeft: isSidebarOpen ? "288px" : "80px",
         }}
       >
-        <WizardModal
-          open={open}
-          onClose={() => { setOpen(false); setModalInitialData(null); }}
-          onCreated={fetchRequisiciones}
-          initialData={modalInitialData}
-          startStep={modalInitialData ? 2 : undefined}
-        />
         <div className="navbarDashboard"
           style={{
             left: isSidebarOpen ? "285px" : "80px",
@@ -1295,266 +1417,248 @@ function DashboardInner() {
         {openReqModal && solicitanteReq && (
           <div className="modalOverlay">
             <div className="modalBox">
-              <style>{`
-                .skeleton-line{
-                  display:inline-block;
-                  height:12px;
-                  border-radius:6px;
-                  background: linear-gradient(90deg, #e9e9e9 25%, #f5f5f5 50%, #e9e9e9 75%);
-                  background-size: 200% 100%;
-                  animation: shimmer 1.2s linear infinite;
-                }
-                @keyframes shimmer{
-                  0%{ background-position: 200% 0; }
-                  100%{ background-position: -200% 0; }
-                }
-              `}</style>
-
-              <div className="infoIzquierdaReq">
-                <div className="containerProductosAsociados">
-                  <h2>Productos Asociados</h2>
-                  <div className="containerDeverdadTabla">
-                    <div className="tabla-productos-container">
-
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Producto / Servicio</th>
-                            <th>Cuenta Contable</th>
-                            <th>Centro Costo</th>
-                            <th className="center">Cantidad</th>
-                            <th className="right">Valor Unitario</th>
-                            <th className="center">Tecnológico</th>
-                            <th className="center">Ergonómico</th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {loadingSolicitante ? (
-                            // skeleton rows mientras carga
-                            Array.from({ length: 3 }).map((_, sIdx) => (
-                              <tr key={"sk-" + sIdx} className={sIdx % 2 === 0 ? "fila-par" : "fila-impar"}>
-                                <td>
-                                  <div className="skeleton-line" style={{ width: "60%", height: 14 }} />
-                                </td>
-                                <td className="center">
-                                  <div className="skeleton-line" style={{ width: "30%", height: 12 }} />
-                                </td>
-                                <td className="center">
-                                  <div className="skeleton-line" style={{ width: "30%", height: 12 }} />
-                                </td>
-                                <td className="center">
-                                  <div className="skeleton-line" style={{ width: "30%", height: 12 }} />
-                                </td>
-                                <td className="right">
-                                  <div className="skeleton-line" style={{ width: "40%", height: 12 }} />
-                                </td>
-                                <td className="center">
-                                  <div className="skeleton-line" style={{ width: "30%", height: 12 }} />
-                                </td>
-                                <td className="center">
-                                  <div className="skeleton-line" style={{ width: "30%", height: 12 }} />
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            solicitanteReq?.productos?.map((producto, idx) => (
-                              <tr key={producto.id ?? idx} className={idx % 2 === 0 ? "fila-par" : "fila-impar"}>
-                                <td>
-                                  <p className="prod-nombre">{producto.nombre}</p>
-                                  <p className="prod-desc">{producto.descripcion}</p>
-                                </td>
-
-                                <td>
-                                  <p className="prod-cuenta">{producto.cuenta_contable}</p>
-                                </td>
-
-                                <td>
-                                  <p className="prod-centro">{producto.centro_costo}</p>
-                                </td>
-
-                                <td className="center">
-                                  <p className="bold">{producto.cantidad}</p>
-                                </td>
-
-                                <td className="right">
-                                  <p className="valor">
-                                    {formatCOP(producto.valor_estimado)}
-                                  </p>
-                                </td>
-
-                                <td className="center">
-                                  <span className={producto.compra_tecnologica ? "ok" : "no"}>
-                                    {producto.compra_tecnologica ? "✓ Sí" : "No"}
-                                  </span>
-                                </td>
-
-                                <td className="center">
-                                  <span className={producto.ergonomico ? "ok" : "no"}>
-                                    {producto.ergonomico ? "✓ Sí" : "No"}
-                                  </span>
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+              <div className="headerInfo">
+                <button
+                  className="modalCloseReq"
+                  onClick={() => {
+                    setOpenReqModal(false);
+                    setSolicitanteReq(null);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faX} />
+                </button>
+                <div className="tittleReq">
+                  <h1>REQUISICIÓN #{solicitanteReq.requisicion_id}</h1>
+                </div>
+                <div className="tagEstado">
+                  <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
+                    {getStatusLabel(estadoSolicitante)}
+                  </span>
                 </div>
               </div>
-
-              <div className="infoDerechaReq">
-                <div className="detallesReqCompletos">
-                  <div className="detallesRequisicion">
-                    <h1>Detalles</h1>
-                    {loadingSolicitante ? (
-                      <div className="areaYFecha">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <div key={i} className="containerInfoReq" style={{ marginBottom: 10 }}>
-                            <div className="skeleton-line" style={{ width: i % 2 ? "50%" : "80%", height: 14 }} />
+              <div className="contentModalReq">
+                <TimeLap
+                  requisicionId={solicitanteReq.requisicion_id}
+                  token={token}
+                  open={true}
+                />
+                <br />
+                <div className="infoGeneralReq">
+                  <div className="detallesGeneralReq" style={{ display: "flex", gap: "24px" }}>
+                    <div className="detallesReq">
+                      <h3 className="tittleOneUserNew">datos del solicitante</h3>
+                      {loadingSolicitante ? (
+                        <div className="areaYFecha">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <div key={i} className="containerInfoReq" style={{ marginBottom: 10 }}>
+                              <div className="skeleton-line" style={{ width: i % 2 ? "50%" : "80%", height: 14 }} />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="areaYFecha">
+                          <div className="containerInfoReq">
+                            <p className="labelTittle">Nombre</p>
+                            <p className="textLabel">{solicitanteReq.nombre_solicitante || "—"}</p>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="areaYFecha">
-                        <div className="containerInfoReq">
-                          <p className="labelTittle">Área:</p>
-                          <p className="textLabel">{getAreaNombre(solicitanteReq.area) || "—"}</p>
+                          <div className="containerInfoReq">
+                            <p className="labelTittle">Área</p>
+                            <p className="textLabel">{getAreaNombre(solicitanteReq.area)}</p>
+                          </div>
+                          <div className="containerInfoReq">
+                            <p className="labelTittle">Sede</p>
+                            <p className="textLabel">{getSedeNombre(solicitanteReq.sede)}</p>
+                          </div>
+                          <div className="containerInfoReq">
+                            <p className="labelTittle">Fecha</p>
+                            <p className="textLabel">{solicitanteReq.fecha || "—"}</p>
+                          </div>
                         </div>
-                        <div className="containerInfoReq">
-                          <p className="labelTittle">Sede:</p>
-                          <p className="textLabel">{solicitanteReq.sede || "—"}</p>
-                        </div>
-                        <div className="containerInfoReq">
-                          <p className="labelTittle">Fecha:</p>
-                          <p className="textLabel">{solicitanteReq.fecha || "—"}</p>
-                        </div>
-                        <div className="containerInfoReq">
-                          <p className="labelTittle">Justificación:</p>
-                          <p className="textLabel">{solicitanteReq.justificacion || "No tiene."}</p>
-                        </div>
-                        <div className="containerInfoReq">
-                          <p className="labelTittle">Nivel de Urgencia:</p>
-                          <p className="textLabel">{solicitanteReq.urgencia || "—"}</p>
-                        </div>
-                        <div className="containerInfoReq">
-                          <p className="labelTittle">¿Esta presupuestada?:</p>
-                          <p className="textLabel">{solicitanteReq.presupuestada ? "Sí" : "No"}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="montoPrecioReq">
-                  <div className="containerMontoTotal">
-                    <p className="labelMonto">Monto Total</p>
-                    <p className="labelTotal">{formatCOP(solicitanteReq.valor_total)}</p>
-                    <p className="labelMontoText">Valor total estimado para esta requisición</p>
-                  </div>
-                </div>
-              </div>
-              <div className="headerInfoReq">
-                <div className="contentIzquierda">
-                  {progress && (
-                    <div className="fixed bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg">
-                      {progress}
+                      )}
                     </div>
-                  )}
-
-                  {loadingSolicitante ? (
-                    <>
-                      <div className="tittle">
-                        <p style={{ fontSize: 18 }}>
-                          <span className="skeleton-line" style={{ width: 140, height: 20 }} />
-                        </p>
+                  </div>
+                  <div className="detallesGeneralReq">
+                    <div className="detallesReq">
+                      <div className="areaYFecha">
+                        <h3 className="tittleOneUserNew">resumen de productos</h3>
+                        <div className="containerInfoReq">
+                          <p className="labelTittle">Total productos</p>
+                          <p className="textLabel">{productosSolicitante.length}</p>
+                        </div>
+                        <div className="containerInfoReq">
+                          <p className="labelTittle">Ergonómicos</p>
+                          <p className="textLabel">
+                            {productosSolicitante.filter(p => p.ergonomico === 1 || p.ergonomico === true).length}
+                          </p>
+                        </div>
+                        <div className="containerInfoReq">
+                          <p className="labelTittle">Tecnológicos</p>
+                          <p className="textLabel">
+                            {productosSolicitante.filter(p => p.compra_tecnologica === 1 || p.compra_tecnologica === true).length}
+                          </p>
+                        </div>
                       </div>
-                      <div className="tagEstado" style={{ marginTop: 8 }}>
-                        <span className="skeleton-line" style={{ width: 80, height: 18, borderRadius: 12 }} />
+                    </div>
+                  </div>
+                  <div className="detallesGeneralReq">
+                    <div className="detallesReq">
+                      <div className="areaYFecha">
+                        <h3 className="tittleOneUserNew">informacion financiera</h3>
+                        <div className="containerInfoReq">
+                          <p className="labelTittle">Valor Total</p>
+                          <p className="textLabel">{formatCOP(solicitanteReq.valor_total)}</p>
+                        </div>
+                        <div className="containerInfoReq">
+                          <p className="labelTittle">En presupuesto</p>
+                          <p className="textLabel">
+                            {solicitanteReq.presupuestada ? "Sí" : "No"}
+                          </p>
+                        </div>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="tittle">
-                        <p>REQUISICION #{solicitanteReq.requisicion_id}</p>
-                      </div>
-                      <div className="tagEstado">
-                        <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
-                          {getStatusLabel(estadoSolicitante)}
-                        </span>
-                      </div>
-                    </>
-                  )}
+                    </div>
+                  </div>
                 </div>
-                <div className="buttonsHeaderInfoReq">
-                  <button
-                    title="Ver flujo"
-                    onClick={() => openTimeline(solicitanteReq.requisicion_id)}
-                    style={{ color: "#1d5da8", fontSize: "18px" }}
-                    className="iconTimeLone"
-                  >
-                    <FontAwesomeIcon icon={faTimeline} />
-                  </button>
-                  {/*
-                  <button
-                    title="Word"
-                    onClick={() => handleDescargarPDF(solicitanteReq.requisicion_id)}
-                    style={{ color: "#1d5da8", fontSize: "18px" }}
-                    className="iconPdf"
-                  >
-                    <FontAwesomeIcon icon={faDownload} />
-                  </button>
-                  */}
-                  {permissions?.canCreateRequisition && (
-                    <button
-                      title="Editar"
-                      onClick={() => handleEditOpen(solicitanteReq)}
-                    >
-                      <FontAwesomeIcon icon={faPencil} style={{ color: "#1d5da8", fontSize: "18px" }} />
-                    </button>
-                  )}
-                  {permissions?.canCreateRequisition && (
-                    <button
-                      title="Eliminar"
-                      onClick={() => handleDelete(solicitanteReq.requisicion_id)}
-                    >
-                      <FontAwesomeIcon icon={faTrash} style={{ color: "red", fontSize: "18px" }} />
-                    </button>
-                  )}
-                  <button
-                    className="modalCloseReq"
-                    style={{ color: "#1d5da8", fontSize: "18px", }}
-                    onClick={() => {
-                      setOpenReqModal(false);
-                      setSolicitanteReq(null);
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faX} />
-                  </button>
+                <br />
+                <div className="tablaContainerRequisicione">
+                  <h3 className="tittleOneUserNew">productos solicitados</h3>
+                  <div className="tablaProductosR">
+                    <div className="tabla-productos-header">
+                      <div>PRODUCTO / SERVICIO</div>
+                      <div>CUENTA CONTABLE</div>
+                      <div>CENTRO COSTO</div>
+                      <div style={{ textAlign: "center" }}>CANTIDAD</div>
+                      <div style={{ textAlign: "right" }}>VALOR UNITARIO</div>
+                      <div style={{ textAlign: "center" }}>TECNOLÓGICO</div>
+                      <div style={{ textAlign: "center" }}>ERGONÓMICO</div>
+                    </div>
+
+                    {/* Body de la tabla con divs */}
+                    <div className="tabla-productos-body">
+                      {loadingSolicitante ? (
+                        // Skeleton rows
+                        Array.from({ length: 3 }).map((_, sIdx) => (
+                          <div
+                            key={"sk-" + sIdx}
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 0.8fr 0.8fr",
+                              gap: "12px",
+                              padding: "12px 16px",
+                              borderBottom: "1px solid #e5e7eb",
+                              backgroundColor: sIdx % 2 === 0 ? "#ffffff" : "#f9fafb"
+                            }}
+                          >
+                            {Array.from({ length: 7 }).map((_, i) => (
+                              <div key={i} className="skeleton-line" style={{ width: "80%", height: 14 }} />
+                            ))}
+                          </div>
+                        ))
+                      ) : productosSolicitante && productosSolicitante.length > 0 ? (
+                        productosSolicitante.map((producto, idx) => (
+                          <div
+                            key={producto.id ?? idx}
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 0.8fr 0.8fr",
+                              gap: "12px",
+                              padding: "12px 16px",
+                              borderBottom: "1px solid #e5e7eb",
+                              backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f9fafb",
+                              alignItems: "center"
+                            }}
+                          >
+                            {/* Producto */}
+                            <div>
+                              <p className="textColor" style={{ fontWeight: "600", margin: "0 0 4px 0", fontSize: "14px"}}>
+                                {producto.nombre || producto.productoOServicio || "—"}
+                              </p>
+                              <p style={{ fontSize: "12px", color: "var(--textColorP)", margin: 0 }}>
+                                {producto.descripcion || ""}
+                              </p>
+                            </div>
+
+                            {/* Cuenta Contable */}
+                            <div style={{ fontSize: "14px", color: "var(--textColorP)", textAlign: "left" }}>
+                              {producto.cuenta_contable || "—"}
+                            </div>
+
+                            {/* Centro Costo */}
+                            <div style={{ fontSize: "14px", color: "var(--textColorP)" }}>
+                              {producto.centro_costo || "—"}
+                            </div>
+
+                            {/* Cantidad */}
+                            <div style={{ textAlign: "center", fontSize: "14px", color: "var(--textColorP)" }}>
+                              {producto.cantidad || "—"}
+                            </div>
+
+                            {/* Valor Unitario */}
+                            <div style={{ textAlign: "right", fontWeight: "600", fontSize: "14px", color: "var(--textColor)" }}>
+                              {formatCOP(producto.valor_estimado ?? producto.valorEstimado ?? 0)}
+                            </div>
+
+                            {/* Tecnológico */}
+                            <div style={{ textAlign: "center" }}>
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "4px 8px",
+                                  borderRadius: "4px",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                  backgroundColor: (producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "#dbeafe" : "#f3f4f6",
+                                  color: (producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "#0369a1" : "#6b7280"
+                                }}
+                              >
+                                {(producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "✓ Sí" : "No"}
+                              </span>
+                            </div>
+
+                            {/* Ergonómico */}
+                            <div style={{ textAlign: "center" }}>
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "4px 8px",
+                                  borderRadius: "4px",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                  backgroundColor: (producto.ergonomico === 1 || producto.ergonomico === true) ? "#dcfce7" : "#f3f4f6",
+                                  color: (producto.ergonomico === 1 || producto.ergonomico === true) ? "#166534" : "#6b7280"
+                                }}
+                              >
+                                {(producto.ergonomico === 1 || producto.ergonomico === true) ? "✓ Sí" : "No"}
+                              </span>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div
+                          style={{
+                            padding: "24px 16px",
+                            textAlign: "center",
+                            color: "#9ca3af",
+                            borderBottom: "1px solid #e5e7eb"
+                          }}
+                        >
+                          No hay productos asociados a esta requisición.
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            {/*
-            <div className="modalBox">
-              <h2>Requisición #{solicitanteReq.requisicion_id}</h2>
-              <p><strong>Solicitante:</strong> {solicitanteReq.nombre_solicitante}</p>
-              <p><strong>Valor total:</strong> {formatCOP(solicitanteReq.valor_total)}</p>
-              <p><strong>Estado:</strong> {getStatusLabel(solicitanteReq.status)}</p>
-              <p><strong>Fecha:</strong> {solicitanteReq.fecha}</p>
-              <button
-                className="modalCloseReq"
-                onClick={() => {
-                  setOpenReqModal(false);
-                  setSolicitanteReq(null);
-                }}
-              >
-                Cerrar
-              </button>
-            </div>
-            */}
           </div>
         )}
       </div>
+      <WizardModal
+        open={open}
+        onClose={() => { setOpen(false); setModalInitialData(null); }}
+        onCreated={fetchRequisiciones}
+        initialData={modalInitialData}
+        startStep={modalInitialData ? 2 : undefined}
+      />
     </div>
   );
 }

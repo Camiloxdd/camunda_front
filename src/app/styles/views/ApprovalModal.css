@@ -14,13 +14,12 @@
 .modal-content {
   background-color: white;
   border-radius: 10px;
-  padding: 20px;
-  width: 70%;
+  width: 40%;
   font-size: 25px;
-  max-height: 90vh;
+  height: 100%;
+  max-height: 85vh;
   overflow-y: auto;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-  position: relative;
 }
 
 /* overlay animado para aprobar/rechazar (con fade-in/out) */
@@ -76,169 +75,79 @@
 }
 
 .modal-header {
+  background-color: #f5f5f5;
+  padding: 20px;
   display: flex;
   justify-content: space-between;
+  border-bottom: 2px solid #ddd;
   align-items: center;
-  border-bottom: 1px solid #ddd;
-  padding-bottom: 10px;
-  margin-bottom: 20px;
-  color: #1d5da8;
 }
 
-.modal-header .close-button {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #1d5da8;
-  border-style: solid;
-  border-radius: 30px;
-  border-width: 2px;
-  height: 30px;
-  width: 30px;
-  transition: 0.3s all;
+.textAndIcon {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
-
-.modal-header .close-button:hover {
-  background-color: #1d5da8;
+.iconHeaderApr {
+  background: linear-gradient(135deg, #002855, #1D5DA8);
   color: white;
-  transform: scale(1.1);
-}
-
-.info-requisicion {
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  background-color: #f3f3f3;
   padding: 10px;
   border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.info-requisicion strong {
-  color: #1d5da8;
+.textApr h2 {
+  font-size: 23px;
+  color: var(--textColor);
 }
 
-.info-requisicion p {
-  font-size: 25px;
-  color: #1d5da8;
-  margin: 5px 0;
+.textApr p {
+  font-size: 16px;
+  color: var(--textColorP);
 }
 
-.tabla-productos {
-  padding: 20px;
-  background-color: #f3f3f3;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
-}
-
-.tabla-productos h3 {
-  color: #1d5da8;
-  margin-bottom: 15px;
-}
-
-.tablaResumen {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  overflow-y: auto;
-  color: #1d5da8;
-}
-
-.tablaResumen th,
-.tablaResumen td {
-  border: 1px solid #ddd;
-  padding: 6px 10px;
-  text-align: center;
-  color: #1d5da8;
-  font-size: 20px;
-}
-
-.tablaResumen th {
-  background-color: #1d5da8;
-  font-weight: 600;
-  color: white;
-}
-
-
-.btn-approve {
-  background-color: #1d5da8;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: 0.3s all;
-}
-
-.btn-approve:hover {
+.close-button {
   background-color: white;
-  color: #1d5da8;
-  border-color: #1d5da8;
-  border-radius: 8px;
-  border-width: 2px;
-  border-style: solid;
-  transform: scale(1.10);
-}
-
-/* estilo para fila rechazado (si quieres más control) */
-/* ya se aplica inline con background color #ffecec */
-
-.loading-cambios-approval {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  height: 200px;
-  width: 100%;
-}
-
-.loading-cambios-approval .LogoCambios-approval {
-  width: 70px;
-  height: 70px;
-  animation: spinVaried 2s linear infinite;
-}
-
-.loading-cambios-approval .textLoading-approval {
-  font-size: 14px;
-  color: #032c59;
-}
-
-.loading-container {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.4);
-  z-index: 999;
-}
-
-.content-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  height: 200px;
-  width: 100%;
-  font-size: 15px;
-  font-weight: bold;
-  color: #1d5da8;
-}
-
-.LogoCambios {
-  width: 70px;
-  height: 70px;
-  animation: spinVaried 2s linear infinite;
-}
-
-.modal-actions{
   text-align: center;
+  justify-content: center;
   font-size: 20px;
-  margin-top: 20px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--textColorP);
+  height: 35px;
+  width: 35px;
+  display: flex;
+  align-items: center;
   font-weight: bold;
-  color: #1d5da8;
+  transition: 0.3s all ease;
+}
+
+.close-button:hover {
+  background-color: red;
+  border: 2px solid red;
+  color: white;
+  transform: translateY(-2px);
+}
+
+.modal-body {
+  padding: 24px;
+  width: 100%;
+}
+
+.cardsReq {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 14px;
+  padding: 16px;
+  width: 100%;
+}
+
+.lineaSeparadora {
+  background-color: #ddd;
+  height: 1px;
+  margin: 0 0 24px;
 }
 
 @keyframes spinVaried {

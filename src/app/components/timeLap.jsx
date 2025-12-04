@@ -4,6 +4,7 @@ import "../styles/views/timeLap.css"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle, faClock } from "@fortawesome/free-solid-svg-icons";
 import api from "../services/axios";
+import { get } from "node:http";
 
 export default function TimeLap({ open, onClose, requisicionId, token }) {
     const [loading, setLoading] = useState(false);
@@ -69,7 +70,7 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
         alignItems: "center", justifyContent: "center", zIndex: 9999, width: "100%"
     };
     const boxStyle = {
-        width: "60%", maxWidth: "95%", background: "#fff", borderRadius: 8, padding: 18, boxShadow: "0 6px 20px rgba(0,0,0,0.2)"
+        width: "100%", maxWidth: "100%", background: "#f5f5f5", borderRadius: 8, padding: 18, border: "2px solid #ddd",
     };
     const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 };
     const listStyle = { listStyle: "none", padding: 0, margin: 0 };
@@ -197,7 +198,7 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
                     {requisicion?.nombre_solicitante && (
                         <div className="timeline-node">
                             <div className="timeline-circle aprobado">
-                                <FontAwesomeIcon icon={faCheckCircle} className="icon" />
+                                <FontAwesomeIcon icon={faCheckCircle} className="iconTimeLap" />
                             </div>
                             <div className="timeline-line linea-aprobada"></div>
                             <div className="timeline-info">
@@ -205,6 +206,7 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
                                     {requisicion.nombre_solicitante}
                                 </div>
                                 <div className="timeline-fecha">Solicitante</div>
+                                <div className="timeline-fecha">{getSedeNombre(requisicion.fecha)}</div>
                             </div>
                         </div>
                     )}
@@ -225,9 +227,9 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
                                         }`}
                                 >
                                     {aprobado ? (
-                                        <FontAwesomeIcon icon={faCheckCircle} className="icon" />
+                                        <FontAwesomeIcon icon={faCheckCircle} className="iconTimeLap" />
                                     ) : (
-                                        <FontAwesomeIcon icon={faClock} className="icon" />
+                                        <FontAwesomeIcon icon={faClock} className="iconTimeLap" />
                                     )}
                                 </div>
 
@@ -240,8 +242,9 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
 
                                 <div className="timeline-info">
                                     <div className={`timeline-nombre ${aprobado ? "text-green" : ""}`}>
-                                        {a.nombre_aprobador || a.rol_aprobador}
+                                        <p>{a.nombre_aprobador}</p>
                                     </div>
+                                    <p className="timeline-fecha">{getCargoNombre(a.rol_aprobador)}</p>
                                     <div className="timeline-fecha">{fecha}</div>
                                 </div>
                             </div>
@@ -253,59 +256,20 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
 
         return (
             <div>
-                <div style={{ height: 10, background: "#eee", borderRadius: 6, overflow: "hidden" }}>
-                    <div style={{ width: `${percent}%`, background: "#1d5da8", height: "100%" }} />
-                </div>
-
-                <div className="listaAprobaciones">
-                    <ul style={listStyle}>
-                        {Array.isArray(approvers) && approvers.length > 0 ? approvers.map((a) => {
-                            const isNext = (nextOrder && a.orden === nextOrder) || a.visible === 1 || a.visible === true;
-                            return (
-                                <li key={a.id} style={itemStyle(isNext)}>
-                                    <div>
-                                        <div style={{ fontWeight: 700 }}>{a.nombre_aprobador || a.rol_aprobador}</div>
-                                        <div style={{ fontSize: 12, color: "#555" }}>
-                                            {getCargoNombre(a.rol_aprobador)}{(a.area || a.sede) ? ` • ${getAreaNombre(a.area) || a.area}${a.sede ? ` • ${getSedeNombre(a.sede) || a.sede}` : ""}` : ""}
-                                        </div>
-                                    </div>
-                                    <div style={{ textAlign: "right" }}>
-                                        <div style={{ fontWeight: 700, color: a.estado === "aprobada" ? "green" : a.estado === "pendiente" ? "red" : "#444" }}>
-                                            {a.estado || "pendiente"}
-                                        </div>
-                                        <div style={{ fontSize: 12, color: "#777" }}>
-                                            {a.fecha_aprobacion
-                                                ? new Date(a.fecha_aprobacion).toLocaleDateString("es-CO")
-                                                : "—"}
-                                        </div>
-
-                                    </div>
-                                </li>
-                            );
-                        }) : <li style={{ padding: 8 }}>No hay aprobadores asignados.</li>}
-                    </ul>
-                </div>
                 {Timeline({ aprobaciones: approvers })}
             </div>
         );
     };
 
     return (
-        <div style={overlayStyle} role="dialog" aria-modal="true">
+        <div role="dialog" aria-modal="true">
             <div style={boxStyle}>
                 <div className="headerTimeLap">
                     <div className="infoHeader">
-                        <h2>Flujo de aprobaciones</h2>
-                        <div style={{ fontSize: 15, color: "#666" }}>
-                            {requisicionId ? `Requisición #${requisicionId}` : ""}
-                        </div>
-                    </div>
-                    <div className="spaceButtonTime">
-                        <button onClick={onClose}>✕</button>
+                        <h3 className="tittleOneUserNew">flujo de aprobaciones</h3>
                     </div>
                 </div>
                 {renderBody()}
-
             </div>
         </div>
     );

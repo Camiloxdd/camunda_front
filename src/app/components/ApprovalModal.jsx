@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import "../styles/views/ApprovalModal.css";
 import api from "../services/axios";
 import { approvePendingSingle, startThreeStep } from "../services/camunda";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFile } from "@fortawesome/free-solid-svg-icons";
 
 export default function ApprovalModal({ requisicion, onClose, onApproved, user, token: tokenProp }) {
     const [detalles, setDetalles] = useState({
@@ -102,12 +104,12 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     try {
                         const verRes = await api.get(
                             `/api/requisiciones/${requisicion.requisicion_id}/verificar-aprobacion`,
-                            { 
-                                headers: { 
+                            {
+                                headers: {
                                     Authorization: `Bearer ${token}`,
                                     "X-User-Name": user?.nombre || "",
                                     "X-User-Area": user?.area || ""
-                                } 
+                                }
                             }
                         );
                         const verData = verRes.data || {};
@@ -467,7 +469,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content" style={{ position: "relative" }}>
+            <div className="modal-content">
                 {actionLoadingVisible && (
                     <div
                         className={`approval-loading-overlay ${actionLoadingExiting ? "fade-out" : "fade-in"}`}
@@ -480,21 +482,51 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     </div>
                 )}
                 <div className="modal-header">
-                    <h2>Requisición #{info.id}</h2>
+                    <div className="textAndIcon">
+                        <div className="iconHeaderApr">
+                            <FontAwesomeIcon icon={faFile} />
+                        </div>
+                        <div className="textApr">
+                            <h2>Requisición #{info.id}</h2>
+                            <p>Revisa y aprueba los productos de esta requisición</p>
+                        </div>
+                    </div>
+
                     <button onClick={onClose} className="close-button">
                         X
                     </button>
                 </div>
 
                 <div className="modal-body">
-                    <div className="info-requisicion">
-                        <p><strong>Solicitante:</strong> {info.nombre_solicitante}</p>
-                        <p><strong>Fecha:</strong> {new Date(info.fecha).toLocaleDateString("es-ES")}</p>
-                        <p><strong>Área:</strong> {getAreaNombre(info.area)}</p>
-                        <p><strong>Justificación:</strong> {info.justificacion || "No tiene."}</p>
-                        <p><strong>Valor total:</strong> {formatCOP(info.valor_total)}</p>
+                    <div className="containerInfoReq">
+                        <div className="cardsReq">
+                            <h3 className="tittleOneUserNew">Solicitante</h3>
+                            <div className="areYFecha">
+                                <p className="labelTittle">{info.nombre_solicitante}</p>
+                                <p className="textLabel">{getAreaNombre(info.area)}</p>
+                            </div>
+                        </div>
+                        <div className="cardsReq">
+                            <h3 className="tittleOneUserNew">Fecha</h3>
+                            <div className="areaYFecha">
+                                <p className="labelTittle">{new Date(info.fecha).toLocaleDateString("es-ES")}</p>
+                                <p className="textLabel">{info.justificacion || "No tiene."}</p>
+                            </div>
+                        </div>
+                        <div className="cardsReq">
+                            <h3 className="tittleOneUserNew">valor total</h3>
+                            <div className="areaYFecha">
+                                <p className="labelTittle">{formatCOP(info.valor_total)}</p>
+                                <p className="textLabel">{productos.length} producto(s)</p>
+                            </div>
+                        </div>
                     </div>
+                    <br />
+                    
+                    <div className="lineaSeparadora">
 
+                    </div>
+                    <h3 className="tittleOneUserNew">productos asociados</h3>
                     <div className="tabla-productos">
                         <h3>Productos asociados</h3>
                         <table className="tablaResumen">

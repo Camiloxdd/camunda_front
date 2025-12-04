@@ -23,12 +23,16 @@ import {
     faCheck,
     faMicrochip,
     faCouch,
+    faEye,
+    faBoxOpen,
+    faDollar,
 } from "@fortawesome/free-solid-svg-icons";
 import TextareaAutosize from "react-textarea-autosize";
 import SaveAnimation from "./animationCreateRequisicion";
 import { faDailymotion } from "@fortawesome/free-brands-svg-icons";
 import api from "../services/axios";
 import { endFirstStepStartTwoStep, endTwoStepStartThreeStep } from "../services/camunda";
+import { createPortal } from "react-dom";
 
 const initialForm = {
     solicitante: {
@@ -664,9 +668,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         },
     ];
 
-    return (
+    const modalContent = (
         <div className="wizardModal-overlay">
-            {/* asegurar que el overlay interno quede confinado a este container */}
             <div className="wizardModal-container">
                 {/* Overlay de carga entre pasos */}
                 {stepLoadingVisible && (
@@ -981,7 +984,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 </div>
                                 <div className="campoPrespuestado">
                                     <div className="firsInfo">
-                                        <label className="obligatorio">*</label><p>¿Está en presupuesto?</p>
+                                        <FontAwesomeIcon icon={faDollar}/>
+                                        <p>¿Está en presupuesto?</p><label className="obligatorio">*</label>
                                         <input
                                             type="checkbox"
                                             checked={formData.solicitante.presupuestada}
@@ -1229,7 +1233,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         <div className="firsInfoTwo">
                                             <div className="tecnologicoButton">
                                                 <div className="iconTecno">
-                                                    <FontAwesomeIcon icon={faMicrochip}/>
+                                                    <FontAwesomeIcon icon={faMicrochip} />
                                                 </div>
                                                 <label>
                                                     Tecnológico
@@ -1246,7 +1250,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             </div>
                                             <div className="ergonomicoButton">
                                                 <div className="iconErgo">
-                                                    <FontAwesomeIcon icon={faCouch}/>
+                                                    <FontAwesomeIcon icon={faCouch} />
                                                 </div>
                                                 <label>
                                                     Ergonómico
@@ -1295,67 +1299,69 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         {/* PASO 3: RESUMEN */}
                         {step === 3 && (
                             <div className="papitoGugutata">
-                                <h1 className="tittleContentGugutata">Resumen de solicitud</h1>
-
-                                <div className="resumenSectionOne">
-                                    <div className="infoSolicitanteFinal">
-                                        <h2>Datos del solicitante</h2>
-                                        <ul>
-                                            <li><strong>Nombre:</strong> {formData.solicitante.nombre || "No tiene."}</li>
-                                            <li><strong>Fecha:</strong> {formData.solicitante.fecha || "No tiene."}</li>
-                                            <li><strong>Área:</strong> {getAreaNombre(formData.solicitante.area || "No tiene.")}</li>
-                                            <li><strong>Sede:</strong> {getSedeNombre(formData.solicitante.sede || "No tiene.")}</li>
-                                            <li><strong>Urgencia:</strong> {formData.solicitante.urgencia || "No tiene."}</li>
-                                            <li><strong>Justificación:</strong> {formData.solicitante.justificacion || "No tiene."}</li>
-                                            <p>
-                                                <strong>¿Está en presupuesto?:</strong>{" "}
-                                                {formData.solicitante.presupuestada ? (
-                                                    <span style={{ color: "green", fontWeight: "bold" }}>Sí lo está</span>
-                                                ) : (
-                                                    <span style={{ color: "red", fontWeight: "bold" }}>No lo está</span>
-                                                )}
-                                            </p>
-                                        </ul>
+                                <h3 className="tittleOneUserNew">resumen de solicitud</h3>
+                                <br />
+                                <div className="campoTotales">
+                                    <div className="totalesCards">
+                                        <p className="totalP">{formData.productos.length}</p>
+                                        <p className="textTotal">Productos</p>
                                     </div>
-
-                                    <div className="totalesProductos">
-                                        <h2>Totales generales</h2>
-                                        <ul>
-                                            <li>
-                                                <strong>Total de productos:</strong> {formData.productos.length}
-                                            </li>
-                                            <li>
-                                                <strong>Total ergonómicos:</strong>{" "}
-                                                {formData.productos.filter((p) => p.ergonomico).length}
-                                            </li>
-                                            <li>
-                                                <strong>Total tecnológicos:</strong>{" "}
-                                                {formData.productos.filter((p) => p.compraTecnologica).length}
-                                            </li>
-                                            <li>
-                                                <strong>Valor total estimado:</strong>{" "}
-                                                {formatCurrency(getTotalEstimado(true))}
-                                                {getTotalEstimado(true) > UMBRAL_10_SM ? (
-                                                    <span style={{ color: "red", fontWeight: "bold", marginLeft: 8 }}>
-                                                        — Supera 10 salarios mínimos
-                                                    </span>
-                                                ) : (
-                                                    <span style={{ color: "green", fontWeight: "bold", marginLeft: 8 }}>
-                                                        — No supera 10 salarios mínimos
-                                                    </span>
-                                                )}
-                                            </li>
-                                        </ul>
+                                    <div className="totalesCards">
+                                        <p className="totalP">{formData.productos.filter((p) => p.ergonomico).length}</p>
+                                        <p className="textTotal">Ergonómicos</p>
+                                    </div>
+                                    <div className="totalesCards">
+                                        <p className="totalP">{formData.productos.filter((p) => p.compraTecnologica).length}</p>
+                                        <p className="textTotal">Tecnológicos</p>
+                                    </div>
+                                    <div className="totalesCards">
+                                        <p className="totalP">{formatCurrency(getTotalEstimado(false))}</p>
+                                        <p className="textTotal">Valor estimado</p>
                                     </div>
                                 </div>
+                                <div className="superaOno">
+                                    {getTotalEstimado(true) > UMBRAL_10_SM ? (
+                                        <div className="noSupera">
+                                            <p style={{ color: "red", fontWeight: "bold" }}>
+                                                La solicitud supera el valor de 10 salarios mínimos legales vigentes.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="siSupera">
+                                            <p style={{ color: "green", fontWeight: "bold" }}>
+                                                La solicitud no supera el valor de 10 salarios mínimos legales vigentes.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                                <br />
+                                <h3 className="tittleOneUserNew">productos asociados</h3>
                                 <div className="resumenSection" style={{ textAlign: "center" }}>
                                     <button
-                                        className="wizardModal-btn"
-                                        style={{ margin: "10px auto", minWidth: 180, backgroundColor: "#1d5da8", color: "#fff" }}
+                                        className="wizardModal-btnView"
                                         onClick={() => setShowProductosModal(true)}
                                     >
-                                        Ver productos
+                                        <FontAwesomeIcon icon={faEye} className="iconViewBtn" /> Ver Detalles
                                     </button>
+                                    {formData.productos.map((prod, index) => (
+                                        <div key={index} className="productos">
+                                            <div className="leftInfoProduct">
+                                                <div className="nameIconProduct">
+                                                    <FontAwesomeIcon icon={faBoxOpen} className="iconProduct" />
+                                                    <div>
+                                                        <h1 className="nameProduct">{prod.nombre}</h1>
+                                                        <p className="subtitlesProductos">Cantidad: {prod.cantidad}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="subtitlesProductos">
+                                                    
+                                                </div>
+                                            </div>
+                                            <div className="rightInfoProduct">
+                                                <h1>{prod.valorEstimado}</h1>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                                 {/* Modal de productos */}
                                 {showProductosModal && (
@@ -1449,4 +1455,10 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
 
         </div>
     );
+
+    // Usar portal si existe document
+    if (typeof window !== "undefined" && document.body) {
+        return createPortal(modalContent, document.body);
+    }
+    return modalContent;
 }
