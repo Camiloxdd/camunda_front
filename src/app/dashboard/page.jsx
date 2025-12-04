@@ -689,7 +689,7 @@ function DashboardInner() {
   }, []);
 
   const abrirModalNuevaReq = () => {
-    handleStartProcessCamunda();
+    /*handleStartProcessCamunda();*/
     setOpen(true);
   }
 

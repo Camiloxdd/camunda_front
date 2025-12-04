@@ -11,11 +11,11 @@
 .wizardModal-container {
   background: #fff;
   border-radius: 16px;
-  width: 60%;
+  width: 80%;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
   animation: wizardModal-scaleIn 0.3s ease;
   position: relative;
-  height: 80%;
+  height: 88%;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -368,7 +368,7 @@
   align-items: center;
   text-align: center;
   display: flex;
-  width: 72.1%;
+  width: 79%;
 }
 
 .papitoGugutata {
@@ -420,7 +420,7 @@
   align-items: center;
 }
 
-.inputAndLabelUsersGestion{
+.inputAndLabelUsersGestion {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -440,11 +440,11 @@
   padding: 20px;
 }
 
-.campoPrespuestado p{
+.campoPrespuestado p {
   color: var(--textColor);
 }
 
-.firsInfo{
+.firsInfo {
   display: flex;
   gap: 10px;
   align-items: center;
@@ -476,4 +476,181 @@
 .wizardModal-footer button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.inputAndIconUserGest input,
+.inputAndIconUserGest select,
+.inputAndIconUserGest textarea {
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  color: var(--foreground);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  transition: all .2s;
+  width: 100%;
+}
+
+.inputAndIconUserGest input:focus,
+.inputAndIconUserGest select:focus,
+.inputAndIconUserGest textarea:focus {
+  outline: none;
+  border-color: var(--textColor);
+  box-shadow: 0 0 0 3px rgba(29, 93, 168, 0.2);
+}
+
+.stepNumberCompleted {
+  background-color: var(--textColorP);
+  color: white;
+  /* Updated glow */
+  box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.1);
+}
+
+.campoListaProductos {
+  height: 100%;
+  max-height: 350px;
+  margin-top: 10px;
+  padding: 5px;
+  border-radius: 8px;
+}
+
+.productoNavVertical {
+  background-color: #ffffff;
+  border: 2px solid #ddd;
+  width: 100%;
+  height: 80%;
+  max-width: 245px;
+  border-radius: 8px;
+  max-height: 370px;
+}
+
+.productoListScroll {
+  overflow-y: auto;
+  height: 100%;
+  padding: 5px;
+  max-height: 290px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.containerButtonsProductos {
+  padding: 10px;
+  justify-content: space-between;
+  display: flex;
+  margin-top: 5px;
+}
+
+.containerButtonsProductos .wizardModal-btn-add {
+  width: 45%;
+  background-color: var(--textColor);
+  border-color: transparent;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.containerButtonsProductos .wizardModal-btn-add:hover {
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.containerButtonsProductos .wizardModal-btn-remove {
+  width: 45%;
+  background-color: red;
+  padding: 7px;
+  color: white;
+  border-color: transparent;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 137, 137, 0.1);
+}
+
+.containerButtonsProductos .wizardModal-btn-remove:hover {
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 16px rgba(255, 123, 123, 0.1);
+}
+
+.productoTabVertical {
+  background: linear-gradient(135deg, #002855, #1d5da8);
+  width: 95%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.productoTabVertical:hover {
+  transform: translateY(-2px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.btn-upload {
+  cursor: pointer;
+}
+
+.inputAndIconUserGests {
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  color: var(--foreground);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  transition: all .2s;
+  width: 100%;
+}
+
+.firsInfoTwo {
+  display: flex;
+  justify-content: space-around;
+}
+
+.tecnologicoButton {
+  border: 1px solid #ddd;
+  cursor: pointer;
+  color: var(--textColor);
+  background: #ffffff;
+  border-radius: 16px;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  font-weight: bold;
+  padding: 20px;
+  transition: all .2s;
+  display: flex;
+}
+
+.iconTecno{
+  font-size: 24px;
+  color: var(--textColor);
+}
+
+.ergonomicoButton {
+  border: 1px solid #ddd;
+  cursor: pointer;
+  color: var(--textColor);
+  background: #ffffff;
+  border-radius: 16px;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  font-weight: bold;
+  padding: 20px;
+  transition: all .2s;
+  display: flex;
 }

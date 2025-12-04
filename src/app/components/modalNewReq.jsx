@@ -20,6 +20,9 @@ import {
     faTrash,
     faSackDollar,
     faClock,
+    faCheck,
+    faMicrochip,
+    faCouch,
 } from "@fortawesome/free-solid-svg-icons";
 import TextareaAutosize from "react-textarea-autosize";
 import SaveAnimation from "./animationCreateRequisicion";
@@ -723,7 +726,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     : "stepNumberPending"
                                                 }`}
                                         >
-                                            {esCompletado ? <Check size={16} /> : id}
+                                            {esCompletado ? <FontAwesomeIcon icon={faCheck} size={16} /> : id}
                                         </div>
 
                                         {/* Content */}
@@ -748,10 +751,71 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             {esActivo && <span className="stepBadge">En progreso</span>}
                                         </div>
                                     </div>
+
                                 );
                             })}
                         </div>
+                        {step === 2 && (
+                            <div className="campoListaProductos">
+                                <br />
+                                <h3 className="tittleOneUserNew">PRODUCTOS</h3>
+                                <div className="productoNavVertical">
+                                    <div className="productoListScroll">
+                                        {formData.productos.map((prod, index) => (
+                                            <button
+                                                key={index}
+                                                className={`productoTabVertical ${index === productoActivo ? "active" : ""}`}
+                                                onClick={() => setProductoActivo(index)}
+                                            >
+                                                <FontAwesomeIcon className="iconListFiles" icon={faFile} />
+                                                {prod.nombre || `Producto ${index + 1}`}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="containerButtonsProductos">
+                                        <button
+                                            className="wizardModal-btn-add fullWidth"
+                                            onClick={() => {
+                                                const productos = [
+                                                    ...formData.productos,
+                                                    {
+                                                        nombre: "",
+                                                        cantidad: 1,
+                                                        descripcion: "",
+                                                        compraTecnologica: false,
+                                                        ergonomico: false,
+                                                        valorEstimado: "",
+                                                        centroCosto: "",
+                                                        cuentaContable: "",
+                                                        aprobaciones: [],
+                                                    },
+                                                ];
+                                                setFormData({ ...formData, productos });
+                                                setProductoActivo(productos.length - 1);
+                                            }}
+                                        >
+                                            <FontAwesomeIcon icon={faPlus} />
+                                        </button>
+
+                                        <button
+                                            className="wizardModal-btn-remove fullWidth"
+                                            disabled={formData.productos.length <= 1}
+                                            onClick={() => {
+                                                const productos = formData.productos.filter(
+                                                    (_, i) => i !== productoActivo
+                                                );
+                                                setFormData({ ...formData, productos });
+                                                setProductoActivo((prev) => (prev > 0 ? prev - 1 : 0));
+                                            }}
+                                        >
+                                            <FontAwesomeIcon icon={faTrash} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </aside>
+
                     <div className="wizardModal-body">
                         {step === 1 && (
                             <div className="papitoGugutata">
@@ -939,72 +1003,19 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         {/* PASO 2: DETALLES DEL PRODUCTO + PRESUPUESTO */}
                         {step === 2 && (
                             <div className="papitoGugutata">
-                                <h1 className="tittleContentGugutata">Detalles del producto o servicio</h1>
+                                <h3 className="tittleOneUserNew">productos o servicios</h3>
                                 <div className="containerProductosSerios" style={{ width: "100%" }}>
-                                    <div className="productoNavVertical">
-                                        <div className="productoListScroll">
-                                            {formData.productos.map((prod, index) => (
-                                                <button
-                                                    key={index}
-                                                    className={`productoTabVertical ${index === productoActivo ? "active" : ""}`}
-                                                    onClick={() => setProductoActivo(index)}
-                                                >
-                                                    <FontAwesomeIcon className="iconListFiles" icon={faFile} />
-                                                    {prod.nombre || `Producto ${index + 1}`}
-                                                </button>
-                                            ))}
-                                        </div>
-                                        <div className="containerButtonsProductos">
-                                            <button
-                                                className="wizardModal-btn-add fullWidth"
-                                                onClick={() => {
-                                                    const productos = [
-                                                        ...formData.productos,
-                                                        {
-                                                            nombre: "",
-                                                            cantidad: 1,
-                                                            descripcion: "",
-                                                            compraTecnologica: false,
-                                                            ergonomico: false,
-                                                            valorEstimado: "",
-                                                            centroCosto: "",
-                                                            cuentaContable: "",
-                                                            aprobaciones: [],
-                                                        },
-                                                    ];
-                                                    setFormData({ ...formData, productos });
-                                                    setProductoActivo(productos.length - 1); // Ir al nuevo producto
-                                                }}
-                                            >
-                                                <FontAwesomeIcon icon={faPlus} />
-                                            </button>
 
-                                            {/* LISTA COMPLETA DE PRODUCTOS */}
-
-
-                                            {/* Botón eliminar */}
-                                            <button
-                                                className="wizardModal-btn-remove fullWidth"
-                                                disabled={formData.productos.length <= 1}
-                                                onClick={() => {
-                                                    const productos = formData.productos.filter(
-                                                        (_, i) => i !== productoActivo
-                                                    );
-                                                    setFormData({ ...formData, productos });
-                                                    setProductoActivo((prev) => (prev > 0 ? prev - 1 : 0));
-                                                }}
-                                            >
-                                                <FontAwesomeIcon icon={faTrash} />
-                                            </button>
-                                        </div>
-                                    </div>
                                     <div className="productoItem" style={{ width: "100%" }}>
-                                        <div className="inputsContainers">
-                                            {/* --- PRODUCTO / SERVICIO --- */}
-                                            <div className="campoAdicional">
-                                                <label>Producto / Servicio<label className="obligatorio">*</label></label>
-                                                <div className="completeInputs">
-                                                    <FontAwesomeIcon icon={faCubes} className="icon" />
+                                        <div className="inputsDatos">
+
+                                            <div className="inputAndLabelUsersGestion">
+                                                <div className="campoTextAndIcon">
+                                                    <FontAwesomeIcon icon={faCubes} className="iconUserCreate" />
+                                                    <label>Producto / Servicio<label className="obligatorio">*</label></label>
+                                                </div>
+                                                <div className="inputAndIconUserGest">
+
                                                     {catalogoLoading ? (
                                                         <select disabled value="" onChange={() => { }}>
                                                             <option value="">Cargando catálogo...</option>
@@ -1048,11 +1059,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     )}
                                                 </div>
                                             </div>
-                                            {/* --- DESCRIPCIÓN --- */}
-                                            <div className="campoAdicional">
-                                                <label>Descripción<label className="obligatorio">*</label></label>
-                                                <div className="completeInputs">
+                                            <div className="inputAndLabelUsersGestion">
+                                                <div className="campoTextAndIcon">
                                                     <FontAwesomeIcon icon={faClipboard} className="icon" />
+                                                    <label>Descripción<label className="obligatorio">*</label></label>
+                                                </div>
+                                                <div className="inputAndIconUserGest">
                                                     <TextareaAutosize
                                                         className="textAreaCustom"
                                                         placeholder="Detalles del producto solicitado"
@@ -1068,10 +1080,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 </div>
                                             </div>
                                             {/* --- CANTIDAD --- */}
-                                            <div className="campoAdicional">
-                                                <label>Cantidad<label className="obligatorio">*</label></label>
-                                                <div className="completeInputs">
+                                            <div className="inputAndLabelUsersGestion">
+                                                <div className="campoTextAndIcon">
                                                     <FontAwesomeIcon icon={faListOl} className="icon" />
+                                                    <label>Cantidad<label className="obligatorio">*</label></label>
+                                                </div>
+                                                <div className="inputAndIconUserGest">
                                                     <input
                                                         type="number"
                                                         min="1"
@@ -1086,6 +1100,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             </div>
                                             {/* --- resto de campos... --- */}
                                             {/* --- TIPO PRODUCTO --- */}
+                                            {/*
                                             <div className="firsInfoTwo">
                                                 <label>
                                                     ¿Es un producto tecnológico?
@@ -1112,11 +1127,14 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     />
                                                 </label>
                                             </div>
+                                            */}
                                             {/* --- VALOR ESTIMADO --- */}
-                                            <div className="campoAdicional">
-                                                <label>Valor estimado<label className="obligatorio">*</label></label>
-                                                <div className="completeInputs">
+                                            <div className="inputAndLabelUsersGestion">
+                                                <div className="campoTextAndIcon">
                                                     <FontAwesomeIcon icon={faMoneyBill} className="icon" />
+                                                    <label>Valor estimado<label className="obligatorio">*</label></label>
+                                                </div>
+                                                <div className="inputAndIconUserGest">
                                                     <input
                                                         type="text"
                                                         placeholder="Valor estimado"
@@ -1139,17 +1157,17 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 </div>
                                             </div>
                                             {/* --- ANEXOS --- */}
-                                            <div className="campoAdicional">
-                                                <label>Anexos</label>
-                                                <div className="fileUploadContainer">
+                                            <div className="inputAndLabelUsersGestion">
+                                                <div className="campoTextAndIcon">
                                                     <FontAwesomeIcon icon={faPaperclip} className="icon" />
+                                                    <label>Anexos</label>
+                                                </div>
+                                                <div className="inputAndIconUserGests">
                                                     <label
                                                         htmlFor={`fileUpload-${productoActivo}`}
-                                                        className="customFileButton"
+                                                        className="btn-upload"
                                                     >
-                                                        {formData.productos[productoActivo].fileName
-                                                            ? formData.productos[productoActivo].fileName
-                                                            : "Seleccionar archivo"}
+                                                        Seleccionar archivo
                                                     </label>
                                                     <input
                                                         type="file"
@@ -1159,7 +1177,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                             const file = e.target.files[0];
                                                             if (file) {
                                                                 const productos = [...formData.productos];
-                                                                productos[productoActivo].fileName = file.name;
                                                                 productos[productoActivo].file = file;
                                                                 setFormData({ ...formData, productos });
                                                             }
@@ -1167,11 +1184,14 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     />
                                                 </div>
                                             </div>
+
                                             {/* --- CENTRO DE COSTO --- */}
-                                            <div className="campoAdicional">
-                                                <label>Centro de costo / Orden interna</label>
-                                                <div className="completeInputs">
+                                            <div className="inputAndLabelUsersGestion">
+                                                <div className="campoTextAndIcon">
                                                     <FontAwesomeIcon icon={faClipboard} className="icon" />
+                                                    <label>Centro de costo / Orden interna</label>
+                                                </div>
+                                                <div className="inputAndIconUserGest">
                                                     <input
                                                         type="text"
                                                         placeholder="Ej. CC-104 / OI-245"
@@ -1185,10 +1205,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 </div>
                                             </div>
                                             {/* --- CUENTA CONTABLE --- */}
-                                            <div className="campoAdicional">
-                                                <label>Cuenta contable o código de material</label>
-                                                <div className="completeInputs">
+                                            <div className="inputAndLabelUsersGestion">
+                                                <div className="campoTextAndIcon">
                                                     <FontAwesomeIcon icon={faMoneyBill} className="icon" />
+                                                    <label>Cuenta contable o código de material</label>
+                                                </div>
+                                                <div className="inputAndIconUserGest">
                                                     <input
                                                         type="text"
                                                         placeholder="Ej. 5120-Equipos"
@@ -1200,6 +1222,44 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                         }}
                                                     />
                                                 </div>
+                                            </div>
+                                        </div>
+                                        <br />
+                                        <h3 className="tittleOneUserNew">tipo de producto o servicio</h3>
+                                        <div className="firsInfoTwo">
+                                            <div className="tecnologicoButton">
+                                                <div className="iconTecno">
+                                                    <FontAwesomeIcon icon={faMicrochip}/>
+                                                </div>
+                                                <label>
+                                                    Tecnológico
+                                                </label>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.productos[productoActivo].compraTecnologica}
+                                                    onChange={(e) => {
+                                                        const productos = [...formData.productos];
+                                                        productos[productoActivo].compraTecnologica = e.target.checked;
+                                                        setFormData({ ...formData, productos });
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="ergonomicoButton">
+                                                <div className="iconErgo">
+                                                    <FontAwesomeIcon icon={faCouch}/>
+                                                </div>
+                                                <label>
+                                                    Ergonómico
+                                                </label>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.productos[productoActivo].ergonomico}
+                                                    onChange={(e) => {
+                                                        const productos = [...formData.productos];
+                                                        productos[productoActivo].ergonomico = e.target.checked;
+                                                        setFormData({ ...formData, productos });
+                                                    }}
+                                                />
                                             </div>
                                         </div>
                                     </div>
