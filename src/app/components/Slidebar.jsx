@@ -14,67 +14,98 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
-import api from "../services/axios";   
+import api from "../services/axios";
 
 export const Sidebar = ({ onToggle }) => {
-     const [isOpen, setIsOpen] = useState(false);
-     const router = useRouter();
-     const { permissions, logout, user } = useAuth(); // obtener user para mostrar nombre/rol
+    const [isOpen, setIsOpen] = useState(false);
+    const router = useRouter();
+    const { permissions, logout, user } = useAuth(); // obtener user para mostrar nombre/rol
 
-     const canSeeDashboard = Boolean(
-         permissions?.isAprobador || permissions?.isComprador || permissions?.isSuperAdmin
-     );
-     const canSeeRequisiciones = Boolean(
-         permissions?.isSolicitante || permissions?.isAprobador || permissions?.isComprador || permissions?.isSuperAdmin
-     );
-     const canSeeUsuarios = Boolean(permissions?.isSuperAdmin || permissions?.isSolicitante);
+    const canSeeDashboard = Boolean(
+        permissions?.isAprobador || permissions?.isComprador || permissions?.isSuperAdmin
+    );
+    const canSeeRequisiciones = Boolean(
+        permissions?.isSolicitante || permissions?.isAprobador || permissions?.isComprador || permissions?.isSuperAdmin
+    );
+    const canSeeUsuarios = Boolean(permissions?.isSuperAdmin || permissions?.isSolicitante);
 
-     const navItems = [{ icon: faHome, label: "Inicio", path: "/dashboard" }];
+    const navItems = [{ icon: faHome, label: "Inicio", path: "/dashboard" }];
 
-     if (canSeeUsuarios) {
-         navItems.push({ icon: faUserGear, label: "Usuarios", path: "/usuarios" });
-     }
+    if (canSeeUsuarios) {
+        navItems.push({ icon: faUserGear, label: "Usuarios", path: "/usuarios" });
+    }
 
-     const handleToggle = () => {
-         const newState = !isOpen;
-         setIsOpen(newState);
-         onToggle?.(newState); // Notifica al Dashboard
-     };
+    const handleToggle = () => {
+        const newState = !isOpen;
+        setIsOpen(newState);
+        onToggle?.(newState); // Notifica al Dashboard
+    };
 
-     const handleNavigate = (path) => {
-         router.push(path)
-     }
+    const handleNavigate = (path) => {
+        router.push(path)
+    }
 
-     const handleLogout = async () => {
-         try {
-             const token = localStorage.getItem("token");
-             if (typeof logout === "function") {
-                 try { logout(); } catch (e) { /* ignore */ }
-             }
-             await api.post("http://localhost:8000/api/auth/logout", {
-                 headers: { Authorization: `Bearer ${token}` },
-             });
-             router.push("/");
-         } catch (err) {
-             console.error("Error durante logout:", err);
-             router.push("/");
-         }
-     }
+    const handleLogout = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (typeof logout === "function") {
+                try { logout(); } catch (e) { /* ignore */ }
+            }
+            await api.post("http://localhost:8000/api/auth/logout", {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            router.push("/");
+        } catch (err) {
+            console.error("Error durante logout:", err);
+            router.push("/");
+        }
+    }
 
-     const isCollapsed = !isOpen;
+    const isCollapsed = !isOpen;
 
-     return (
-         <aside
-             className={`sidebar ${isCollapsed ? "sidebarCollapsed" : "sidebarExpanded"}`}
-             aria-expanded={!isCollapsed}
-         >
-             {/* Toggle */}
-             <button onClick={handleToggle} className="toggleButton" aria-label="Toggle sidebar">
-                 <FontAwesomeIcon icon={isCollapsed ? faArrowRight : faArrowLeft} size="lg" />
-             </button>
+    const getCargoNombre = (cargo) => {
+        switch (cargo) {
+            case "managerGeneral":
+                return "Gerente General";
+            case "managerAdmin":
+                return "Gerente Administrativo";
+            case "managerAreaTyc":
+                return "Gerente de Área Tecnología y Proyectos";
+            case "gerSST":
+                return "Gerente de Área SST";
+            case "dicLeaderAreaTyC":
+                return "Director / Líder de Área Tec y Proyectos";
+            case "dicSST":
+                return "Director / Líder de SST";
+            case "CoordiDevWeb":
+                return "Coordinador Desarrollo Web";
+            case "analistaQA":
+                return "Analista Requerimientos y QA";
+            case "gerAdmin":
+                return "Gerente Administrativo";
+            case "gerGeneral":
+                return "Gerente General";
+            case "dicTYP":
+                return "Director Tecnología y Proyectos";
+            case "gerTyC":
+                return "Gerente Tecnología y Proyectos";
+            default:
+                return cargo || "Usuario";
+        }
+    };
 
-             {/* Logo / Header */}
-             <div className={`logoSection ${isCollapsed ? "logoSectionCollapsed" : "logoSectionExpanded"}`}>
+    return (
+        <aside
+            className={`sidebar ${isCollapsed ? "sidebarCollapsed" : "sidebarExpanded"}`}
+            aria-expanded={!isCollapsed}
+        >
+            {/* Toggle */}
+            <button onClick={handleToggle} className="toggleButton" aria-label="Toggle sidebar">
+                <FontAwesomeIcon icon={isCollapsed ? faArrowRight : faArrowLeft} size="lg" />
+            </button>
+
+            {/* Logo / Header */}
+            <div className={`logoSection ${isCollapsed ? "logoSectionCollapsed" : "logoSectionExpanded"}`}>
                 <div className={`logoContainer ${isCollapsed ? "logoContainerCollapsed" : ""}`}>
                     {/* Imagen mini cuando está colapsado */}
                     {isCollapsed ? (
@@ -93,43 +124,43 @@ export const Sidebar = ({ onToggle }) => {
                 </div>
             </div>
 
-             {/* Navigation */}
-             <nav className="nav">
-                 {navItems.map((item, index) => (
-                     <button
-                         key={index}
-                         type="button"
-                         title={isCollapsed ? item.label : undefined}
-                         onClick={() => handleNavigate(item.path)}
-                         className={`navButton ${isCollapsed ? "navButtonCollapsed" : ""} navButtonInactive`}
-                     >
-                         <FontAwesomeIcon icon={item.icon} className="navIcon" />
-                         {!isCollapsed && <span>{item.label}</span>}
-                     </button>
-                 ))}
-                 {/* Opcional: otras entradas basadas en permisos */}
-             </nav>
+            {/* Navigation */}
+            <nav className="nav">
+                {navItems.map((item, index) => (
+                    <button
+                        key={index}
+                        type="button"
+                        title={isCollapsed ? item.label : undefined}
+                        onClick={() => handleNavigate(item.path)}
+                        className={`navButton ${isCollapsed ? "navButtonCollapsed" : ""} navButtonInactive`}
+                    >
+                        <FontAwesomeIcon icon={item.icon} className="navIcon" />
+                        {!isCollapsed && <span>{item.label}</span>}
+                    </button>
+                ))}
+                {/* Opcional: otras entradas basadas en permisos */}
+            </nav>
 
-             {/* User / Footer */}
-             <div className="userSection">
-                 <div className={`userCard ${isCollapsed ? "userCardCollapsed" : ""}`}>
-                     <div className="userAvatar">
-                         <FontAwesomeIcon icon={faUser} style={{ color: "var(--textColor)" }}/>
-                     </div>
-                     {!isCollapsed && (
-                         <div className="userDetails">
-                             <div className="userInfo">
-                                 <p className="userName">{user?.nombre || "Usuario"}</p>
-                                 <p className="userRole">{user?.rol || user?.cargo || "—"}</p>
-                             </div>
-                             <button className="logoutButton" onClick={handleLogout} title="Cerrar sesión">
-                                 <FontAwesomeIcon icon={faRightFromBracket} />
-                             </button>
-                         </div>
-                     )}
-                 </div>
-             </div>
-         </aside>
-     );
- };
+            {/* User / Footer */}
+            <div className="userSection">
+                <div className={`userCard ${isCollapsed ? "userCardCollapsed" : ""}`}>
+                    <div className="userAvatar">
+                        <FontAwesomeIcon icon={faUser} style={{ color: "var(--textColor)" }} />
+                    </div>
+                    {!isCollapsed && (
+                        <div className="userDetails">
+                            <div className="userInfo">
+                                <p className="userName">{user?.nombre || "Usuario"}</p>
+                                <p className="userRole">{getCargoNombre(user.cargo)}</p>
+                            </div>
+                            <button className="logoutButton" onClick={handleLogout} title="Cerrar sesión">
+                                <FontAwesomeIcon icon={faRightFromBracket} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </aside>
+    );
+};
 

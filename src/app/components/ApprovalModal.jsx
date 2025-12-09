@@ -43,81 +43,71 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 const data = await res.data;
-                const productosVisibles = (data.productos || []).filter(
-                    (p) => p.aprobado !== "rechazado" && p.visible !== 0
-                );
-                setDetalles(prev => ({
-                    currentUser: user,
-                    requisicion: data.requisicion,
-                    productos: productosVisibles,
-                }));
 
-                const init = {};
+                // Obtener aprobadores y determinar el aprobador actual (por sesión y requisición)
+                const apr = await api.get(
+                    `/api/requisiciones/${requisicion.requisicion_id}/aprobacion`,
+                    { headers: { Authorization: token ? `Bearer ${token}` : "" } }
+                );
+                const aprData = apr.data || {};
+                const approvers = aprData.approvers || aprData.aprobadores || [];
+
+                // Buscar el aprobador de la sesión actual
+                const uname = (user?.nombre || "").toLowerCase().trim();
+                const urol = (user?.rol || user?.cargo || "").toLowerCase().trim();
+                const aprobadorSesion = approvers.find(a =>
+                    (String(a.nombre_aprobador || "").toLowerCase().trim() === uname) ||
+                    (String(a.rol_aprobador || "").toLowerCase().trim() === urol)
+                );
+
+                // Solo puede aprobar si es el aprobador de la sesión, su estado es "pendiente" y visible
+                const puedeAprobarAhora = !!aprobadorSesion &&
+                    String(aprobadorSesion.estado).toLowerCase() === "pendiente" &&
+                    (aprobadorSesion.visible === 1 || aprobadorSesion.visible === true);
+                setPuedeAprobar(puedeAprobarAhora);
+
+                // Filtrar productos relevantes según el rol
                 const technoRoles = ["dicTYP", "gerTyC"];
                 const sstRoles = ["dicSST", "gerSST"];
                 const cargo = user?.cargo || "";
 
-                (data.productos || []).forEach((p) => {
-                    const editable =
-                        (technoRoles.includes(cargo) && !!p.compra_tecnologica) ||
-                        (sstRoles.includes(cargo) && !!p.ergonomico) ||
-                        (!technoRoles.concat(sstRoles).includes(cargo));
+                let productosRelevantes = (data.productos || []);
+                if (technoRoles.includes(cargo)) {
+                    productosRelevantes = productosRelevantes.filter(p => p.compra_tecnologica === 1 || p.compra_tecnologica === true);
+                } else if (sstRoles.includes(cargo)) {
+                    productosRelevantes = productosRelevantes.filter(p => p.ergonomico === 1 || p.ergonomico === true);
+                }
 
-                    if (editable) {
-                        init[p.id] = (p.aprobado === "aprobado" || p.aprobado === 1 || p.aprobado === true) || false;
-                    }
+                setDetalles(prev => ({
+                    currentUser: user,
+                    requisicion: data.requisicion,
+                    productos: productosRelevantes,
+                    aprobadorSesion: aprobadorSesion,
+                }));
+
+                // Inicializar decisiones para todos los productos relevantes
+                const init = {};
+                (productosRelevantes || []).forEach((p) => {
+                    init[p.id] = false;
                 });
                 setDecisiones(init);
 
-                try {
-                    const apr = await api.get(
-                        `/api/requisiciones/${requisicion.requisicion_id}/aprobacion`,
-                        { headers: { Authorization: token ? `Bearer ${token}` : "" } }
-                    );
-                    const aprData = apr.data || {};
-                    const approvers = aprData.approvers || aprData.aprobadores || [];
-
-                    // 🔥 NUEVA LÓGICA: Buscar AL APROBADOR DEL USUARIO ACTUAL
-                    const uname = (user?.nombre || "").toLowerCase().trim();
-                    const urol = (user?.rol || user?.cargo || "").toLowerCase().trim();
-
-                    const aprobadorActual = approvers.find(a => {
-                        const nombreMatch = String(a.nombre_aprobador || "").toLowerCase().trim() === uname;
-                        const rolMatch = String(a.rol_aprobador || "").toLowerCase().trim() === urol;
-                        return nombreMatch || rolMatch;
-                    });
-
-                    if (!aprobadorActual) {
-                        // El usuario no es aprobador de esta requisición
-                        setPuedeAprobar(false);
-                        setYaAprobaste(false);
-                        setLoading(false);
-                        return;
-                    }
-
-                    // Verificar estado del aprobador actual
-                    const estadoActual = String(aprobadorActual.estado || "").toLowerCase().trim();
-                    const yaAprobado = estadoActual === "aprobada";
-                    const esVisible = aprobadorActual.visible === 1 || aprobadorActual.visible === true;
-                    const estaPendiente = estadoActual === "pendiente";
-
-                    // Puede aprobar si: es su turno (visible), está pendiente y no ha aprobado
-                    const puede = esVisible && estaPendiente && !yaAprobado;
-
-                    setPuedeAprobar(puede);
-                    setYaAprobaste(yaAprobado);
-
-                    console.log(`🔍 Aprobador: ${user?.nombre} | Rol: ${user?.cargo}`);
-                    console.log(`📋 Estado en BD: ${estadoActual} | Visible: ${esVisible} | Pendiente: ${estaPendiente}`);
-                    console.log(`✅ Puede aprobar: ${puede} | Ya aprobó: ${yaAprobado}`);
-
-                } catch (e) {
-                    console.error("❌ Error al obtener aprobación:", e);
-                    setPuedeAprobar(false);
-                    setYaAprobaste(false);
+                // 🔥 Solo marcar yaAprobaste si el aprobador tiene estado "aprobada" Y TODOS sus productos relevantes tienen aprobado/rechazado
+                let yaAprobasteFinal = false;
+                if (aprobadorSesion && String(aprobadorSesion.estado).toLowerCase() === "aprobada") {
+                    // Verifica que todos los productos relevantes tengan aprobado/rechazado
+                    const todosDecididos = productosRelevantes.length > 0 &&
+                        productosRelevantes.every(
+                            (p) => p.aprobado === "aprobado" || p.aprobado === "rechazado"
+                        );
+                    yaAprobasteFinal = todosDecididos;
                 }
+                setYaAprobaste(yaAprobasteFinal);
+
             } catch (err) {
                 console.error("❌ Error cargando detalles:", err);
+                setPuedeAprobar(false);
+                setYaAprobaste(false);
             } finally {
                 setLoading(false);
             }
@@ -126,29 +116,14 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
         fetchDetalles();
     }, [requisicion, token, user]);
 
-    const technoRoles = ["dicTYP", "gerTyC"];
-    const sstRoles = ["dicSST", "gerSST"];
-
     const isEditableForUser = (product) => {
-        const cargo = detalles?.currentUser?.cargo || "";
-        const esTecnologico = !!product.compra_tecnologica;
-        const esErgonomico = !!product.ergonomico;
-
-        if (!esTecnologico && !esErgonomico) {
-            return true;
-        }
-
-        if (technoRoles.includes(cargo)) {
-            return esTecnologico;
-        }
-
-        if (sstRoles.includes(cargo)) {
-            return esErgonomico;
-        }
-
+        const cargo = user?.cargo || "";
+        const technoRoles = ["dicTYP", "gerTyC"];
+        const sstRoles = ["dicSST", "gerSST"];
+        if (technoRoles.includes(cargo)) return !!product.compra_tecnologica;
+        if (sstRoles.includes(cargo)) return !!product.ergonomico;
         return true;
     };
-
 
     const toggleDecision = (productoId, product) => {
         if (!isEditableForUser(product)) return;
@@ -185,7 +160,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                 decisiones: editable.map((p) => {
                     const currentlyApproved = !!decisiones[p.id];
                     const previouslyApproved =
-                        p.aprobado === "aprobado" || p.aprobado === 1 || p.aprobado === true;
+                        p.aprobado === "aprobado" || p.aprobado === 1 || p.aprobado === "true";
                     let fecha_aprobado = null;
                     if (currentlyApproved) {
                         fecha_aprobado = previouslyApproved ? (p.fecha_aprobado || nowIso) : nowIso;
@@ -257,6 +232,8 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
             }
 
             onApproved();
+            // 🔥 Recargar detalles para actualizar el estado del aprobador y productos
+            await reloadDetalles();
             setActionLoadingExiting(true);
             setTimeout(() => {
                 setActionLoadingExiting(false);
@@ -342,6 +319,146 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
             toast.error("No se pudo registrar el rechazo");
             setActionLoadingVisible(false);
             setSaving(false);
+        }
+    };
+
+    const handleAprobaSingle = async (productoId) => {
+        try {
+            const producto = detalles.productos.find(p => p.id === productoId);
+            if (!producto) return;
+
+            const confirmed = await confirmToast(
+                `¿Deseas aprobar "${producto.nombre}"?`,
+                { confirmLabel: "Aprobar", cancelLabel: "Cancelar", confirmColor: "#16a34a" }
+            );
+            if (!confirmed) return;
+
+            setSaving(true);
+            setActionLoadingVisible(true);
+
+            const nowIso = new Date().toISOString();
+            const body = {
+                decisiones: [{
+                    id: productoId,
+                    aprobado: true,
+                    fecha_aprobado: nowIso,
+                }],
+            };
+
+            // 🔥 Solo actualiza el producto individual, NO el estado del aprobador ni de la requisición
+            const res = await api.put(
+                `/api/requisiciones/${requisicion.requisicion_id}/aprobar-items`,
+                body,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "X-User-Name": detalles.currentUser?.nombre,
+                        "X-User-Area": detalles.currentUser?.area,
+                    },
+                }
+            );
+            if (res.status >= 400) throw new Error(res.data?.message || "Error al aprobar");
+
+            toast.success("Producto aprobado");
+
+            // Actualizar solo el producto aprobado en el estado local
+            setDetalles(prev => ({
+                ...prev,
+                productos: prev.productos.map(p =>
+                    p.id === productoId
+                        ? { ...p, aprobado: "aprobado", fecha_aprobado: nowIso }
+                        : p
+                ),
+            }));
+
+            setDecisiones(prev => ({
+                ...prev,
+                [productoId]: false
+            }));
+
+        } catch (err) {
+            if (err?.response?.status >= 400) {
+                toast.error("No se pudo aprobar el producto");
+            }
+        } finally {
+            setSaving(false);
+            setActionLoadingVisible(false);
+        }
+    };
+
+    const handleRechazarSingle = async (productoId) => {
+        try {
+            const producto = detalles.productos.find(p => p.id === productoId);
+            if (!producto) return;
+
+            const confirmed = await confirmToast(
+                `¿Deseas rechazar "${producto.nombre}"?`,
+                { confirmLabel: "Rechazar", cancelLabel: "Cancelar", confirmColor: "#dc2626", background: "#ef4444" }
+            );
+            if (!confirmed) return;
+
+            setSaving(true);
+            setActionLoadingVisible(true);
+
+            const nowIso = new Date().toISOString();
+            const body = {
+                decisiones: [{
+                    id: productoId,
+                    aprobado: false,
+                    fecha_aprobado: nowIso,
+                }],
+            };
+
+            const res = await api.put(
+                `/api/requisiciones/${requisicion.requisicion_id}/aprobar-items`,
+                body,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "X-User-Name": detalles.currentUser?.nombre,
+                        "X-User-Area": detalles.currentUser?.area,
+                    },
+                }
+            );
+            if (res.status >= 400) throw new Error(res.data?.message || "Error al rechazar");
+
+            toast.success("Producto rechazado");
+
+            // Recargar productos para reflejar el estado actualizado
+            const resReload = await api.get(
+                `http://localhost:8000/api/requisiciones/${requisicion.requisicion_id}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            const dataReload = await resReload.data;
+
+            // Filtrar y actualizar productos relevantes
+            const cargo = user?.cargo || "";
+            let productosRelevantes = (dataReload.productos || []);
+            if (technoRoles.includes(cargo)) {
+                productosRelevantes = productosRelevantes.filter(p => p.compra_tecnologica === 1 || p.compra_tecnologica === true);
+            } else if (sstRoles.includes(cargo)) {
+                productosRelevantes = productosRelevantes.filter(p => p.ergonomico === 1 || p.ergonomico === true);
+            }
+            setDetalles(prev => ({
+                ...prev,
+                requisicion: dataReload.requisicion,
+                productos: productosRelevantes,
+            }));
+
+            // Actualizar decisiones solo para productos pendientes
+            const newDecisiones = {};
+            productosRelevantes.forEach((p) => {
+                if (!p.aprobado) newDecisiones[p.id] = false;
+            });
+            setDecisiones(newDecisiones);
+
+        } catch (err) {
+            if (err?.response?.status >= 400) {
+                toast.error("No se pudo rechazar el producto");
+            }
+        } finally {
+            setSaving(false);
+            setActionLoadingVisible(false);
         }
     };
 
@@ -451,13 +568,17 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
         ""
     ).toLowerCase().trim();
 
+    // 🔥 ESTADO DEL APROBADOR ACTUAL (no de la requisición)
+    const estadoAprobadorActual = detalles?.aprobadorActual?.estado || "";
+    const aprobadorEsRechazado = detalles?.aprobadorActual?.esRechazado || false;
+
     return (
         <div className="modal-overlay">
             <div className="modal-content">
                 {actionLoadingVisible && (
                     <div
                         className={`approval-loading-overlay ${actionLoadingExiting ? "fade-out" : "fade-in"}`}
-                        style={{ position: "absolute", inset: 0, zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.92)" }}
+                        style={{ position: "absolute", inset: 0, zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.92)", width: "100%" }}
                     >
                         <div className="loading-cambios" style={{ textAlign: "center" }}>
                             <img src="/coopidrogas_logo_mini.png" className="LogoCambios" alt="Cargando..." />
@@ -518,22 +639,65 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     <h3 className="tittleOneUserNew">productos asociados</h3>
                     <div className="tabla-productos">
                         {productos.map((p) => {
-                            const editable = isEditableForUser(p);
+                            // Estado del producto
+                            const productoAprobado = p.aprobado === "aprobado" || p.aprobado === 1 || p.aprobado === "true";
+                            const productoRechazado = p.aprobado === "rechazado";
+                            const pendiente = !productoAprobado && !productoRechazado;
+
+                            // Permitir editar si el aprobador no ha terminado
+                            const editable = isEditableForUser(p) && puedeAprobar && (!yaAprobaste);
+
+                            // 🔥 Mostrar color verde/rojo y etiqueta SOLO si:
+                            // - El aprobador yaAprobaste (final), o
+                            // - El producto ya fue aprobado/rechazado por el usuario actual en esta sesión (mientras aprueba)
+                            // Para esto, si el producto está aprobado y el usuario aún puede aprobar, lo mostramos verde temporalmente
+                            let borderColor = "#ddd";
+                            let backgroundColor = "#fff";
+                            let showAprobadoTag = false;
+                            let showRechazadoTag = false;
+
+                            if (productoAprobado && (yaAprobaste || (puedeAprobar && !yaAprobaste))) {
+                                borderColor = "#16a34a";
+                                backgroundColor = "#dcfce7";
+                                showAprobadoTag = true;
+                            } else if (productoRechazado && (yaAprobaste || (puedeAprobar && !yaAprobaste))) {
+                                borderColor = "#dc2626";
+                                backgroundColor = "#fee2e2";
+                                showRechazadoTag = true;
+                            }
+
                             return (
-                                <div key={p.id} className="containerProductoAprove">
+                                <div
+                                    key={p.id}
+                                    className="containerProductoAprove"
+                                    style={{
+                                        border: `2px solid ${borderColor}`,
+                                        backgroundColor: backgroundColor,
+                                        borderRadius: "8px",
+                                        padding: "12px",
+                                        transition: "all 0.3s ease",
+                                        opacity: editable || showAprobadoTag || showRechazadoTag ? 1 : 0.5
+                                    }}
+                                >
                                     <div className="leftInfoAprove">
-                                        <div
-                                            className={`checkProducto 
-                                                ${decisiones[p.id] ? "checked" : ""} 
-                                                ${(!editable || rejectedIds.has(p.id)) ? "disabled" : ""}`
-                                            }
-                                            onClick={() => {
-                                                if (!editable || rejectedIds.has(p.id)) return;
-                                                toggleDecision(p.id, p);
-                                            }}
-                                        >
-                                            {decisiones[p.id] ? "✔" : ""}
-                                        </div>
+                                        {/* Solo mostrar check si es editable */}
+                                        {editable && (
+                                            <div
+                                                className="checkProducto"
+                                                onClick={() => {
+                                                    if (!editable) return;
+                                                    toggleDecision(p.id, p);
+                                                }}
+                                                style={{
+                                                    display: "flex",
+                                                    background: "#e5e7eb",
+                                                    color: "#111827",
+                                                    cursor: editable ? "pointer" : "not-allowed"
+                                                }}
+                                            >
+                                                {decisiones[p.id] ? "✔" : ""}
+                                            </div>
+                                        )}
                                         <div className="nameAndDescriptionProducto">
                                             <p className="nameProducto">{p.nombre}</p>
                                             <p className="descriptionProducto">{p.descripcion}</p>
@@ -541,25 +705,102 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                                                 <div className={`tagOption ${p.compra_tecnologica ? "active" : ""}`}>
                                                     Tecnológico
                                                 </div>
-
                                                 <div className={`tagOption ${p.ergonomico ? "active" : ""}`}>
                                                     Ergonómico
                                                 </div>
+                                                {showAprobadoTag && (
+                                                    <div className="tagOption active" style={{ background: "#16a34a", color: "white" }}>
+                                                        ✓ Aprobado
+                                                    </div>
+                                                )}
+                                                {showRechazadoTag && (
+                                                    <div className="tagOption" style={{ background: "#dc2626", color: "white" }}>
+                                                        ✕ Rechazado
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
                                     <div className="rightInfoAprove">
                                         <div className="totalAndCantidad">
                                             <p className="priceProducto">{formatCOP(p.valor_estimado)}</p>
-                                            <p className="cantidadProducto">{p.cantidad}</p>
+                                            <p className="cantidadProducto">Cantidad {p.cantidad}</p>
                                         </div>
+                                        {/* Botones solo si editable */}
+                                        {editable && (
+                                            <div style={{
+                                                display: "grid",
+                                                gridTemplateColumns: "1fr",
+                                                gap: "6px",
+                                                marginLeft: "12px",
+                                                minWidth: "50px"
+                                            }}>
+                                                <button
+                                                    onClick={() => handleAprobaSingle(p.id)}
+                                                    disabled={saving || actionLoadingVisible}
+                                                    title="Aprobar este producto"
+                                                    style={{
+                                                        padding: "8px 10px",
+                                                        background: "#16a34a",
+                                                        color: "white",
+                                                        border: "none",
+                                                        borderRadius: "5px",
+                                                        cursor: saving || actionLoadingVisible ? "not-allowed" : "pointer",
+                                                        fontWeight: "bold",
+                                                        fontSize: "14px",
+                                                        opacity: saving || actionLoadingVisible ? 0.6 : 1,
+                                                        transition: "all 0.2s ease",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center"
+                                                    }}
+                                                >
+                                                    ✓
+                                                </button>
+                                                <button
+                                                    onClick={() => handleRechazarSingle(p.id)}
+                                                    disabled={saving || actionLoadingVisible}
+                                                    title="Rechazar este producto"
+                                                    style={{
+                                                        padding: "8px 10px",
+                                                        background: "#dc2626",
+                                                        color: "white",
+                                                        border: "none",
+                                                        borderRadius: "5px",
+                                                        cursor: saving || actionLoadingVisible ? "not-allowed" : "pointer",
+                                                        fontWeight: "bold",
+                                                        fontSize: "14px",
+                                                        opacity: saving || actionLoadingVisible ? 0.6 : 1,
+                                                        transition: "all 0.2s ease",
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center"
+                                                    }}
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             );
                         })}
                     </div>
                 </div>
-                {estadoNormalized === "rechazada" ? (
+                {/* 🔥 VERIFICAR ESTADO DEL APROBADOR ACTUAL, NO DE LA REQUISICIÓN */}
+                {aprobadorEsRechazado ? (
+                    <div className="modalFooter">
+                        <div className="modal-actions">
+                            <div className="containerIconApprove">
+                                <FontAwesomeIcon icon={faWarning} />
+                            </div>
+                            <div className="containerTextApprove">
+                                <p className="textOneTextApprove">Tu aprobación fue rechazada automáticamente</p>
+                                <p className="textTwoTextApprove">Porque el aprobador anterior rechazó todos los productos</p>
+                            </div>
+                        </div>
+                    </div>
+                ) : estadoNormalized === "rechazada" ? (
                     <div className="modalFooter">
                         <div className="modal-actions">
                             <div className="containerIconApprove">

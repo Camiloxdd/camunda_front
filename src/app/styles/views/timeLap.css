@@ -116,6 +116,11 @@
     transition: all 0.4s ease;
 }
 
+.timeline-circle.rechazado {
+    background-color: red;
+    color: white;
+}
+
 .timeline-circle.aprobado {
     background: linear-gradient(135deg, #002855, #1D5DA8);
     color: white;
@@ -149,6 +154,10 @@
 
 .timeline-line.linea-pendiente {
     background: #e0e4eb;
+}
+
+.timeline-line.linea-rechazada {
+background: linear-gradient(135deg, red, #1D5DA8);
 }
 
 .timeline-info {

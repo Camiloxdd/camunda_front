@@ -248,13 +248,14 @@
   color: white;
   font-size: 15px;
   font-weight: bold;
-  background-color: var(--textColor);
+  background: linear-gradient(135deg, #1d5da8,#002855 );
   border-radius: 4px;
-  transition: 0.3s all;
+  transition: 0.5s all;
 }
 
 .buttonsLogin button:hover {
-  background-color: var(--textColorP);
+  transition: 0.3s all ease;
+  background: linear-gradient(135deg, #002855, #1d5da8);
 }
 
 .buttonsMicrosoft {
@@ -3413,6 +3414,7 @@ input[type="time"] {
   border-bottom: 3px solid #ddd;
   width: 100%;
   padding: 20px;
+  justify-content: space-between;
   height: 9%;
   display: flex;
   align-items: center;
@@ -3512,9 +3514,30 @@ input[type="time"] {
   border-bottom: 2px solid #e5e7eb;
 }
 
-.textColor{
+.textColor {
   color: var(--textColor);
 }
+
+.downloadPdfButton {
+  background: linear-gradient(135deg, #002855, #1d5da8);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.downloadPdfButton:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+
+
 
 @media (max-width: 900px) {
 

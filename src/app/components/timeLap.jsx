@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import "../styles/views/timeLap.css"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheckCircle, faClock } from "@fortawesome/free-solid-svg-icons";
+import { faCheckCircle, faCircle, faCircleXmark, faClock } from "@fortawesome/free-solid-svg-icons";
 import api from "../services/axios";
 import { get } from "node:http";
 
@@ -214,38 +214,46 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
                     {/* Nodos de aprobadores */}
                     {aprobaciones.map((a, index) => {
                         const aprobado = a.estado === "aprobada";
+                        const rechazado = a.estado === "rechazada";
                         const siguiente = a.visible === 1 || a.visible === true;
                         const showLine = index < aprobaciones.length - 1;
+                        
+                        // 🔥 EXTRAER FECHA Y HORA
                         const fecha = a.fecha_aprobacion
                             ? new Date(a.fecha_aprobacion).toISOString().split("T")[0]
+                            : "-";
+                        const hora = a.fecha_aprobacion
+                            ? new Date(a.fecha_aprobacion).toISOString().split("T")[1].substring(0, 5)
                             : "-";
 
                         return (
                             <div key={index} className="timeline-node">
                                 <div
-                                    className={`timeline-circle ${aprobado ? "aprobado" : siguiente ? "activo" : "pendiente"
-                                        }`}
+                                    className={`timeline-circle ${aprobado ? "aprobado" : rechazado ? "rechazado" : siguiente ? "activo" : "pendiente"}`}
                                 >
                                     {aprobado ? (
                                         <FontAwesomeIcon icon={faCheckCircle} className="iconTimeLap" />
+                                    ) : rechazado ? (
+                                        <span className="iconTimeLap" style={{ fontSize: "18px" }}><FontAwesomeIcon icon={faCircleXmark}/></span>
                                     ) : (
-                                        <FontAwesomeIcon icon={faClock} className="iconTimeLap" />
+                                        <FontAwesomeIcon icon={faClock} className="iconTimeLap"/>
                                     )}
                                 </div>
 
                                 {showLine && (
                                     <div
-                                        className={`timeline-line ${aprobado ? "linea-aprobada" : "linea-pendiente"
-                                            }`}
+                                        className={`timeline-line ${aprobado ? "linea-aprobada" : rechazado ? "linea-rechazada" : "linea-pendiente"}`}
                                     ></div>
                                 )}
 
                                 <div className="timeline-info">
-                                    <div className={`timeline-nombre ${aprobado ? "text-green" : ""}`}>
+                                    <div className={`timeline-nombre ${aprobado ? "text-green" : rechazado ? "text-red" : ""}`}>
                                         <p>{a.nombre_aprobador}</p>
                                     </div>
                                     <p className="timeline-fecha">{getCargoNombre(a.rol_aprobador)}</p>
-                                    <div className="timeline-fecha">{fecha}</div>
+                                    <div className={`timeline-fecha ${rechazado ? "text-red" : ""}`}>
+                                        {rechazado ? "Rechazado" : fecha !== "-" ? `${fecha} ${hora}` : "-"}
+                                    </div>
                                 </div>
                             </div>
                         );

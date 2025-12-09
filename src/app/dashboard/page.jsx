@@ -758,15 +758,21 @@ function DashboardInner() {
 
   useEffect(() => {
     // Mostrar notificación una sola vez (usar toastId para evitar duplicados)
-    if (!loading && permissions?.isAprobador && requisiciones.some(r => isPendingState(r.status || r.estado_aprobacion))) {
-      if (!toast.isActive(pendingToastIdRef.current)) {
-        toast.info("Tienes requisiciones por aprobar", { toastId: pendingToastIdRef.current });
-      }
-    } else {
-      // si ya no hay pendientes, cerrar notificación previa
-      if (toast.isActive(pendingToastIdRef.current)) {
-        toast.dismiss(pendingToastIdRef.current);
-      }
+    if (!loading && permissions?.isAprobador) {
+        const tieneRequisicionesPendientes = requisiciones.some(
+            r => normalizeEstado(r.status || r.estado_aprobacion || "") === "pendiente"
+        );
+
+        if (tieneRequisicionesPendientes) {
+            if (!toast.isActive(pendingToastIdRef.current)) {
+                toast.info("Tienes requisiciones por aprobar", { toastId: pendingToastIdRef.current });
+            }
+        } else {
+            // Si no hay pendientes, cerrar notificación previa
+            if (toast.isActive(pendingToastIdRef.current)) {
+                toast.dismiss(pendingToastIdRef.current);
+            }
+        }
     }
 
     if (!loading && permissions?.isComprador && requisiciones.some(r => isApprovedState(r.status || r.estado))) {
@@ -828,7 +834,7 @@ function DashboardInner() {
     try {
       setLoadingSolicitante(true);
       setOpenReqModal(true); // 🔥 Abre el modal INMEDIATAMENTE con estado de carga
-      
+
       if (!token) {
         toast.error("Token no encontrado. Por favor inicia sesión.");
         setLoadingSolicitante(false);
@@ -1514,26 +1520,16 @@ function DashboardInner() {
                     <div className="tittleReq">
                       <h1>REQUISICIÓN #{solicitanteReq.requisicion_id}</h1>
                     </div>
-                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-                      {/* 🔥 BOTÓN DESCARGAR PDF */}
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center", width: "78%", justifyContent: "space-between" }}>
+                      <div className="tagEstado">
+                        <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
+                          {getStatusLabel(estadoSolicitante)}
+                        </span>
+                      </div>
                       <button
                         onClick={() => handleDescargarPDF(solicitanteReq.requisicion_id)}
-                        disabled={progress !== null}
-                        style={{
-                          background: "linear-gradient(135deg, #002855, #1d5da8)",
-                          color: "white",
-                          border: "none",
-                          padding: "8px 16px",
-                          borderRadius: "8px",
-                          cursor: progress !== null ? "not-allowed" : "pointer",
-                          fontWeight: "bold",
-                          fontSize: "14px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          transition: "all 0.3s ease",
-                          opacity: progress !== null ? 0.6 : 1
-                        }}
+                        disabled={solicitanteReq.status === "pendiente" || progress !== null}
+                        className="downloadPdfButton"
                         onMouseEnter={(e) => {
                           if (progress === null) e.target.style.transform = "translateY(-2px)";
                         }}
@@ -1544,11 +1540,6 @@ function DashboardInner() {
                         <FontAwesomeIcon icon={faFilePdf} />
                         {progress ? `${progress}` : "Descargar PDF"}
                       </button>
-                      <div className="tagEstado">
-                        <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
-                          {getStatusLabel(estadoSolicitante)}
-                        </span>
-                      </div>
                     </div>
                   </div>
 
