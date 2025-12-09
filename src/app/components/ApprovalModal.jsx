@@ -5,7 +5,8 @@ import "../styles/views/ApprovalModal.css";
 import api from "../services/axios";
 import { approvePendingSingle, startThreeStep } from "../services/camunda";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFile } from "@fortawesome/free-solid-svg-icons";
+import { faCircleCheck, faFile, faWarning } from "@fortawesome/free-solid-svg-icons";
+import TimeLap from "./timeLap";
 
 export default function ApprovalModal({ requisicion, onClose, onApproved, user, token: tokenProp }) {
     const [detalles, setDetalles] = useState({
@@ -75,51 +76,43 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     );
                     const aprData = apr.data || {};
                     const approvers = aprData.approvers || aprData.aprobadores || [];
-                    const nextOrder = aprData.nextOrder;
-                    const uname = (user?.nombre || "").toLowerCase().trim();
-                    const urol = (user?.rol || "").toLowerCase().trim();
-                    const actual = approvers.find(a => (
-                        String(a.nombre_aprobador || "").toLowerCase().trim() === uname ||
-                        String(a.rol_aprobador || "").toLowerCase().trim() === urol
-                    ));
 
-                    const estadoAct = String(actual?.estado || actual?.estado_aprobador || "").toLowerCase().trim();
-                    const yaApr = !!(
-                        actual && (
-                            actual.aprobado === 1 || actual.aprobado === true ||
-                            estadoAct.includes("aprob") || !!actual.fecha_aprobacion
-                        )
-                    );
-                    const puede = !!(
-                        actual && !yaApr && (
-                            actual.visible === 1 || actual.visible === true ||
-                            (typeof actual.orden !== "undefined" && actual.orden === nextOrder)
-                        )
-                    );
+                    // 🔥 NUEVA LÓGICA: Buscar AL APROBADOR DEL USUARIO ACTUAL
+                    const uname = (user?.nombre || "").toLowerCase().trim();
+                    const urol = (user?.rol || user?.cargo || "").toLowerCase().trim();
+
+                    const aprobadorActual = approvers.find(a => {
+                        const nombreMatch = String(a.nombre_aprobador || "").toLowerCase().trim() === uname;
+                        const rolMatch = String(a.rol_aprobador || "").toLowerCase().trim() === urol;
+                        return nombreMatch || rolMatch;
+                    });
+
+                    if (!aprobadorActual) {
+                        // El usuario no es aprobador de esta requisición
+                        setPuedeAprobar(false);
+                        setYaAprobaste(false);
+                        setLoading(false);
+                        return;
+                    }
+
+                    // Verificar estado del aprobador actual
+                    const estadoActual = String(aprobadorActual.estado || "").toLowerCase().trim();
+                    const yaAprobado = estadoActual === "aprobada";
+                    const esVisible = aprobadorActual.visible === 1 || aprobadorActual.visible === true;
+                    const estaPendiente = estadoActual === "pendiente";
+
+                    // Puede aprobar si: es su turno (visible), está pendiente y no ha aprobado
+                    const puede = esVisible && estaPendiente && !yaAprobado;
 
                     setPuedeAprobar(puede);
-                    setYaAprobaste(yaApr);
+                    setYaAprobaste(yaAprobado);
 
-                    // 🔥 VERIFICACIÓN CON HEADERS CORRECTOS
-                    try {
-                        const verRes = await api.get(
-                            `/api/requisiciones/${requisicion.requisicion_id}/verificar-aprobacion`,
-                            {
-                                headers: {
-                                    Authorization: `Bearer ${token}`,
-                                    "X-User-Name": user?.nombre || "",
-                                    "X-User-Area": user?.area || ""
-                                }
-                            }
-                        );
-                        const verData = verRes.data || {};
-                        setPuedeAprobar(verData.puedeAprobar || false);
-                        setYaAprobaste(verData.yaAprobaste || false);
-                    } catch (verErr) {
-                        console.error("Error al verificar aprobación:", verErr);
-                        // Mantener valores previos si falla la verificación
-                    }
+                    console.log(`🔍 Aprobador: ${user?.nombre} | Rol: ${user?.cargo}`);
+                    console.log(`📋 Estado en BD: ${estadoActual} | Visible: ${esVisible} | Pendiente: ${estaPendiente}`);
+                    console.log(`✅ Puede aprobar: ${puede} | Ya aprobó: ${yaAprobado}`);
+
                 } catch (e) {
+                    console.error("❌ Error al obtener aprobación:", e);
                     setPuedeAprobar(false);
                     setYaAprobaste(false);
                 }
@@ -172,7 +165,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
             const editable = editableAll.filter((p) => !rejectedIds.has(p.id));
 
             if (editable.length === 0) {
-                toast.warn("No hay items editables para aprobar (los items de tu área ya fueron rechazados).");
+                toast.warn("No hay items editables para aprobar.");
                 return;
             }
 
@@ -186,6 +179,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
             if (!confirmed) return;
             setSaving(true);
             setActionLoadingVisible(true);
+
             const nowIso = new Date().toISOString();
             const body = {
                 decisiones: editable.map((p) => {
@@ -205,8 +199,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     };
                 }),
             };
-            console.log(detalles.currentUser?.nombre)
-            console.log(detalles.currentUser?.area)
 
             const res = await api.put(
                 `/api/requisiciones/${requisicion.requisicion_id}/aprobar-items`,
@@ -254,14 +246,14 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
 
                 if (!esMayor) {
                     await approvePendingSingle(camundaVars, { processInstanceKey });
-                    toast.info("Se solicitó aprobación de tareas pendientes (flujo simplificado).");
+                    toast.info("Se solicitó aprobación de tareas pendientes.");
                 } else {
                     await startThreeStep(camundaVars, { role: currentRole, processInstanceKey });
-                    toast.info("Se completó la userTask correspondiente a tu rol en Camunda.");
+                    toast.info("Se completó la userTask correspondiente.");
                 }
             } catch (err) {
                 console.error("Error al llamar a Camunda:", err);
-                toast.warn("No se completaron las tareas en Camunda automáticamente.");
+                toast.warn("Las aprobaciones se registraron, pero Camunda no se actualizó automáticamente.");
             }
 
             onApproved();
@@ -304,7 +296,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
 
             const body = {
                 decisiones: decisionesParaEnviar,
-                action: "reject",
             };
 
             const res = await api.put(
@@ -321,7 +312,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
             const data = res.data;
             toast.success(data.message || "Rechazo registrado correctamente");
 
-            // Eliminar los productos rechazados del estado local
+            // Actualizar UI
             setDetalles((prev) => ({
                 ...prev,
                 productos: prev.productos.filter((p) => !seleccionados.some((s) => s.id === p.id)),
@@ -337,21 +328,14 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                 return newSet;
             });
 
-            // Si ya no quedan productos editables, cerrar modal y desbloquear siguiente aprobador
+            // Cerrar modal
+            setActionLoadingExiting(true);
             setTimeout(() => {
+                setActionLoadingExiting(false);
                 setActionLoadingVisible(false);
-                setSaving(false);
-                if (
-                    detalles.productos.filter((p) => isEditableForUser(p) && !rejectedIds.has(p.id) && !seleccionados.some((s) => s.id === p.id)).length === 0
-                ) {
-                    setActionLoadingExiting(true);
-                    setTimeout(() => {
-                        setActionLoadingExiting(false);
-                        onApproved();
-                        onClose();
-                    }, 360);
-                }
-            }, 500);
+                onApproved();
+                onClose();
+            }, 360);
 
         } catch (err) {
             console.error("Error al registrar rechazo:", err);
@@ -431,14 +415,14 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
     if (loading) {
         return (
             <div className="modal-overlay">
-                <div className="modal-content">
+                <div className="modal-content-loading">
                     <div className="content-loading">
                         <img
                             src="/coopidrogas_logo_mini.png"
                             className="LogoCambios"
                             alt="Logo de carga"
                         />
-                        <p>Cargando detalles...</p>
+                        <p>Thinking...</p>
                     </div>
                 </div>
             </div>
@@ -498,6 +482,14 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                 </div>
 
                 <div className="modal-body">
+                    {/* 🔥 AGREGAR TIMELINE AQUÍ */}
+                    <TimeLap
+                        requisicionId={requisicion.requisicion_id}
+                        token={token}
+                        open={true}
+                    />
+                    <br />
+
                     <div className="containerInfoReq">
                         <div className="cardsReq">
                             <h3 className="tittleOneUserNew">Solicitante</h3>
@@ -522,103 +514,108 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                         </div>
                     </div>
                     <br />
-                    
-                    <div className="lineaSeparadora">
-
-                    </div>
+                    <div className="lineaSeparadora"></div>
                     <h3 className="tittleOneUserNew">productos asociados</h3>
                     <div className="tabla-productos">
-                        <h3>Productos asociados</h3>
-                        <table className="tablaResumen">
-                            <thead >
-                                <tr>
-                                    <th>Aprobar</th>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Cantidad</th>
-                                    <th>Valor estimado</th>
-                                    <th>Tecnológico</th>
-                                    <th>Ergonómico</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {productos.map((p) => {
-                                    const editable = isEditableForUser(p);
-                                    return (
-                                        <tr
-                                            key={p.id}
-                                            style={{
-                                                backgroundColor: rejectedIds.has(p.id)
-                                                    ? "#ffecec"
-                                                    : !editable
-                                                        ? "#ddddddff"
-                                                        : "transparent",
-                                                color: !editable ? "#666" : "inherit",
+                        {productos.map((p) => {
+                            const editable = isEditableForUser(p);
+                            return (
+                                <div key={p.id} className="containerProductoAprove">
+                                    <div className="leftInfoAprove">
+                                        <div
+                                            className={`checkProducto 
+                                                ${decisiones[p.id] ? "checked" : ""} 
+                                                ${(!editable || rejectedIds.has(p.id)) ? "disabled" : ""}`
+                                            }
+                                            onClick={() => {
+                                                if (!editable || rejectedIds.has(p.id)) return;
+                                                toggleDecision(p.id, p);
                                             }}
                                         >
-                                            <td>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!decisiones[p.id]}
-                                                    onChange={() => toggleDecision(p.id, p)}
-                                                    disabled={!editable || rejectedIds.has(p.id)}
-                                                />
-                                            </td>
-                                            <td>{p.nombre}</td>
-                                            <td>{p.descripcion}</td>
-                                            <td>{p.cantidad}</td>
-                                            <td>{formatCOP(p.valor_estimado)}</td>
-                                            <td>{p.compra_tecnologica ? "Sí" : "No"}</td>
-                                            <td>{p.ergonomico ? "Sí" : "No"}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                                            {decisiones[p.id] ? "✔" : ""}
+                                        </div>
+                                        <div className="nameAndDescriptionProducto">
+                                            <p className="nameProducto">{p.nombre}</p>
+                                            <p className="descriptionProducto">{p.descripcion}</p>
+                                            <div className="tagsProducto">
+                                                <div className={`tagOption ${p.compra_tecnologica ? "active" : ""}`}>
+                                                    Tecnológico
+                                                </div>
+
+                                                <div className={`tagOption ${p.ergonomico ? "active" : ""}`}>
+                                                    Ergonómico
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="rightInfoAprove">
+                                        <div className="totalAndCantidad">
+                                            <p className="priceProducto">{formatCOP(p.valor_estimado)}</p>
+                                            <p className="cantidadProducto">{p.cantidad}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
                 {estadoNormalized === "rechazada" ? (
-                    <div className="modal-actions"><p>Esta requisicion fue rechazada</p></div>
+                    <div className="modalFooter">
+                        <div className="modal-actions">
+                            <div className="containerIconApprove">
+                                <FontAwesomeIcon icon={faWarning} />
+                            </div>
+                            <div className="containerTextApprove">
+                                <p className="textOneTextApprove">Esta requisicion fue rechazada</p>
+                                <p className="textTwoTextApprove">Solicita de nuevo esta requisicion</p>
+                            </div>
+                        </div>
+                    </div>
                 ) : estadoNormalized === "totalmente aprobada" ? (
-                    <div className="modal-actions"><p>Esta requisicion ya esta totalmente aprobada</p></div>
+                    <div className="modalFooter">
+                        <div className="modal-actions">
+                            <div className="containerIconApprove">
+                                <FontAwesomeIcon icon={faCircleCheck} />
+                            </div>
+                            <div className="containerTextApprove">
+                                <p className="textOneTextApprove">Esta requisicion ya fue totalmente aprobada</p>
+                                <p className="textTwoTextApprove">No necesita mas aprobaciones</p>
+                            </div>
+                        </div>
+                    </div>
                 ) : puedeAprobar ? (
-                    <div className="modal-actions">
-                        <button onClick={handleGuardar} disabled={saving || actionLoadingVisible} className="btn-approve">
+                    <div className="modal-actions-buttons">
+                        <button onClick={handleGuardar} disabled={saving || actionLoadingVisible} >
                             {saving ? "Aprobando..." : "Aprobar"}
                         </button>
-                        <button onClick={handleRechazar} disabled={saving || actionLoadingVisible} className="btn-approve" style={{ marginLeft: 8 }}>
+                        <button onClick={handleRechazar} disabled={saving || actionLoadingVisible}>
                             {saving ? "Procesando..." : "Rechazar"}
                         </button>
                     </div>
                 ) : yaAprobaste ? (
-                    <div className="modal-actions">
-                        <p>Esta requisicion ya fue aprobada por ti, faltan aprobadores</p>
-                        {/* Botón para ver el timeline de aprobaciones */}
-                        <button
-                            style={{
-                                marginLeft: 12,
-                                background: "#1d5da8",
-                                color: "white",
-                                border: "none",
-                                borderRadius: 5,
-                                padding: "6px 14px",
-                                fontWeight: "bold",
-                                cursor: "pointer"
-                            }}
-                            onClick={() => {
-                                // Abrir el modal de TimeLap en la página principal
-                                if (typeof window !== "undefined" && window.dispatchEvent) {
-                                    window.dispatchEvent(new CustomEvent("openTimeLap", {
-                                        detail: { requisicionId: requisicion.requisicion_id }
-                                    }));
-                                }
-                            }}
-                        >
-                            Ver flujo de aprobaciones
-                        </button>
+                    <div className="modalFooter">
+                        <div className="modal-actions">
+                            <div className="containerIconApprove">
+                                <FontAwesomeIcon icon={faCircleCheck} />
+                            </div>
+                            <div className="containerTextApprove">
+                                <p className="textOneTextApprove">Esta requisicion ya fue aprobada por ti</p>
+                                <p className="textTwoTextApprove">Faltan mas aprobadores</p>
+                            </div>
+                        </div>
                     </div>
                 ) : (
-                    <div className="modal-actions"><p>Aún no es tu turno de aprobar esta requisición</p></div>
+                    <div className="modalFooter">
+                        <div className="modal-actions">
+                            <div className="containerIconApprove">
+                                <FontAwesomeIcon icon={faWarning} />
+                            </div>
+                            <div className="containerTextApprove">
+                                <p className="textOneTextApprove">Aún no es tu turno de aprobar esta requisición</p>
+                                <p className="textTwoTextApprove">Espera tu turno para aprobar</p>
+                            </div>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>

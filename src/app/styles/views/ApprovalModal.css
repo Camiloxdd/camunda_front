@@ -14,12 +14,38 @@
 .modal-content {
   background-color: white;
   border-radius: 10px;
-  width: 40%;
+  width: 80%;
   font-size: 25px;
   height: 100%;
   max-height: 85vh;
-  overflow-y: auto;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  overflow-y: auto;
+}
+
+.modal-content-loading {
+  background-color: white;
+  border-radius: 10px;
+  width: 80%;
+  font-size: 20px;
+  display: flex;
+  justify-content: center;
+  height: 100%;
+  max-height: 85vh;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  position: relative;
+  align-items: center;
+  color: var(--textColor);
+  font-weight: bold;
+  overflow-y: auto;
+}
+
+.content-loading{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 
 /* overlay animado para aprobar/rechazar (con fade-in/out) */
@@ -148,6 +174,234 @@
   background-color: #ddd;
   height: 1px;
   margin: 0 0 24px;
+}
+
+.tabla-productos {
+  gap: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Estilos específicos para verifyModalReq */
+.modal-actions {
+  background-color: #10b98114;
+  border: 1px solid #10b98133;
+  border-radius: 12px;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  display: flex;
+}
+
+.containerIconApprove {
+  color: #10b981;
+  background-color: #10b98126;
+  border-radius: 50%;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: 44px;
+  height: 44px;
+  display: flex;
+}
+
+.textOneTextApprove {
+  color: #10b981;
+  margin: 0 0 2px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.textTwoTextApprove {
+  color: #6b7280;
+  margin: 0;
+  font-size: 13px;
+}
+
+.modalFooter{
+  padding: 20px;
+}
+
+.modal-actions-buttons {
+ background-color: #f5f5f5;
+ border-top: 2px solid #ddd;
+ padding: 20px;
+ gap: 10px;
+ display: flex;
+  justify-content: flex-end;
+}
+
+.modal-actions-buttons button {
+  background: linear-gradient(135deg, #002855, #1d5da8);
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all .2s;
+}
+
+.modal-actions-buttons button:hover {
+  transform: translateY(-2px);
+}
+
+.modal-actions button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-approve {
+  background-color: #1d5da8 !important;
+  padding: 10px 20px !important;
+  border-radius: 8px !important;
+  color: white !important;
+}
+
+/* Contenedor de la tabla de productos con scroll limitado */
+.tabla-productos {
+  max-height: 350px;
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-bottom: 20px;
+}
+
+/* Scroll personalizado */
+.tabla-productos::-webkit-scrollbar {
+  width: 8px;
+}
+
+.tabla-productos::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+
+.tabla-productos::-webkit-scrollbar-thumb {
+  background: #1d5da8;
+  border-radius: 8px;
+}
+
+.tabla-productos::-webkit-scrollbar-thumb:hover {
+  background: #154a8c;
+}
+
+.containerProductoAprove {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  border-radius: 12px;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  transition: all .2s;
+  display: flex;
+}
+
+.checkProducto.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background-color: red;
+}
+
+.leftInfoAprove {
+  display: flex;
+  gap: 12px;
+  width: 70%;
+}
+
+.checkProducto {
+  border: 2px solid var(--textColor);
+  background-color: var(--textColor);
+  color: #fff;
+  border-radius: 6px;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  width: 20px;
+  font-size: 15px;
+  height: 20px;
+  transition: all .2s;
+  display: flex;
+  padding: 10px;
+}
+
+.checkProducto .hola {
+  background-color: orange;
+}
+
+.nameProducto {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--textColor);
+}
+
+.descriptionProducto {
+  font-size: 15px;
+  color: var(--textColorP);
+}
+
+.nameAndDescriptionProducto {
+  gap: 2px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tagsProducto {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.tagOption {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 8px;
+  background: #e7edf3;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.tagOption:hover {
+  opacity: 0.9;
+}
+
+.tagOption.active {
+  background: #e0ecff;
+  color: #1d4ed8;
+  border-color: #1d4ed8;
+  font-weight: 600;
+}
+
+.rightInfoAprove {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.totalAndCantidad {
+  display: flex;
+  gap: 12px;
+  text-align: right;
+  flex-direction: column;
+}
+
+.priceProducto {
+  font-size: 25px;
+  font-weight: 600;
+  color: var(--textColor);
+}
+
+.cantidadProducto {
+  font-size: 20px;
+  color: var(--textColorP);
 }
 
 @keyframes spinVaried {

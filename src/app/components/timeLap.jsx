@@ -155,7 +155,7 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
                         className="LogoCambios"
                         alt="Logo de carga"
                     />
-                    <p className="textLoading">Cargando flujo...</p>
+                    <p className="textLoading">Thinking...</p>
                 </div>
             </div>
         );

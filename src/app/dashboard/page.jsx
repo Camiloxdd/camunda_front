@@ -827,6 +827,8 @@ function DashboardInner() {
   const handleOpenSolicitanteModal = async (req) => {
     try {
       setLoadingSolicitante(true);
+      setOpenReqModal(true); // 🔥 Abre el modal INMEDIATAMENTE con estado de carga
+      
       if (!token) {
         toast.error("Token no encontrado. Por favor inicia sesión.");
         setLoadingSolicitante(false);
@@ -888,10 +890,10 @@ function DashboardInner() {
         aprobadores, // añadir lista de aprobadores al estado
       });
 
-      setOpenReqModal(true);
     } catch (err) {
       console.error(err);
       toast.error("No se pudo cargar la requisición");
+      setOpenReqModal(false);
     } finally {
       setLoadingSolicitante(false);
     }
@@ -1125,9 +1127,11 @@ function DashboardInner() {
             <p>Gestiona todas las solicitudes de compra</p>
           </div>
           <div className="buttonsReq">
-            <button onClick={abrirModalNuevaReq} className="fab-btn primary">
-              <FontAwesomeIcon icon={faPlus} /> Nueva requisición
-            </button>
+            {permissions?.isSolicitante && (
+              <button onClick={abrirModalNuevaReq} className="fab-btn primary">
+                <FontAwesomeIcon icon={faPlus} /> Nueva requisición
+              </button>
+            )}
           </div>
         </div>
         <div className="containerInfoRequisiciones">
@@ -1305,20 +1309,24 @@ function DashboardInner() {
                                 >
                                   <FontAwesomeIcon icon={faEye} />
                                 </button>
-                                <button
-                                  className="actionButton actionButtonVisible"
-                                  onClick={(e) => { e.stopPropagation(); handleEditOpen(req); }}
-                                  title="Editar"
-                                >
-                                  <FontAwesomeIcon icon={faPencil} />
-                                </button>
-                                <button
-                                  className="actionButton actionButtonVisible"
-                                  onClick={(e) => { e.stopPropagation(); handleDelete(req.requisicion_id); }}
-                                  title="Eliminar"
-                                >
-                                  <FontAwesomeIcon icon={faTrash} style={{ color: "red" }} />
-                                </button>
+                                {permissions?.isSolicitante && (
+                                  <div className="campoBotonesReq">
+                                    <button
+                                      className="actionButton actionButtonVisible"
+                                      onClick={(e) => { e.stopPropagation(); handleEditOpen(req); }}
+                                      title="Editar"
+                                    >
+                                      <FontAwesomeIcon icon={faPencil} />
+                                    </button>
+                                    <button
+                                      className="actionButton actionButtonVisible"
+                                      onClick={(e) => { e.stopPropagation(); handleDelete(req.requisicion_id); }}
+                                      title="Eliminar"
+                                    >
+                                      <FontAwesomeIcon icon={faTrash} style={{ color: "red" }} />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1341,75 +1349,125 @@ function DashboardInner() {
           />
         )}
         {verifyModalReq && (
-          <div
-            className="modalOverlayVerifiRequi"
-          >
+          <div className="modalOverlay">
             <div className="modal-content">
-              <div className="papitoGugutata">
-                <h1 className="tittleContentComprador ">Verificar requisición #{verifyModalReq.requisicion_id}</h1>
-                <div className="resumenSectionOne">
-                  <div className="info-requisiciones">
-                    <h3>Datos del solicitante</h3>
-                    <ul>
-                      <li><strong>Nombre:</strong> {verifyModalReq.nombre_solicitante || "—"}</li>
-                      <li><strong>Fecha:</strong> {verifyModalReq.fecha || "—"}</li>
-                      <li><strong>Área:</strong> {verifyModalReq.area || "—"}</li>
-                      <li><strong>Sede:</strong> {verifyModalReq.sede || "—"}</li>
-                      <li><strong>Urgencia:</strong> {verifyModalReq.urgencia || "—"}</li>
-                      <li><strong>Justificación:</strong> {verifyModalReq.justificacion || "—"}</li>
-                    </ul>
-                  </div>
-                  <div className="totalesComprador">
-                    <h4>Totales</h4>
-                    <ul>
-                      <li><strong>Total de productos:</strong> {verifyModalReq.productos?.length || 0}</li>
-                      <li><strong>Valor total:</strong> {formatCOP(verifyModalReq.valor_total)}</li>
-                    </ul>
+              {/* 🔥 OVERLAY DE CARGA */}
+              {verifyLoading && (
+                <div
+                  className="approval-loading-overlay"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    zIndex: 60,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "rgba(255,255,255,0.92)",
+                    borderRadius: "10px"
+                  }}
+                >
+                  <div className="loading-cambios" style={{ textAlign: "center" }}>
+                    <img
+                      src="/coopidrogas_logo_mini.png"
+                      className="LogoCambios"
+                      alt="Cargando..."
+                    />
+                    <p className="textLoading">Procesando...</p>
                   </div>
                 </div>
+              )}
+
+              <div className="modal-header">
+                <div className="textAndIcon">
+                  <div className="iconHeaderApr">
+                    <FontAwesomeIcon icon={faFile} />
+                  </div>
+                  <div className="textApr">
+                    <h2>Verificar requisición #{verifyModalReq.requisicion_id}</h2>
+                    <p>Aprobación final del comprador</p>
+                  </div>
+                </div>
+                <button onClick={() => setVerifyModalReq(null)} className="close-button">
+                  X
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <div className="containerInfoReq">
+                  <div className="cardsReq">
+                    <h3 className="tittleOneUserNew">Datos del solicitante</h3>
+                    <div className="areaYFecha">
+                      <p className="labelTittle">{verifyModalReq.nombre_solicitante}</p>
+                      <p className="textLabel">{verifyModalReq.area || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="cardsReq">
+                    <h3 className="tittleOneUserNew">Fecha</h3>
+                    <div className="areaYFecha">
+                      <p className="labelTittle">{verifyModalReq.fecha || "—"}</p>
+                      <p className="textLabel">{verifyModalReq.justificacion || "No tiene."}</p>
+                    </div>
+                  </div>
+                  <div className="cardsReq">
+                    <h3 className="tittleOneUserNew">Valor total</h3>
+                    <div className="areaYFecha">
+                      <p className="labelTittle">{formatCOP(verifyModalReq.valor_total)}</p>
+                      <p className="textLabel">{verifyModalReq.productos?.length || 0} producto(s)</p>
+                    </div>
+                  </div>
+                </div>
+                <br />
+                <div className="lineaSeparadora"></div>
+                <h3 className="tittleOneUserNew">Productos asociados</h3>
                 <div className="tabla-productos">
-                  <h4>Productos</h4>
-                  <table className="tablaResumen">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        <th>Valor estimado</th>
-                        <th>Cuenta Contable</th>
-                        <th>Centro Costo</th>
-                        <th>Tecnológico</th>
-                        <th>Ergonómico</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {verifyModalReq.productos?.map((p, i) => (
-                        <tr key={i}>
-                          <td style={{ padding: 6 }}>{i + 1}</td>
-                          <td style={{ padding: 6 }}>{p.nombre || p.productoOServicio || "—"}</td>
-                          <td style={{ padding: 6 }}>{p.cantidad || "—"}</td>
-                          <td style={{ padding: 6 }}>
-                            {formatCOP(p.valor_estimado ?? p.valorEstimado)}
-                          </td>
-                          <td style={{ padding: 6 }}>{p.cuenta_contable}</td>
-                          <td>{p.centro_costo}</td>
-                          <td style={{ padding: 6 }}>{(p.compra_tecnologica || p.compraTecnologica) ? "Sí" : "No"}</td>
-                          <td style={{ padding: 6 }}>{(p.ergonomico) ? "Sí" : "No"}</td>
-                          {/**/}
-                        </tr>
-                      )) || null}
-                    </tbody>
-                  </table>
+                  {verifyModalReq.productos?.map((p, i) => (
+                    <div key={i} className="containerProductoAprove">
+                      <div className="leftInfoAprove">
+                        <div className="checkProducto" style={{ background: "#e7edf3", color: "#4b5563", border: "2px solid #ddd" }}>
+                          {p.aprobado === "aprobado" ? "✔" : p.aprobado === "rechazado" ? "✕" : "—"}
+                        </div>
+                        <div className="nameAndDescriptionProducto">
+                          <p className="nameProducto">{p.nombre || p.productoOServicio || "—"}</p>
+                          <p className="descriptionProducto">{p.descripcion || ""}</p>
+                          <div className="tagsProducto">
+                            <div className={`tagOption ${p.compra_tecnologica ? "active" : ""}`}>
+                              Tecnológico
+                            </div>
+                            <div className={`tagOption ${p.ergonomico ? "active" : ""}`}>
+                              Ergonómico
+                            </div>
+                            <div className={`tagOption ${p.aprobado === "aprobado" ? "active" : p.aprobado === "rechazado" ? "" : ""}`}
+                              style={{
+                                background: p.aprobado === "aprobado" ? "#dcfce7" : p.aprobado === "rechazado" ? "#fee2e2" : "#fef3c7",
+                                color: p.aprobado === "aprobado" ? "#166534" : p.aprobado === "rechazado" ? "#991b1b" : "#92400e"
+                              }}
+                            >
+                              {p.aprobado === "aprobado" ? "Aprobado" : p.aprobado === "rechazado" ? "Rechazado" : "Pendiente"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="rightInfoAprove">
+                        <div className="totalAndCantidad">
+                          <p className="priceProducto">{formatCOP(p.valor_estimado ?? p.valorEstimado)}</p>
+                          <p className="cantidadProducto">Cant: {p.cantidad}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )) || null}
                 </div>
-                <div className="buttonsVerifiRequi">
-                  <button onClick={() => setVerifyModalReq(null)}>Cerrar</button>
-                  <button onClick={() => handleDevolver(verifyModalReq.requisicion_id)} disabled={verifyLoading}>
-                    {verifyLoading ? "Procesando..." : "Devolver"}
-                  </button>
-                  <button onClick={() => handleAprobar(verifyModalReq.requisicion_id)} disabled={verifyLoading}>
-                    {verifyLoading ? "Procesando..." : "Aprobar Total"}
-                  </button>
-                </div>
+              </div>
+
+              <div className="modal-actions" style={{ padding: "20px", borderTop: "2px solid #ddd", display: "flex", gap: "10px", justifyContent: "center" }}>
+                <button onClick={() => setVerifyModalReq(null)} style={{ padding: "10px 20px", background: "#e5e7eb", color: "#111827", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+                  Cerrar
+                </button>
+                <button onClick={() => handleDevolver(verifyModalReq.requisicion_id)} disabled={verifyLoading} style={{ padding: "10px 20px", background: "#f97316", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+                  {verifyLoading ? "Procesando..." : "Devolver"}
+                </button>
+                <button onClick={() => handleAprobar(verifyModalReq.requisicion_id)} disabled={verifyLoading} style={{ padding: "10px 20px", background: "#16a34a", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+                  {verifyLoading ? "Procesando..." : "Aprobar Total"}
+                </button>
               </div>
             </div>
           </div>
@@ -1417,237 +1475,296 @@ function DashboardInner() {
         {openReqModal && solicitanteReq && (
           <div className="modalOverlay">
             <div className="modalBox">
-              <div className="headerInfo">
-                <button
-                  className="modalCloseReq"
-                  onClick={() => {
-                    setOpenReqModal(false);
-                    setSolicitanteReq(null);
-                  }}
-                >
-                  <FontAwesomeIcon icon={faX} />
-                </button>
-                <div className="tittleReq">
-                  <h1>REQUISICIÓN #{solicitanteReq.requisicion_id}</h1>
+              {loadingSolicitante ? (
+                // 🔥 PANTALLA DE CARGA
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  height: "100%",
+                  width: "100%",
+                  gap: "20px"
+                }}>
+                  <img
+                    src="/coopidrogas_logo_mini.png"
+                    className="LogoCambios"
+                    alt="Cargando..."
+                    style={{ width: "80px", height: "80px" }}
+                  />
+                  <p style={{
+                    color: "#1d5da8",
+                    fontSize: "18px",
+                    fontWeight: "bold"
+                  }}>Thinking...</p>
                 </div>
-                <div className="tagEstado">
-                  <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
-                    {getStatusLabel(estadoSolicitante)}
-                  </span>
-                </div>
-              </div>
-              <div className="contentModalReq">
-                <TimeLap
-                  requisicionId={solicitanteReq.requisicion_id}
-                  token={token}
-                  open={true}
-                />
-                <br />
-                <div className="infoGeneralReq">
-                  <div className="detallesGeneralReq" style={{ display: "flex", gap: "24px" }}>
-                    <div className="detallesReq">
-                      <h3 className="tittleOneUserNew">datos del solicitante</h3>
-                      {loadingSolicitante ? (
-                        <div className="areaYFecha">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <div key={i} className="containerInfoReq" style={{ marginBottom: 10 }}>
-                              <div className="skeleton-line" style={{ width: i % 2 ? "50%" : "80%", height: 14 }} />
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="areaYFecha">
-                          <div className="containerInfoReq">
-                            <p className="labelTittle">Nombre</p>
-                            <p className="textLabel">{solicitanteReq.nombre_solicitante || "—"}</p>
-                          </div>
-                          <div className="containerInfoReq">
-                            <p className="labelTittle">Área</p>
-                            <p className="textLabel">{getAreaNombre(solicitanteReq.area)}</p>
-                          </div>
-                          <div className="containerInfoReq">
-                            <p className="labelTittle">Sede</p>
-                            <p className="textLabel">{getSedeNombre(solicitanteReq.sede)}</p>
-                          </div>
-                          <div className="containerInfoReq">
-                            <p className="labelTittle">Fecha</p>
-                            <p className="textLabel">{solicitanteReq.fecha || "—"}</p>
-                          </div>
-                        </div>
-                      )}
+              ) : solicitanteReq ? (
+                // 🔥 CONTENIDO CARGADO
+                <>
+                  <div className="headerInfo">
+                    <button
+                      className="modalCloseReq"
+                      onClick={() => {
+                        setOpenReqModal(false);
+                        setSolicitanteReq(null);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faX} />
+                    </button>
+                    <div className="tittleReq">
+                      <h1>REQUISICIÓN #{solicitanteReq.requisicion_id}</h1>
+                    </div>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                      {/* 🔥 BOTÓN DESCARGAR PDF */}
+                      <button
+                        onClick={() => handleDescargarPDF(solicitanteReq.requisicion_id)}
+                        disabled={progress !== null}
+                        style={{
+                          background: "linear-gradient(135deg, #002855, #1d5da8)",
+                          color: "white",
+                          border: "none",
+                          padding: "8px 16px",
+                          borderRadius: "8px",
+                          cursor: progress !== null ? "not-allowed" : "pointer",
+                          fontWeight: "bold",
+                          fontSize: "14px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                          transition: "all 0.3s ease",
+                          opacity: progress !== null ? 0.6 : 1
+                        }}
+                        onMouseEnter={(e) => {
+                          if (progress === null) e.target.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = "translateY(0)";
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faFilePdf} />
+                        {progress ? `${progress}` : "Descargar PDF"}
+                      </button>
+                      <div className="tagEstado">
+                        <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
+                          {getStatusLabel(estadoSolicitante)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="detallesGeneralReq">
-                    <div className="detallesReq">
-                      <div className="areaYFecha">
-                        <h3 className="tittleOneUserNew">resumen de productos</h3>
-                        <div className="containerInfoReq">
-                          <p className="labelTittle">Total productos</p>
-                          <p className="textLabel">{productosSolicitante.length}</p>
+
+                  <div className="contentModalReq">
+                    <TimeLap
+                      requisicionId={solicitanteReq.requisicion_id}
+                      token={token}
+                      open={true}
+                    />
+                    <br />
+                    <div className="infoGeneralReq">
+                      <div className="detallesGeneralReq" style={{ display: "flex", gap: "24px" }}>
+                        <div className="detallesReq">
+                          <h3 className="tittleOneUserNew">datos del solicitante</h3>
+                          {loadingSolicitante ? (
+                            <div className="areaYFecha">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <div key={i} className="containerInfoReq" style={{ marginBottom: 10 }}>
+                                  <div className="skeleton-line" style={{ width: i % 2 ? "50%" : "80%", height: 14 }} />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="areaYFecha">
+                              <div className="containerInfoReq">
+                                <p className="labelTittle">Nombre</p>
+                                <p className="textLabel">{solicitanteReq.nombre_solicitante || "—"}</p>
+                              </div>
+                              <div className="containerInfoReq">
+                                <p className="labelTittle">Área</p>
+                                <p className="textLabel">{getAreaNombre(solicitanteReq.area)}</p>
+                              </div>
+                              <div className="containerInfoReq">
+                                <p className="labelTittle">Sede</p>
+                                <p className="textLabel">{getSedeNombre(solicitanteReq.sede)}</p>
+                              </div>
+                              <div className="containerInfoReq">
+                                <p className="labelTittle">Fecha</p>
+                                <p className="textLabel">{solicitanteReq.fecha || "—"}</p>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="containerInfoReq">
-                          <p className="labelTittle">Ergonómicos</p>
-                          <p className="textLabel">
-                            {productosSolicitante.filter(p => p.ergonomico === 1 || p.ergonomico === true).length}
-                          </p>
+                      </div>
+                      <div className="detallesGeneralReq">
+                        <div className="detallesReq">
+                          <div className="areaYFecha">
+                            <h3 className="tittleOneUserNew">resumen de productos</h3>
+                            <div className="containerInfoReq">
+                              <p className="labelTittle">Total productos</p>
+                              <p className="textLabel">{productosSolicitante.length}</p>
+                            </div>
+                            <div className="containerInfoReq">
+                              <p className="labelTittle">Ergonómicos</p>
+                              <p className="textLabel">
+                                {productosSolicitante.filter(p => p.ergonomico === 1 || p.ergonomico === true).length}
+                              </p>
+                            </div>
+                            <div className="containerInfoReq">
+                              <p className="labelTittle">Tecnológicos</p>
+                              <p className="textLabel">
+                                {productosSolicitante.filter(p => p.compra_tecnologica === 1 || p.compra_tecnologica === true).length}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="containerInfoReq">
-                          <p className="labelTittle">Tecnológicos</p>
-                          <p className="textLabel">
-                            {productosSolicitante.filter(p => p.compra_tecnologica === 1 || p.compra_tecnologica === true).length}
-                          </p>
+                      </div>
+                      <div className="detallesGeneralReq">
+                        <div className="detallesReq">
+                          <div className="areaYFecha">
+                            <h3 className="tittleOneUserNew">informacion financiera</h3>
+                            <div className="containerInfoReq">
+                              <p className="labelTittle">Valor Total</p>
+                              <p className="textLabel">{formatCOP(solicitanteReq.valor_total)}</p>
+                            </div>
+                            <div className="containerInfoReq">
+                              <p className="labelTittle">En presupuesto</p>
+                              <p className="textLabel">
+                                {solicitanteReq.presupuestada ? "Sí" : "No"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <br />
+                    <div className="tablaContainerRequisicione">
+                      <h3 className="tittleOneUserNew">productos solicitados</h3>
+                      <div className="tablaProductosR">
+                        <div className="tabla-productos-header">
+                          <div>PRODUCTO / SERVICIO</div>
+                          <div>CUENTA CONTABLE</div>
+                          <div>CENTRO COSTO</div>
+                          <div style={{ textAlign: "center" }}>CANTIDAD</div>
+                          <div style={{ textAlign: "right" }}>VALOR UNITARIO</div>
+                          <div style={{ textAlign: "center" }}>ESTADO</div>
+                          <div style={{ textAlign: "center" }}>TECNOLÓGICO</div>
+                          <div style={{ textAlign: "center" }}>ERGONÓMICO</div>
+                        </div>
+
+                        <div className="tabla-productos-body">
+                          {productosSolicitante && productosSolicitante.length > 0 ? (
+                            productosSolicitante.map((producto, idx) => (
+                              <div
+                                key={producto.id ?? idx}
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns: "2.5fr 1.2fr 1.2fr 0.8fr 1.2fr 1fr 0.9fr 0.9fr",
+                                  gap: "12px",
+                                  padding: "12px 16px",
+                                  borderBottom: "1px solid #e5e7eb",
+                                  backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f9fafb",
+                                  alignItems: "center"
+                                }}
+                              >
+                                {/* Producto */}
+                                <div>
+                                  <p className="textColor" style={{ fontWeight: "600", margin: "0 0 4px 0", fontSize: "13px" }}>
+                                    {producto.nombre || producto.productoOServicio || "—"}
+                                  </p>
+                                  <p style={{ fontSize: "11px", color: "var(--textColorP)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {producto.descripcion || ""}
+                                  </p>
+                                </div>
+
+                                {/* Cuenta Contable */}
+                                <div style={{ fontSize: "13px", color: "var(--textColorP)", textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {producto.cuenta_contable || "—"}
+                                </div>
+
+                                {/* Centro Costo */}
+                                <div style={{ fontSize: "13px", color: "var(--textColorP)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {producto.centro_costo || "—"}
+                                </div>
+
+                                {/* Cantidad */}
+                                <div style={{ textAlign: "center", fontSize: "13px", color: "var(--textColorP)", fontWeight: "600" }}>
+                                  {producto.cantidad || "—"}
+                                </div>
+
+                                {/* Valor Unitario */}
+                                <div style={{ textAlign: "right", fontWeight: "600", fontSize: "13px", color: "var(--textColor)" }}>
+                                  {formatCOP(producto.valor_estimado ?? producto.valorEstimado ?? 0)}
+                                </div>
+
+                                {/* Estado */}
+                                <div style={{ textAlign: "center" }}>
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      padding: "4px 8px",
+                                      borderRadius: "4px",
+                                      fontSize: "11px",
+                                      fontWeight: "600",
+                                      backgroundColor: producto.aprobado === "aprobado" ? "#dcfce7" : producto.aprobado === "rechazado" ? "#fee2e2" : "#fef3c7",
+                                      color: producto.aprobado === "aprobado" ? "#166534" : producto.aprobado === "rechazado" ? "#991b1b" : "#92400e",
+                                      whiteSpace: "nowrap"
+                                    }}
+                                  >
+                                    {producto.aprobado || "Pendiente"}
+                                  </span>
+                                </div>
+
+                                {/* Tecnológico */}
+                                <div style={{ textAlign: "center" }}>
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      padding: "4px 6px",
+                                      borderRadius: "4px",
+                                      fontSize: "11px",
+                                      fontWeight: "600",
+                                      backgroundColor: (producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "#dbeafe" : "#f3f4f6",
+                                      color: (producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "#0369a1" : "#6b7280"
+                                    }}
+                                  >
+                                    {(producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "✓" : "—"}
+                                  </span>
+                                </div>
+
+                                {/* Ergonómico */}
+                                <div style={{ textAlign: "center" }}>
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      padding: "4px 6px",
+                                      borderRadius: "4px",
+                                      fontSize: "11px",
+                                      fontWeight: "600",
+                                      backgroundColor: (producto.ergonomico === 1 || producto.ergonomico === true) ? "#dcfce7" : "#f3f4f6",
+                                      color: (producto.ergonomico === 1 || producto.ergonomico === true) ? "#166534" : "#6b7280"
+                                    }}
+                                  >
+                                    {(producto.ergonomico === 1 || producto.ergonomico === true) ? "✓" : "—"}
+                                  </span>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div
+                              style={{
+                                padding: "24px 16px",
+                                textAlign: "center",
+                                color: "#9ca3af",
+                                borderBottom: "1px solid #e5e7eb"
+                              }}
+                            >
+                              No hay productos asociados a esta requisición.
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="detallesGeneralReq">
-                    <div className="detallesReq">
-                      <div className="areaYFecha">
-                        <h3 className="tittleOneUserNew">informacion financiera</h3>
-                        <div className="containerInfoReq">
-                          <p className="labelTittle">Valor Total</p>
-                          <p className="textLabel">{formatCOP(solicitanteReq.valor_total)}</p>
-                        </div>
-                        <div className="containerInfoReq">
-                          <p className="labelTittle">En presupuesto</p>
-                          <p className="textLabel">
-                            {solicitanteReq.presupuestada ? "Sí" : "No"}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <br />
-                <div className="tablaContainerRequisicione">
-                  <h3 className="tittleOneUserNew">productos solicitados</h3>
-                  <div className="tablaProductosR">
-                    <div className="tabla-productos-header">
-                      <div>PRODUCTO / SERVICIO</div>
-                      <div>CUENTA CONTABLE</div>
-                      <div>CENTRO COSTO</div>
-                      <div style={{ textAlign: "center" }}>CANTIDAD</div>
-                      <div style={{ textAlign: "right" }}>VALOR UNITARIO</div>
-                      <div style={{ textAlign: "center" }}>TECNOLÓGICO</div>
-                      <div style={{ textAlign: "center" }}>ERGONÓMICO</div>
-                    </div>
-
-                    {/* Body de la tabla con divs */}
-                    <div className="tabla-productos-body">
-                      {loadingSolicitante ? (
-                        // Skeleton rows
-                        Array.from({ length: 3 }).map((_, sIdx) => (
-                          <div
-                            key={"sk-" + sIdx}
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 0.8fr 0.8fr",
-                              gap: "12px",
-                              padding: "12px 16px",
-                              borderBottom: "1px solid #e5e7eb",
-                              backgroundColor: sIdx % 2 === 0 ? "#ffffff" : "#f9fafb"
-                            }}
-                          >
-                            {Array.from({ length: 7 }).map((_, i) => (
-                              <div key={i} className="skeleton-line" style={{ width: "80%", height: 14 }} />
-                            ))}
-                          </div>
-                        ))
-                      ) : productosSolicitante && productosSolicitante.length > 0 ? (
-                        productosSolicitante.map((producto, idx) => (
-                          <div
-                            key={producto.id ?? idx}
-                            style={{
-                              display: "grid",
-                              gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 0.8fr 0.8fr",
-                              gap: "12px",
-                              padding: "12px 16px",
-                              borderBottom: "1px solid #e5e7eb",
-                              backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f9fafb",
-                              alignItems: "center"
-                            }}
-                          >
-                            {/* Producto */}
-                            <div>
-                              <p className="textColor" style={{ fontWeight: "600", margin: "0 0 4px 0", fontSize: "14px"}}>
-                                {producto.nombre || producto.productoOServicio || "—"}
-                              </p>
-                              <p style={{ fontSize: "12px", color: "var(--textColorP)", margin: 0 }}>
-                                {producto.descripcion || ""}
-                              </p>
-                            </div>
-
-                            {/* Cuenta Contable */}
-                            <div style={{ fontSize: "14px", color: "var(--textColorP)", textAlign: "left" }}>
-                              {producto.cuenta_contable || "—"}
-                            </div>
-
-                            {/* Centro Costo */}
-                            <div style={{ fontSize: "14px", color: "var(--textColorP)" }}>
-                              {producto.centro_costo || "—"}
-                            </div>
-
-                            {/* Cantidad */}
-                            <div style={{ textAlign: "center", fontSize: "14px", color: "var(--textColorP)" }}>
-                              {producto.cantidad || "—"}
-                            </div>
-
-                            {/* Valor Unitario */}
-                            <div style={{ textAlign: "right", fontWeight: "600", fontSize: "14px", color: "var(--textColor)" }}>
-                              {formatCOP(producto.valor_estimado ?? producto.valorEstimado ?? 0)}
-                            </div>
-
-                            {/* Tecnológico */}
-                            <div style={{ textAlign: "center" }}>
-                              <span
-                                style={{
-                                  display: "inline-block",
-                                  padding: "4px 8px",
-                                  borderRadius: "4px",
-                                  fontSize: "12px",
-                                  fontWeight: "600",
-                                  backgroundColor: (producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "#dbeafe" : "#f3f4f6",
-                                  color: (producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "#0369a1" : "#6b7280"
-                                }}
-                              >
-                                {(producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "✓ Sí" : "No"}
-                              </span>
-                            </div>
-
-                            {/* Ergonómico */}
-                            <div style={{ textAlign: "center" }}>
-                              <span
-                                style={{
-                                  display: "inline-block",
-                                  padding: "4px 8px",
-                                  borderRadius: "4px",
-                                  fontSize: "12px",
-                                  fontWeight: "600",
-                                  backgroundColor: (producto.ergonomico === 1 || producto.ergonomico === true) ? "#dcfce7" : "#f3f4f6",
-                                  color: (producto.ergonomico === 1 || producto.ergonomico === true) ? "#166534" : "#6b7280"
-                                }}
-                              >
-                                {(producto.ergonomico === 1 || producto.ergonomico === true) ? "✓ Sí" : "No"}
-                              </span>
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div
-                          style={{
-                            padding: "24px 16px",
-                            textAlign: "center",
-                            color: "#9ca3af",
-                            borderBottom: "1px solid #e5e7eb"
-                          }}
-                        >
-                          No hay productos asociados a esta requisición.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+                </>
+              ) : null}
             </div>
           </div>
         )}
