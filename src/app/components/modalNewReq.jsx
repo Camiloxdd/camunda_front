@@ -476,7 +476,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 // 🔸 Llamamos a Camunda para completar la tarea
                 try {
                     console.log("🔁 Completando tarea de Camunda (segundo paso)...");
-                    /*await endTwoStepStartThreeStep(finalPayload);*/ // 👈 pasa tus variables del flujo
+                    await endTwoStepStartThreeStep(finalPayload);
                     console.log("✅ Tarea completada correctamente en Camunda");
                 } catch (err) {
                     console.error("❌ Error completando tarea en Camunda:", err);
@@ -586,7 +586,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 const payload = {
                     bienvenida: "Inicio del proceso de compras",
                 };
-                /*await endFirstStepStartTwoStep(payload);*/
+                await endFirstStepStartTwoStep(payload);
             }
             // Validación al avanzar de Paso 2 -> Paso 3 (ahora validaciones de productos y presupuesto)
             if (currentStep === 2 && nextStep === 3) {

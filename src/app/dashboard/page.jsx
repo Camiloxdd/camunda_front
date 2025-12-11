@@ -818,7 +818,7 @@ function DashboardInner() {
   }, []);
 
   const abrirModalNuevaReq = () => {
-    /*handleStartProcessCamunda();*/
+    handleStartProcessCamunda();
     setOpen(true);
   }
 
@@ -858,6 +858,8 @@ function DashboardInner() {
       const productos = resProd.data?.productos || [];
       setProductosSolicitante(productos);
 
+
+      console.log(productos)
 
       // Intentar obtener información de aprobadores (flujo)
       let aprobadores = [];
