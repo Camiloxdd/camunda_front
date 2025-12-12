@@ -11,11 +11,13 @@ import {
   faBuilding,
   faCartShopping,
   faChevronDown,
+  faGear,
   faLock,
   faMailBulk,
   faPencil,
   faPhone,
   faPlus,
+  faRightFromBracket,
   faSave,
   faShield,
   faStore,
@@ -27,6 +29,8 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import UserModal from "../components/userModal";
 import api from "../services/axios";
+import { useAuth } from "../context/AuthContext";
+import { useRouter } from "next/navigation";
 
 function UsuariosInner() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -41,7 +45,9 @@ function UsuariosInner() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingUser, setEditingUser] = useState(null);
-
+  const { permissions, user } = useAuth();
+  const [openUserModal, setOpenUserModal] = useState(false)
+  const router = useRouter();
   const [token, setToken] = useState(null);
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -304,6 +310,44 @@ function UsuariosInner() {
     }
   };
 
+  const getUserRoles = (user) => {
+    const roles = [];
+
+    if (user.super_admin) roles.push("Super Admin");
+    if (user.aprobador) roles.push("Aprobador");
+    if (user.solicitante) roles.push("Solicitante");
+    if (user.comprador) roles.push("Comprador");
+
+    return roles.length > 0 ? roles.join(" | ") : "Sin rol asignado";
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (openUserModal.current && !openUserModal.current.contains(e.target)) {
+        setOpenUserModal(false);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (typeof logout === "function") {
+        try { logout(); } catch (e) { /* ignore */ }
+      }
+      await api.post("http://localhost:8000/api/auth/logout", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      router.push("/");
+    } catch (err) {
+      console.error("Error durante logout:", err);
+      router.push("/");
+    }
+  }
+
   return (
     <div style={{ display: "flex", height: "100vh" }}>
       <Sidebar onToggle={setIsSidebarOpen} />
@@ -331,35 +375,28 @@ function UsuariosInner() {
             <p>Administra los usuarios y sus permisos</p>
           </div>
           <div className="buttonsReq">
-            <div className="newUserButton">
-              <button
-                onClick={() => {
-                  setEditingUser(null);
-                  setFormData({
-                    nombre: "",
-                    correo: "",
-                    cargo: "",
-                    telefono: "",
-                    sede: "",
-                    area: "",
-                    contraseña: "",
-                    super_admin: false,
-                    aprobador: false,
-                    solicitante: false,
-                    comprador: false,
-                  });
-                  setSelectedCargo("");
-                  setSelectedArea("");
-                  setSelectedSede("");
-                  setOpenModal(true);
-                }}
-              >
-                <FontAwesomeIcon icon={faUserPlus} />
-                <p>
-                  Nuevo Usuario
-                </p>
-              </button>
+            <div className="campoButtonsAndInfoUser">
+              <div className="infoUser">
+                <div className="nameAndRol">
+                  {user ? (
+                    <>
+                      <h3>Hola, {user.nombre}</h3>
+                      <p>{getCargoNombre(user.cargo)}</p>
+                    </>
+                  ) : (
+                    <>
+                      <h3>Cargando usuario...</h3>
+                      <p></p>
+                    </>
+                  )}
+                </div>
+                <div className="imgUser" onClick={() => setOpenUserModal(!openUserModal)} style={{ cursor: "pointer", position: "relative" }}>
+                  <FontAwesomeIcon icon={faUser} />
+                </div>
+
+              </div>
             </div>
+
           </div>
         </div>
 
@@ -401,6 +438,35 @@ function UsuariosInner() {
               <button className={`filterTab ${activeFilter === "aprobadores" ? "filterTabActive" : ""}`} onClick={() => setActiveFilter("aprobadores")}>Aprobadores</button>
               <button className={`filterTab ${activeFilter === "solicitantes" ? "filterTabActive" : ""}`} onClick={() => setActiveFilter("solicitantes")}>Solicitantes</button>
             </div>
+            <div className="newUserButton">
+              <button
+                onClick={() => {
+                  setEditingUser(null);
+                  setFormData({
+                    nombre: "",
+                    correo: "",
+                    cargo: "",
+                    telefono: "",
+                    sede: "",
+                    area: "",
+                    contraseña: "",
+                    super_admin: false,
+                    aprobador: false,
+                    solicitante: false,
+                    comprador: false,
+                  });
+                  setSelectedCargo("");
+                  setSelectedArea("");
+                  setSelectedSede("");
+                  setOpenModal(true);
+                }}
+              >
+                <FontAwesomeIcon icon={faUserPlus} />
+                <p>
+                  Nuevo Usuario
+                </p>
+              </button>
+            </div>
           </div>
         </div>
         <div className="campoTablaFondo">
@@ -434,7 +500,13 @@ function UsuariosInner() {
                 ) : userList.length > 0 ? (
                   // Usar displayedUsers (aplica búsqueda y pestañas)
                   displayedUsers.map((u) => {
-                    const roles = [u.aprobador && "Aprobador", u.solicitante && "Solicitante", u.comprador && "Comprador"].filter(Boolean).join(", ") || "Sin rol";
+                    const roles = [
+                      u.super_admin && "Super Admin",
+                      u.aprobador && "Aprobador",
+                      u.solicitante && "Solicitante",
+                      u.comprador && "Comprador"
+                    ].filter(Boolean).join(" | ");
+
                     const initials = (u.nombre || "").split(" ").map(n => n[0]).slice(0, 2).join("");
                     return (
                       <div key={u.id || u._id || u.correo} className="tableRow">
@@ -447,8 +519,13 @@ function UsuariosInner() {
                         </div>
                         <div className="departmentText">{getAreaNombre(u.area || u.department)}</div>
                         <div className="badgeEstado">
-                          <div className={`roleBadge ${u.super_admin ? "roleAdmin" : (u.aprobador ? "roleApprover" : "roleRequester")}`}>
-                            {u.super_admin ? "Super Admin" : roles}
+                          <div className={`roleBadge ${u.super_admin
+                            ? "roleAdmin"
+                            : u.aprobador
+                              ? "roleApprover"
+                              : "roleRequester"
+                            }`}>
+                            {roles}
                           </div>
                         </div>
                         <div className="badgeEstado">
@@ -479,6 +556,63 @@ function UsuariosInner() {
           </div>
         </div>
       </div>
+      {openUserModal && (
+        <div
+          className="userMenuDropdown animateDropdown"
+          style={{
+            position: "absolute",
+            top: "80px",
+            right: "20px",
+            width: "300px",
+            background: "white",
+            borderRadius: "12px",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+            overflow: "hidden",
+            zIndex: 9999
+          }}
+        >
+          {/* HEADER AZUL */}
+          <div style={{
+            background: "linear-gradient(135deg, #002855, #1d5da8)",
+            padding: "14px 16px",
+            color: "white"
+          }}>
+            <p style={{ fontSize: "12px", opacity: 0.8, margin: 0 }}>SESIÓN INICIADA CON</p>
+            <p style={{ fontSize: "14px", fontWeight: "bold", marginTop: "2px" }}>
+              {user?.correo}
+            </p>
+          </div>
+
+          {/* CONTENIDO */}
+          <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: "18px" }}>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }} className="nose">
+              <FontAwesomeIcon icon={faUser} className="iconNormal" />
+              <p>{getAreaNombre(user.area)}</p>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }} className="nose">
+              <FontAwesomeIcon icon={faGear} className="iconNormal" />
+              <p>{getUserRoles(user)}</p>
+            </div>
+
+            <div
+              onClick={handleLogout}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                cursor: "pointer"
+              }}
+              className="textLogout"
+            >
+              <FontAwesomeIcon icon={faRightFromBracket} className="buttonLogout" />
+              <span>Cerrar sesión</span>
+            </div>
+
+          </div>
+        </div>
+      )}
       <UserModal
         open={openModal}
         onClose={() => {
@@ -728,7 +862,7 @@ function UsuariosInner() {
             </div>
 
           </div>
-       
+
           <div className="footerButtonSave">
             <button className="saveUsersReq" onClick={handleSaveUser}>
               <p>

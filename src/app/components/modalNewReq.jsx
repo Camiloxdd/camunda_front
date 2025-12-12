@@ -26,6 +26,7 @@ import {
     faEye,
     faBoxOpen,
     faDollar,
+    faCoffee,
 } from "@fortawesome/free-solid-svg-icons";
 import TextareaAutosize from "react-textarea-autosize";
 import SaveAnimation from "./animationCreateRequisicion";
@@ -34,6 +35,7 @@ import api from "../services/axios";
 import { endFirstStepStartTwoStep, endTwoStepStartThreeStep } from "../services/camunda";
 import { createPortal } from "react-dom";
 
+// 1. Agrega los nuevos campos al initialForm para los tipos de producto
 const initialForm = {
     solicitante: {
         nombre: "",
@@ -54,6 +56,8 @@ const initialForm = {
             descripcion: "",
             compraTecnologica: false,
             ergonomico: false,
+            papeleria: false,
+            cafeteria: false,
             valorEstimado: "",
             centroCosto: "",
             cuentaContable: "",
@@ -80,7 +84,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [catalogoLoading, setCatalogoLoading] = useState(false);
     const [catalogoError, setCatalogoError] = useState("");
     const [showProductosModal, setShowProductosModal] = useState(false);
-
+    const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
 
 
 
@@ -109,14 +113,30 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 const res = await api.get("/api/productos", { headers: { Authorization: token ? `Bearer ${token}` : "" } });
                 const data = res.data;
                 const lista = Array.isArray(data) ? data : (data ? [data] : []);
-                setCatalogoProductos(lista.map(p => ({
-                    id: p.id,
-                    nombre: p.nombre,
-                    cuenta_contable: p.cuenta_contable,
-                    centro_costo: p.centro_costo,
-                    es_tecnologico: Boolean(p.es_tecnologico ?? p.compra_tecnologica ?? false),
-                    ergonomico: p.ergonomico !== undefined ? Boolean(p.ergonomico) : !Boolean(p.es_tecnologico ?? false),
-                })));
+                setCatalogoProductos(lista.map(p => {
+                    // Asignar grupo según la lógica de negocio
+                    let grupo = "";
+                    if (p.grupo) {
+                        grupo = p.grupo;
+                    } else if (p.es_tecnologico ?? p.compra_tecnologica) {
+                        grupo = "tec";
+                    } else if (p.ergonomico) {
+                        grupo = "erg";
+                    } else if (p.nombre && p.nombre.toLowerCase().includes("papel")) {
+                        grupo = "pap";
+                    } else if (p.nombre && p.nombre.toLowerCase().includes("cafe")) {
+                        grupo = "caf";
+                    }
+                    return {
+                        id: p.id,
+                        nombre: p.nombre,
+                        cuenta_contable: p.cuenta_contable,
+                        centro_costo: p.centro_costo,
+                        es_tecnologico: Boolean(p.es_tecnologico ?? p.compra_tecnologica ?? false),
+                        ergonomico: p.ergonomico !== undefined ? Boolean(p.ergonomico) : !Boolean(p.es_tecnologico ?? false),
+                        grupo, // <-- Asignar grupo aquí
+                    };
+                }));
             } catch (err) {
                 setCatalogoError("No se pudo cargar el catálogo de productos");
                 setCatalogoProductos([]);
@@ -344,15 +364,20 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             return;
         }
 
-        // Validación: cada producto debe ser tecnológico o ergonómico (o ambos)
+        // Validación: cada producto debe ser tecnológico, ergonómico, papelería o cafetería (al menos uno)
         const invalidTipo = formData.productos
             .map((p, i) => ({ p, i }))
-            .filter(({ p }) => !Boolean(p.compraTecnologica) && !Boolean(p.ergonomico));
+            .filter(({ p }) =>
+                !Boolean(p.compraTecnologica) &&
+                !Boolean(p.ergonomico) &&
+                !Boolean(p.papeleria) &&
+                !Boolean(p.cafeteria)
+            );
         if (invalidTipo.length > 0) {
             const list = invalidTipo
                 .map(({ p, i }) => p.nombre ? `${i + 1} (${p.nombre})` : `${i + 1}`)
                 .join(", ");
-            toast.error(`Cada producto debe ser tecnológico o ergonómico. Revisa los ítems: ${list}`);
+            toast.error(`Cada producto debe ser tecnológico, ergonómico, papelería o cafetería. Revisa los ítems: ${list}`);
             return;
         }
 
@@ -532,6 +557,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         }
     };
 
+    const catalogoAgrupado = catalogoProductos.reduce((acc, item) => {
+        if (!acc[item.grupo]) acc[item.grupo] = [];
+        acc[item.grupo].push(item);
+        return acc;
+    }, {});
+
 
     useEffect(() => {
         if (productoActivo >= formData.productos.length) {
@@ -590,15 +621,20 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             }
             // Validación al avanzar de Paso 2 -> Paso 3 (ahora validaciones de productos y presupuesto)
             if (currentStep === 2 && nextStep === 3) {
-                // Validación: cada producto debe ser tecnológico o ergonómico (o ambos)
+                // Validación: cada producto debe ser tecnológico, ergonómico, papelería o cafetería (al menos uno)
                 const invalid = formData.productos
                     .map((p, i) => ({ p, i }))
-                    .filter(({ p }) => !Boolean(p.compraTecnologica) && !Boolean(p.ergonomico));
+                    .filter(({ p }) =>
+                        !Boolean(p.compraTecnologica) &&
+                        !Boolean(p.ergonomico) &&
+                        !Boolean(p.papeleria) &&
+                        !Boolean(p.cafeteria)
+                    );
                 if (invalid.length > 0) {
                     const names = invalid
                         .map(({ p, i }) => p.nombre ? `${i + 1} (${p.nombre})` : `${i + 1}`)
                         .join(", ");
-                    toast.error(`Cada producto debe ser tecnológico o ergonómico. Revisa los ítems: ${names}`);
+                    toast.error(`Cada producto debe ser tecnológico, ergonómico, papelería o cafetería. Revisa los ítems: ${names}`);
                     return false;
                 }
                 // Validación: todos los productos deben tener valor estimado, centro de costo y cuenta contable
@@ -667,6 +703,22 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             description: "Revisa y confirma tu solicitud.",
         },
     ];
+
+    const getBusinessDays = (start, end) => {
+        let dateStart = new Date(start);
+        let dateEnd = new Date(end);
+
+        let count = 0;
+
+        while (dateStart <= dateEnd) {
+            const day = dateStart.getDay(); // 0 domingo, 6 sábado
+            if (day !== 0 && day !== 6) count++;
+            dateStart.setDate(dateStart.getDate() + 1);
+        }
+
+        return count;
+    };
+
 
     const modalContent = (
         <div className="wizardModal-overlay">
@@ -794,7 +846,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     },
                                                 ];
                                                 setFormData({ ...formData, productos });
-                                                setProductoActivo(productos.length - 1);
+                                                setProductoActivo(productos.length - 1); // seleccionar el nuevo producto
                                             }}
                                         >
                                             <FontAwesomeIcon icon={faPlus} />
@@ -832,6 +884,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         <div className="inputAndIconUserGest">
 
                                             <input type="text" placeholder="Ej. Juan Pérez" value={formData.solicitante.nombre}
+                                                readOnly
                                                 onChange={(e) =>
                                                     setFormData({
                                                         ...formData,
@@ -850,6 +903,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         </div>
                                         <div className="inputAndIconUserGest">
                                             <input type="date" value={formData.solicitante.fecha}
+                                                readOnly
                                                 onChange={(e) =>
                                                     setFormData({
                                                         ...formData,
@@ -867,16 +921,32 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             <label>Fecha requerida de entrega<label className="obligatorio">*</label></label>
                                         </div>
                                         <div className="inputAndIconUserGest">
-                                            <input type="date" value={formData.solicitante.fechaRequeridoEntrega}
-                                                onChange={(e) =>
+                                            <input
+                                                type="date"
+                                                value={formData.solicitante.fechaRequeridoEntrega}
+                                                min={new Date().toISOString().split("T")[0]}
+                                                onChange={(e) => {
+                                                    const nuevaFechaEntrega = e.target.value;
+                                                    const fechaSolicitud = formData.solicitante.fecha;
+
+                                                    let dias = "";
+
+                                                    // si hay ambas fechas, calcular días hábiles
+                                                    if (fechaSolicitud && nuevaFechaEntrega >= fechaSolicitud) {
+                                                        dias = getBusinessDays(fechaSolicitud, nuevaFechaEntrega);
+                                                    }
+
                                                     setFormData({
                                                         ...formData,
                                                         solicitante: {
                                                             ...formData.solicitante,
-                                                            fechaRequeridoEntrega: e.target.value,
+                                                            fechaRequeridoEntrega: nuevaFechaEntrega,
+                                                            tiempoAproximadoGestion: dias,
                                                         },
-                                                    })
-                                                } />
+                                                    });
+                                                }}
+                                            />
+
                                         </div>
                                     </div>
                                     <div className="inputAndLabelUsersGestion">
@@ -888,17 +958,16 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             <label>Tiempo aproximado de gestión (SLA)<label className="obligatorio">*</label></label>
                                         </div>
                                         <div className="inputAndIconUserGest">
-                                            <input type="text" placeholder="(cantidad) días hábiles"
-                                                value={formData.solicitante.tiempoAproximadoGestion}
-                                                onChange={(e) =>
-                                                    setFormData({
-                                                        ...formData,
-                                                        solicitante: {
-                                                            ...formData.solicitante,
-                                                            tiempoAproximadoGestion: e.target.value,
-                                                        },
-                                                    })
-                                                } />
+                                            <input
+                                                type="text"
+                                                placeholder="(cantidad) días hábiles"
+                                                value={
+                                                    formData.solicitante.tiempoAproximadoGestion
+                                                        ? `${formData.solicitante.tiempoAproximadoGestion} ${formData.solicitante.tiempoAproximadoGestion == 1 ? "día" : "días"}`
+                                                        : ""
+                                                }
+                                                readOnly
+                                            />
                                         </div>
                                     </div>
                                     <div className="inputAndLabelUsersGestion">
@@ -944,15 +1013,18 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         <div className="inputAndIconUserGest">
                                             <select
                                                 value={formData.solicitante.urgencia}
-                                                onChange={(e) =>
+                                                onChange={(e) => {
+                                                    const urgencia = e.target.value;
+
                                                     setFormData({
                                                         ...formData,
                                                         solicitante: {
                                                             ...formData.solicitante,
-                                                            urgencia: e.target.value,
+                                                            urgencia,
+                                                            justificacion: urgencia === "Alta" ? formData.solicitante.justificacion : "",
                                                         },
-                                                    })
-                                                }
+                                                    });
+                                                }}
                                             >
                                                 <option value="">Seleccione urgencia</option>
                                                 <option value="Alta">Alta</option>
@@ -967,8 +1039,11 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             <label>Justificación de la compra</label>
                                         </div>
                                         <div className="inputAndIconUserGest">
-
-                                            <input type="text" placeholder="Solo si la urgencia es alta" value={formData.solicitante.justificacion}
+                                            <input
+                                                type="text"
+                                                placeholder="Solo si la urgencia es alta"
+                                                value={formData.solicitante.justificacion}
+                                                disabled={formData.solicitante.urgencia !== "Alta"}   // 👈 AQUÍ
                                                 onChange={(e) =>
                                                     setFormData({
                                                         ...formData,
@@ -977,14 +1052,15 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                             justificacion: e.target.value,
                                                         },
                                                     })
-                                                } />
+                                                }
+                                            />
                                         </div>
                                     </div>
 
                                 </div>
                                 <div className="campoPrespuestado">
                                     <div className="firsInfo">
-                                        <FontAwesomeIcon icon={faDollar}/>
+                                        <FontAwesomeIcon icon={faDollar} />
                                         <p>¿Está en presupuesto?</p><label className="obligatorio">*</label>
                                         <input
                                             type="checkbox"
@@ -1011,17 +1087,15 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 <div className="containerProductosSerios" style={{ width: "100%" }}>
 
                                     <div className="productoItem" style={{ width: "100%" }}>
-                                        <div className="inputsDatos">
-
+                                        <div className="inputsItems">
                                             <div className="inputAndLabelUsersGestion">
                                                 <div className="campoTextAndIcon">
                                                     <FontAwesomeIcon icon={faCubes} className="iconUserCreate" />
                                                     <label>Producto / Servicio<label className="obligatorio">*</label></label>
                                                 </div>
                                                 <div className="inputAndIconUserGest">
-
                                                     {catalogoLoading ? (
-                                                        <select disabled value="" onChange={() => { }}>
+                                                        <select disabled value="">
                                                             <option value="">Cargando catálogo...</option>
                                                         </select>
                                                     ) : catalogoError ? (
@@ -1036,33 +1110,66 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                             }}
                                                         />
                                                     ) : (
-                                                        <select
-                                                            value={formData.productos[productoActivo].nombre || ""}
-                                                            onChange={(e) => {
-                                                                const productos = [...formData.productos];
-                                                                const sel = catalogoProductos.find(p => p.nombre === e.target.value);
-                                                                if (sel) {
-                                                                    productos[productoActivo].nombre = sel.nombre;
-                                                                    // No asignar descripción automática
-                                                                    productos[productoActivo].centroCosto = sel.centro_costo || "";
-                                                                    productos[productoActivo].cuentaContable = sel.cuenta_contable || "";
-                                                                    productos[productoActivo].compraTecnologica = !!sel.es_tecnologico;
-                                                                    productos[productoActivo].ergonomico = !!sel.ergonomico;
-                                                                } else {
-                                                                    productos[productoActivo].nombre = e.target.value;
-                                                                }
-                                                                setFormData({ ...formData, productos });
-                                                            }}
-                                                            className="selectProducto"
-                                                        >
-                                                            <option value="">Seleccione un producto</option>
-                                                            {catalogoProductos.map((p) => (
-                                                                <option key={p.id} value={p.nombre}>{p.nombre}</option>
-                                                            ))}
-                                                        </select>
+                                                        <div>
+                                                            {/* --- CATEGORÍAS Y SELECT PERSONALIZADO --- */}
+                                                            {!categoriaSeleccionada && (
+                                                                <div className="categoriasLista">
+                                                                    {[
+                                                                        { id: "tec", label: "Tecnológicos" },
+                                                                        { id: "erg", label: "Ergonómicos" },
+                                                                        { id: "pap", label: "Papelería" },
+                                                                        { id: "caf", label: "Cafetería" }
+                                                                    ].map(cat => (
+                                                                        <button
+                                                                            key={cat.id}
+                                                                            onClick={() => setCategoriaSeleccionada(cat.id)}
+                                                                            className="categoriaButton"
+                                                                        >
+                                                                            {cat.label}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            {categoriaSeleccionada && (
+                                                                <div className="seleccionProductoContainer">
+                                                                    <button className="volverCats" onClick={() => setCategoriaSeleccionada(null)}>
+                                                                        ← Volver a categorías
+                                                                    </button>
+
+                                                                    <select
+                                                                        value={formData.productos[productoActivo].nombre || ""}
+                                                                        onChange={(e) => {
+                                                                            const productos = [...formData.productos];
+                                                                            const sel = catalogoProductos.find(p => p.nombre === e.target.value);
+
+                                                                            if (sel) {
+                                                                                productos[productoActivo].nombre = sel.nombre;
+                                                                                productos[productoActivo].centroCosto = sel.centro_costo || "";
+                                                                                productos[productoActivo].cuentaContable = sel.cuenta_contable || "";
+                                                                                productos[productoActivo].compraTecnologica = sel.grupo === "tec";
+                                                                                productos[productoActivo].ergonomico = sel.grupo === "erg";
+                                                                                productos[productoActivo].papeleria = sel.grupo === "pap";
+                                                                                productos[productoActivo].cafeteria = sel.grupo === "caf";
+                                                                            }
+                                                                            setFormData({ ...formData, productos });
+                                                                        }}
+                                                                    >
+                                                                        <option value="">Seleccione un producto</option>
+
+                                                                        {(catalogoAgrupado[categoriaSeleccionada] || []).map((p, idx) => (
+                                                                            <option key={`${p.id ?? 'idx' + idx}-${p.nombre}`} value={p.nombre}>{p.nombre}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                            )}
+
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div className="inputsDatos">
                                             <div className="inputAndLabelUsersGestion">
                                                 <div className="campoTextAndIcon">
                                                     <FontAwesomeIcon icon={faClipboard} className="icon" />
@@ -1102,37 +1209,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     />
                                                 </div>
                                             </div>
-                                            {/* --- resto de campos... --- */}
-                                            {/* --- TIPO PRODUCTO --- */}
-                                            {/*
-                                            <div className="firsInfoTwo">
-                                                <label>
-                                                    ¿Es un producto tecnológico?
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={formData.productos[productoActivo].compraTecnologica}
-                                                        onChange={(e) => {
-                                                            const productos = [...formData.productos];
-                                                            productos[productoActivo].compraTecnologica = e.target.checked;
-                                                            setFormData({ ...formData, productos });
-                                                        }}
-                                                    />
-                                                </label>
-                                                <label>
-                                                    ¿Es un producto ergonómico?
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={formData.productos[productoActivo].ergonomico}
-                                                        onChange={(e) => {
-                                                            const productos = [...formData.productos];
-                                                            productos[productoActivo].ergonomico = e.target.checked;
-                                                            setFormData({ ...formData, productos });
-                                                        }}
-                                                    />
-                                                </label>
-                                            </div>
-                                            */}
-                                            {/* --- VALOR ESTIMADO --- */}
                                             <div className="inputAndLabelUsersGestion">
                                                 <div className="campoTextAndIcon">
                                                     <FontAwesomeIcon icon={faMoneyBill} className="icon" />
@@ -1265,6 +1341,40 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     }}
                                                 />
                                             </div>
+                                            <div className="ergonomicoButton">
+                                                <div className="iconErgo">
+                                                    <FontAwesomeIcon icon={faClipboard} />
+                                                </div>
+                                                <label>
+                                                    Papelería
+                                                </label>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.productos[productoActivo].papeleria}
+                                                    onChange={(e) => {
+                                                        const productos = [...formData.productos];
+                                                        productos[productoActivo].papeleria = e.target.checked;
+                                                        setFormData({ ...formData, productos });
+                                                    }}
+                                                />
+                                            </div>
+                                            <div className="ergonomicoButton">
+                                                <div className="iconErgo">
+                                                    <FontAwesomeIcon icon={faCoffee} />
+                                                </div>
+                                                <label>
+                                                    Cafetería
+                                                </label>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.productos[productoActivo].cafeteria}
+                                                    onChange={(e) => {
+                                                        const productos = [...formData.productos];
+                                                        productos[productoActivo].cafeteria = e.target.checked;
+                                                        setFormData({ ...formData, productos });
+                                                    }}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1311,6 +1421,14 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         <p className="textTotal">Ergonómicos</p>
                                     </div>
                                     <div className="totalesCards">
+                                        <p className="totalP">{formData.productos.filter((p) => p.papeleria).length}</p>
+                                        <p className="textTotal">Papelería</p>
+                                    </div>
+                                    <div className="totalesCards">
+                                        <p className="totalP">{formData.productos.filter((p) => p.cafeteria).length}</p>
+                                        <p className="textTotal">Cafetería</p>
+                                    </div>
+                                    <div className="totalesCards">
                                         <p className="totalP">{formData.productos.filter((p) => p.compraTecnologica).length}</p>
                                         <p className="textTotal">Tecnológicos</p>
                                     </div>
@@ -1337,12 +1455,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 <br />
                                 <h3 className="tittleOneUserNew">productos asociados</h3>
                                 <div className="resumenSection" style={{ textAlign: "center" }}>
-                                    <button
-                                        className="wizardModal-btnView"
-                                        onClick={() => setShowProductosModal(true)}
-                                    >
-                                        <FontAwesomeIcon icon={faEye} className="iconViewBtn" /> Ver Detalles
-                                    </button>
                                     {formData.productos.map((prod, index) => (
                                         <div key={index} className="productos">
                                             <div className="leftInfoProduct">
@@ -1350,20 +1462,20 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     <FontAwesomeIcon icon={faBoxOpen} className="iconProduct" />
                                                     <div>
                                                         <h1 className="nameProduct">{prod.nombre}</h1>
-                                                        <p className="subtitlesProductos">Cantidad: {prod.cantidad}</p>
+
                                                     </div>
                                                 </div>
                                                 <div className="subtitlesProductos">
-                                                    
+
                                                 </div>
                                             </div>
                                             <div className="rightInfoProduct">
                                                 <h1>{prod.valorEstimado}</h1>
+                                                <p className="subtitlesProductos">Cantidad: {prod.cantidad}</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                                {/* Modal de productos */}
                                 {showProductosModal && (
                                     <div className="modalOverlay">
                                         <div className="modalSelectProductos">

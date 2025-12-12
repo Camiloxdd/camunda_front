@@ -4,7 +4,7 @@ import { Sidebar } from "../components/Slidebar";
 import Navbar from "../components/navbar";
 import SearchBar from "../components/searchBar";
 import ApprovalModal from "../components/ApprovalModal";
-import { faTrash, faPencil, faUser, faFilePdf, faTimeline, faX, faPlus, faRefresh, faFile, faFileCircleCheck, faFileCircleQuestion, faFileCircleXmark, faFileEdit, faFileExcel, faUserPen, faDownload, faBoxArchive, faEye, faCalendarAlt, faCalendar } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faPencil, faUser, faFilePdf, faTimeline, faX, faPlus, faRefresh, faFile, faFileCircleCheck, faFileCircleQuestion, faFileCircleXmark, faFileEdit, faFileExcel, faUserPen, faDownload, faBoxArchive, faEye, faCalendarAlt, faCalendar, faAngleDown, faGear, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Suspense } from "react";
 import { AuthProvider, useAuth } from "../context/AuthContext";
@@ -14,8 +14,13 @@ import styles from "../dashboard/DashboardRequisiciones.module.css";
 import api from "../services/axios";
 import WizardModal from "../components/modalNewReq";
 import TimeLap from "../components/timeLap";
-import ExcelJS from "exceljs";
 import { useRouter } from "next/navigation";
+import { Toast } from 'primereact/toast';
+import "primereact/resources/themes/lara-light-cyan/theme.css";
+import "primereact/resources/primereact.min.css";
+import "primeicons/primeicons.css";
+import { useLayoutEffect } from "react";
+
 
 function DashboardInner() {
   function getBadgeClass(estado) {
@@ -103,6 +108,8 @@ function DashboardInner() {
   const [progress, setProgress] = useState(null);
   const [timelineReqId, setTimelineReqId] = useState(null);
   const [productosSolicitante, setProductosSolicitante] = useState([]);
+  const [openUserModal, setOpenUserModal] = useState(false)
+  const toastRef = useRef(null);
 
   // Leer token desde localStorage al montar y actualizar si cambia en otra pestaña (event storage).
   useEffect(() => {
@@ -759,20 +766,20 @@ function DashboardInner() {
   useEffect(() => {
     // Mostrar notificación una sola vez (usar toastId para evitar duplicados)
     if (!loading && permissions?.isAprobador) {
-        const tieneRequisicionesPendientes = requisiciones.some(
-            r => normalizeEstado(r.status || r.estado_aprobacion || "") === "pendiente"
-        );
+      const tieneRequisicionesPendientes = requisiciones.some(
+        r => normalizeEstado(r.status || r.estado_aprobacion || "") === "pendiente"
+      );
 
-        if (tieneRequisicionesPendientes) {
-            if (!toast.isActive(pendingToastIdRef.current)) {
-                toast.info("Tienes requisiciones por aprobar", { toastId: pendingToastIdRef.current });
-            }
-        } else {
-            // Si no hay pendientes, cerrar notificación previa
-            if (toast.isActive(pendingToastIdRef.current)) {
-                toast.dismiss(pendingToastIdRef.current);
-            }
+      if (tieneRequisicionesPendientes) {
+        if (!toast.isActive(pendingToastIdRef.current)) {
+          toast.info("Tienes requisiciones por aprobar", { toastId: pendingToastIdRef.current });
         }
+      } else {
+        // Si no hay pendientes, cerrar notificación previa
+        if (toast.isActive(pendingToastIdRef.current)) {
+          toast.dismiss(pendingToastIdRef.current);
+        }
+      }
     }
 
     if (!loading && permissions?.isComprador && requisiciones.some(r => isApprovedState(r.status || r.estado))) {
@@ -787,9 +794,20 @@ function DashboardInner() {
   }, [loading, requisiciones, permissions]);
 
   useEffect(() => {
-    // Mostrar toast de "sesión iniciada" sin duplicados (usa toastId)
-    if (!toast.isActive(sessionToastIdRef.current)) {
-      toast.success("Sesión iniciada correctamente!", { toastId: sessionToastIdRef.current });
+    // Mostrar toast de "sesión iniciada" solo una vez usando PrimeReact
+    if (toastRef.current && !window.__prime_sesion_toast_shown) {
+      setTimeout(() => {
+        toastRef.current.show({
+          severity: 'success',
+          summary: 'Sesión iniciada',
+          detail: 'Sesión iniciada correctamente!',
+          life: 3000,
+          // Puedes personalizar el icono así:
+          icon: 'pi pi-user', // ejemplo: icono de usuario
+          // icon: 'pi pi-check-circle', // ejemplo: icono de check redondo
+        });
+        window.__prime_sesion_toast_shown = true;
+      }); // pequeño delay para asegurar que el Toast esté montado
     }
   }, []);
 
@@ -895,7 +913,7 @@ function DashboardInner() {
           data.requisicion?.requisicion_id ??
           data.requisicion_id ??
           req.requisicion_id,
-        aprobadores, // añadir lista de aprobadores al estado
+        aprobadores: []// añadir lista de aprobadores al estado
       });
 
     } catch (err) {
@@ -1111,8 +1129,78 @@ function DashboardInner() {
     }
   };
 
+  const getUserRoles = (user) => {
+    const roles = [];
+
+    if (user.super_admin) roles.push("Super Admin");
+    if (user.aprobador) roles.push("Aprobador");
+    if (user.solicitante) roles.push("Solicitante");
+    if (user.comprador) roles.push("Comprador");
+
+    return roles.length > 0 ? roles.join(" | ") : "Sin rol asignado";
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (openUserModal.current && !openUserModal.current.contains(e.target)) {
+        setOpenUserModal(false);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (typeof logout === "function") {
+        try { logout(); } catch (e) { /* ignore */ }
+      }
+      await api.post("http://localhost:8000/api/auth/logout", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      router.push("/");
+    } catch (err) {
+      console.error("Error durante logout:", err);
+      router.push("/");
+    }
+  }
+
+  // Ajuste de tamaño del Toast PrimeReact por CSS-in-JS (opcional, para forzar tamaño)
+  useLayoutEffect(() => {
+    const styleId = "custom-prime-toast-size";
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement("style");
+      style.id = styleId;
+      style.innerHTML = `
+        .p-toast {
+          min-width: 320px !important;
+          max-width: 420px !important;
+          font-size: 1.1rem !important;
+        }
+        .p-toast-message {
+          min-height: 56px !important;
+          padding: 18px 24px !important;
+        }
+        .p-toast-message-text {
+          font-size: 1.08rem !important;
+        }
+        .p-toast-summary {
+          font-size: 1.12rem !important;
+          font-weight: 600 !important;
+        }
+        .p-toast-detail {
+          font-size: 1.08rem !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   return (
     <div className="dashboard-container-requisiciones" style={{ display: "flex" }}>
+      <Toast ref={toastRef} position="top-right" />
       <Sidebar onToggle={setIsSidebarOpen} />
       <TimeLap open={timelineOpen} onClose={() => setTimelineOpen(false)} requisicionId={timelineReqId} token={token} />
       <div
@@ -1134,12 +1222,26 @@ function DashboardInner() {
             <h1>Requisiciones</h1>
             <p>Gestiona todas las solicitudes de compra</p>
           </div>
-          <div className="buttonsReq">
-            {permissions?.isSolicitante && (
-              <button onClick={abrirModalNuevaReq} className="fab-btn primary">
-                <FontAwesomeIcon icon={faPlus} /> Nueva requisición
-              </button>
-            )}
+          <div className="campoButtonsAndInfoUser">
+            <div className="infoUser">
+              <div className="nameAndRol">
+                {user ? (
+                  <>
+                    <h3>Hola, {user.nombre}</h3>
+                    <p>{getCargoNombre(user.cargo)}</p>
+                  </>
+                ) : (
+                  <>
+                    <h3>Cargando usuario...</h3>
+                    <p></p>
+                  </>
+                )}
+              </div>
+              <div className="imgUser" onClick={() => setOpenUserModal(!openUserModal)} style={{ cursor: "pointer", position: "relative" }}>
+                <FontAwesomeIcon icon={faUser} />
+              </div>
+
+            </div>
           </div>
         </div>
         <div className="containerInfoRequisiciones">
@@ -1213,6 +1315,13 @@ function DashboardInner() {
                     onQueryChange={setSearchQuery}
                   />
                 </div>
+                <div className="buttonsReq">
+                  {permissions?.isSolicitante && (
+                    <button onClick={abrirModalNuevaReq} className="fab-btn primary">
+                      <FontAwesomeIcon icon={faPlus} /> Nueva requisición
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="listaReq">
                 {loading ? (
@@ -1242,10 +1351,10 @@ function DashboardInner() {
                     <thead>
                       <tr>
                         <th>ID</th>
+                        <th>Fecha de Solicitud</th>
                         <th>Solicitante</th>
-                        <th>Estado</th>
-                        <th>Fecha</th>
                         <th>Valor</th>
+                        <th>Estado</th>
                         <th>Acciones</th>
                       </tr>
                     </thead>
@@ -1270,23 +1379,29 @@ function DashboardInner() {
                         };
 
                         return (
-                          <tr key={req.requisicion_id} className="row" onClick={onRowClick} style={{ cursor: "pointer" }}>
+                          <tr key={req.requisicion_id} className="row">
                             <td className="colSpan2 idCell">
                               <div className="idBadge"><span className="idText">REQ-{req.requisicion_id}</span></div>
                             </td>
-
+                            <td className="colSpan2 dateCell">
+                              <div className="fecha">
+                                <FontAwesomeIcon icon={faCalendar} className="calendarIcon" />
+                                {fecha}
+                              </div>
+                            </td>
                             <td className="requesterCell">
                               <div className="requesterDiv">
-                                <div className="requesterAvatar">
-                                  <FontAwesomeIcon icon={faUser || faUser /* fallback if not available */} />
-                                </div>
                                 <div className="requesterInfo">
                                   <span className="requesterName">{req.nombre_solicitante || "—"}</span>
                                   <span className="requesterLabel">Solicitante</span>
                                 </div>
                               </div>
                             </td>
-
+                            <td className="colSpan2 amountCell">
+                              <div className="valor">
+                                {formatCOP(valor)}
+                              </div>
+                            </td>
                             <td className="colSpan2 statusCell">
                               <div className="campoStatus">
                                 <div className={`${styles.badge} ${getBadgeClass(estado)} statusBadge`}>
@@ -1294,20 +1409,6 @@ function DashboardInner() {
                                 </div>
                               </div>
                             </td>
-
-                            <td className="colSpan2 dateCell">
-                              <div className="fecha">
-                                <FontAwesomeIcon icon={faCalendar} className="calendarIcon" />
-                                {fecha}
-                              </div>
-                            </td>
-
-                            <td className="colSpan2 amountCell">
-                              <div className="valor">
-                                {formatCOP(valor)}
-                              </div>
-                            </td>
-
                             <td className="colSpan1 actionsCell">
                               <div className="campoBotonesReq">
                                 <button
@@ -1347,6 +1448,63 @@ function DashboardInner() {
             </div>
           </div>
         </div>
+        {openUserModal && (
+          <div
+            className="userMenuDropdown animateDropdown"
+            style={{
+              position: "absolute",
+              top: "80px",
+              right: "20px",
+              width: "300px",
+              background: "white",
+              borderRadius: "12px",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+              overflow: "hidden",
+              zIndex: 9999
+            }}
+          >
+            {/* HEADER AZUL */}
+            <div style={{
+              background: "linear-gradient(135deg, #002855, #1d5da8)",
+              padding: "14px 16px",
+              color: "white"
+            }}>
+              <p style={{ fontSize: "12px", opacity: 0.8, margin: 0 }}>SESIÓN INICIADA CON</p>
+              <p style={{ fontSize: "14px", fontWeight: "bold", marginTop: "2px" }}>
+                {user?.correo}
+              </p>
+            </div>
+
+            {/* CONTENIDO */}
+            <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: "18px" }}>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }} className="nose">
+                <FontAwesomeIcon icon={faUser} className="iconNormal" />
+                <p>{getAreaNombre(user.area)}</p>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }} className="nose">
+                <FontAwesomeIcon icon={faGear} className="iconNormal" />
+                <p>{getUserRoles(user)}</p>
+              </div>
+
+              <div
+                onClick={handleLogout}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  cursor: "pointer"
+                }}
+                className="textLogout"
+              >
+                <FontAwesomeIcon icon={faRightFromBracket} className="buttonLogout" />
+                <span>Cerrar sesión</span>
+              </div>
+
+            </div>
+          </div>
+        )}
         {selectedReq && (
           <ApprovalModal
             requisicion={selectedReq}
@@ -1636,7 +1794,7 @@ function DashboardInner() {
                           <div>CUENTA CONTABLE</div>
                           <div>CENTRO COSTO</div>
                           <div style={{ textAlign: "center" }}>CANTIDAD</div>
-                          <div style={{ textAlign: "right" }}>VALOR UNITARIO</div>
+                          <div style={{ textAlign: "center" }}>VALOR UNITARIO</div>
                           <div style={{ textAlign: "center" }}>ESTADO</div>
                           <div style={{ textAlign: "center" }}>TECNOLÓGICO</div>
                           <div style={{ textAlign: "center" }}>ERGONÓMICO</div>
@@ -1649,12 +1807,13 @@ function DashboardInner() {
                                 key={producto.id ?? idx}
                                 style={{
                                   display: "grid",
-                                  gridTemplateColumns: "2.5fr 1.2fr 1.2fr 0.8fr 1.2fr 1fr 0.9fr 0.9fr",
+                                  gridTemplateColumns: "1.8fr 1fr 1fr 1fr 1fr 1fr 0.8fr 0.8fr",
                                   gap: "12px",
                                   padding: "12px 16px",
                                   borderBottom: "1px solid #e5e7eb",
                                   backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f9fafb",
-                                  alignItems: "center"
+                                  alignItems: "center",
+                                  textAlign: "center"
                                 }}
                               >
                                 {/* Producto */}
@@ -1662,13 +1821,13 @@ function DashboardInner() {
                                   <p className="textColor" style={{ fontWeight: "600", margin: "0 0 4px 0", fontSize: "13px" }}>
                                     {producto.nombre || producto.productoOServicio || "—"}
                                   </p>
-                                  <p style={{ fontSize: "11px", color: "var(--textColorP)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  <p style={{ textAlign: "center", fontSize: "11px", color: "var(--textColorP)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                     {producto.descripcion || ""}
                                   </p>
                                 </div>
 
                                 {/* Cuenta Contable */}
-                                <div style={{ fontSize: "13px", color: "var(--textColorP)", textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                <div style={{ textAlign: "center",fontSize: "13px", color: "var(--textColorP)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                   {producto.cuenta_contable || "—"}
                                 </div>
 
@@ -1683,7 +1842,7 @@ function DashboardInner() {
                                 </div>
 
                                 {/* Valor Unitario */}
-                                <div style={{ textAlign: "right", fontWeight: "600", fontSize: "13px", color: "var(--textColor)" }}>
+                                <div style={{ textAlign: "center", fontWeight: "600", fontSize: "13px", color: "var(--textColor)" }}>
                                   {formatCOP(producto.valor_estimado ?? producto.valorEstimado ?? 0)}
                                 </div>
 

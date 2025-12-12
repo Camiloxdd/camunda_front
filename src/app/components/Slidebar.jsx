@@ -15,6 +15,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/axios";
+import { usePathname } from "next/navigation";
 
 export const Sidebar = ({ onToggle }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -94,17 +95,16 @@ export const Sidebar = ({ onToggle }) => {
         }
     };
 
+    const pathname = usePathname();
+
     return (
         <aside
             className={`sidebar ${isCollapsed ? "sidebarCollapsed" : "sidebarExpanded"}`}
             aria-expanded={!isCollapsed}
         >
-            {/* Toggle */}
-            <button onClick={handleToggle} className="toggleButton" aria-label="Toggle sidebar">
-                <FontAwesomeIcon icon={isCollapsed ? faArrowRight : faArrowLeft} size="lg" />
+            <button onClick={handleToggle} className="toggleButton toggleButtonTop" aria-label="Toggle sidebar">
+                <FontAwesomeIcon icon={isCollapsed ? faBars : faTimes} size="lg" />
             </button>
-
-            {/* Logo / Header */}
             <div className={`logoSection ${isCollapsed ? "logoSectionCollapsed" : "logoSectionExpanded"}`}>
                 <div className={`logoContainer ${isCollapsed ? "logoContainerCollapsed" : ""}`}>
                     {/* Imagen mini cuando está colapsado */}
@@ -132,7 +132,10 @@ export const Sidebar = ({ onToggle }) => {
                         type="button"
                         title={isCollapsed ? item.label : undefined}
                         onClick={() => handleNavigate(item.path)}
-                        className={`navButton ${isCollapsed ? "navButtonCollapsed" : ""} navButtonInactive`}
+                        className={`navButton 
+                            ${isCollapsed ? "navButtonCollapsed" : ""} 
+                            ${pathname === item.path ? "navButtonActive" : "navButtonInactive"}
+                        `}
                     >
                         <FontAwesomeIcon icon={item.icon} className="navIcon" />
                         {!isCollapsed && <span>{item.label}</span>}
@@ -141,25 +144,6 @@ export const Sidebar = ({ onToggle }) => {
                 {/* Opcional: otras entradas basadas en permisos */}
             </nav>
 
-            {/* User / Footer */}
-            <div className="userSection">
-                <div className={`userCard ${isCollapsed ? "userCardCollapsed" : ""}`}>
-                    <div className="userAvatar">
-                        <FontAwesomeIcon icon={faUser} style={{ color: "var(--textColor)" }} />
-                    </div>
-                    {!isCollapsed && (
-                        <div className="userDetails">
-                            <div className="userInfo">
-                                <p className="userName">{user?.nombre || "Usuario"}</p>
-                                <p className="userRole">{getCargoNombre(user.cargo)}</p>
-                            </div>
-                            <button className="logoutButton" onClick={handleLogout} title="Cerrar sesión">
-                                <FontAwesomeIcon icon={faRightFromBracket} />
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
         </aside>
     );
 };

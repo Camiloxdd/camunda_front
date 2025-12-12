@@ -709,21 +709,21 @@
   font-size: 12px;
 }
 
-.siSupera{
+.siSupera {
   background-color: #9DE09D;
   padding: 20px;
   border-radius: 8px;
   border: 2px solid green;
 }
 
-.noSupera{
+.noSupera {
   background-color: #FFB3B3;
   padding: 20px;
   border-radius: 8px;
   border: 2px solid red;
 }
 
-.resumenSection{
+.resumenSection {
   background-color: #ffffff;
   border-radius: 8px;
   border: 2px solid #ddd;
@@ -735,7 +735,7 @@
   gap: 10px;
 }
 
-.wizardModal-btnView{
+.wizardModal-btnView {
   background-color: var(--textColor);
   border: none;
   padding: 10px;
@@ -744,15 +744,15 @@
   margin-left: auto;
   cursor: pointer;
   transition: 0.3s ease all;
-  position:sticky;
+  position: sticky;
 }
 
-.wizardModal-btnView:hover{
+.wizardModal-btnView:hover {
   transform: translateY(-2px);
   transition: 0.3s ease all;
 }
 
-.productos{
+.productos {
   background-color: #f5f5f5;
   border: 2px solid #ddd;
   border-radius: 8px;
@@ -761,17 +761,17 @@
   justify-content: space-between;
 }
 
-.leftInfoProduct{
+.leftInfoProduct {
   display: grid;
 }
 
-.nameIconProduct{
+.nameIconProduct {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.iconProduct{
+.iconProduct {
   font-size: 20px;
   padding: 10px;
   border-radius: 8px;
@@ -779,13 +779,13 @@
   color: white;
 }
 
-.nameProduct{
+.nameProduct {
   font-size: 16px;
   font-weight: 600;
   color: var(--textColor);
 }
 
-.subtitlesProductos{
+.subtitlesProductos {
   margin-top: -3px;
   text-align: left;
   width: 100%;
@@ -793,10 +793,65 @@
   font-size: 14px;
 }
 
-.rightInfoProduct{
+.rightInfoProduct {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 10px;
+  text-align: right;
   font-size: 10px;
   color: var(--textColor);
-} 
+}
+
+.categoriasLista {
+  padding: 4px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.categoriaButton {
+  cursor: pointer;
+  color: #fff;
+  background-color: var(--textColor);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all .3s;
+}
+
+.categoriaButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.inputsItems {
+  height: 90px;
+}
+
+.seleccionProductoContainer {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.volverCats {
+  cursor: pointer;
+  color: #fff;
+  background-color: var(--textColor);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  width: 100%;
+  font-weight: 600;
+  transition: all .3s;
+}
+
+.volverCats:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}

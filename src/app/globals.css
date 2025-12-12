@@ -248,7 +248,7 @@
   color: white;
   font-size: 15px;
   font-weight: bold;
-  background: linear-gradient(135deg, #1d5da8,#002855 );
+  background: linear-gradient(135deg, #1d5da8, #002855);
   border-radius: 4px;
   transition: 0.5s all;
 }
@@ -426,7 +426,7 @@
 }
 
 .nameAndRol {
-  color: #1d5da8;
+  color: var(--textColor);
   justify-content: center;
   align-items: left;
   text-align: left;
@@ -435,18 +435,22 @@
 }
 
 .imgUser {
-  width: 50px;
-  height: 50px;
-  text-align: center;
-  justify-content: center;
-  align-items: center;
-  display: flex;
-  border-radius: 30px;
   font-size: 25px;
-  color: #1d5da8;
-  border-width: 3px;
-  border-color: #1d5da8;
-  border-style: solid;
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, #002855, #1d5da8);
+  transition: 0.3s all;
+}
+
+.imgUser:hover {
+  transform: translateY(-3px);
 }
 
 /* BOTONES SUPERIORES */
@@ -2180,7 +2184,8 @@ input[type="time"] {
 }
 
 .papaHeaderRequi {
-
+  align-items: center;
+  gap: 20px;
   padding: 5px;
   border-radius: 10px;
   color: #1d5da8;
@@ -3230,6 +3235,9 @@ input[type="time"] {
 /* If some code uses .row on the <tr> keep compatibility */
 .row {
   display: block;
+  justify-content: center;
+  text-align: center;
+  align-items: center;
   /* neutral; table rows will be forced below for the requisitions table */
 }
 
@@ -3255,27 +3263,27 @@ input[type="time"] {
 
 /* ID pequeño */
 .requisitionsTable thead th:nth-child(2) {
-  width: 40%;
+  width: 20%;
 }
 
 /* Solicitante */
 .requisitionsTable thead th:nth-child(3) {
-  width: 14%;
+  width: 30%;
 }
 
 /* Estado */
 .requisitionsTable thead th:nth-child(4) {
-  width: 12%;
+  width: 20%;
 }
 
 /* Fecha */
 .requisitionsTable thead th:nth-child(5) {
-  width: 12%;
+  width: 20%;
 }
 
 /* Valor */
 .requisitionsTable thead th:nth-child(6) {
-  width: 10%;
+  width: 20%;
 }
 
 /* Acciones */
@@ -3503,15 +3511,20 @@ input[type="time"] {
 
 .tabla-productos-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 0.8fr 0.8fr;
+  grid-template-columns: 1.8fr 1fr 1fr 1fr 1fr 1fr 0.8fr 0.8fr;
   gap: 12px;
   padding: 12px 16px;
   background-color: #f3f4f6;
   border-radius: 8px 8px 0 0;
   font-weight: 600;
+  text-align: center;
   font-size: 14px;
   color: var(--textColor);
   border-bottom: 2px solid #e5e7eb;
+}
+
+.tabla-productos-body{
+  align-items: center;
 }
 
 .textColor {
@@ -3520,24 +3533,71 @@ input[type="time"] {
 
 .downloadPdfButton {
   background: linear-gradient(135deg, #002855, #1d5da8);
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.3s ease;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
 }
 
 .downloadPdfButton:disabled {
-    background: #cccccc;
-    cursor: not-allowed;
+  background: #cccccc;
+  cursor: not-allowed;
 }
 
+.campoButtonsAndInfoUser {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
 
+.userMenuDropdown {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.userMenuDropdown.animateDropdown {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.iconNormal{
+  background: linear-gradient(135deg, #002855, #1d5da8);
+  padding: 7px;
+  color: white;
+  border-radius: 8px;
+}
+
+.nose{
+  color: var(--textColor);
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.buttonLogout{
+  background-color: red;
+  padding: 7px;
+  border-radius: 8px;
+  color: white;
+}
+
+.textLogout{
+  color: red;
+  font-size: 15px;
+  font-weight: bold;
+  transition: 0.3s all;
+}
+
+.textLogout:hover{
+  transform: translateY(-2px);
+}
 
 @media (max-width: 900px) {
 
