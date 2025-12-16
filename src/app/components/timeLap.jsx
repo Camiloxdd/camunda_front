@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle, faCircle, faCircleXmark, faClock } from "@fortawesome/free-solid-svg-icons";
 import api from "../services/axios";
 import { get } from "node:http";
+import LoadingView from "./loadingView"
 
 export default function TimeLap({ open, onClose, requisicionId, token }) {
     const [loading, setLoading] = useState(false);
@@ -142,22 +143,7 @@ export default function TimeLap({ open, onClose, requisicionId, token }) {
 
     const renderBody = () => {
         if (loading) return (
-            <div style={{
-                width: "100%",
-                minHeight: 220,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-            }}>
-                <div className="loading-cambios">
-                    <img
-                        src="/coopidrogas_logo_mini.png"
-                        className="LogoCambios"
-                        alt="Logo de carga"
-                    />
-                    <p className="textLoading">Thinking...</p>
-                </div>
-            </div>
+            <LoadingView/>
         );
         if (error) return <div style={{ color: "red" }}>{error}</div>;
         if (!progress) return <div>No hay información.</div>;

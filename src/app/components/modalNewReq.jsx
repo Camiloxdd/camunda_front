@@ -34,6 +34,7 @@ import { faDailymotion } from "@fortawesome/free-brands-svg-icons";
 import api from "../services/axios";
 import { endFirstStepStartTwoStep, endTwoStepStartThreeStep } from "../services/camunda";
 import { createPortal } from "react-dom";
+import LoadingView from "./loadingView";
 
 // 1. Agrega los nuevos campos al initialForm para los tipos de producto
 const initialForm = {
@@ -570,6 +571,142 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         }
     }, [formData.productos.length]);
 
+    // Al agregar producto, reiniciar categoría seleccionada
+    const handleAddProducto = () => {
+        const productos = [
+            ...formData.productos,
+            {
+                nombre: "",
+                cantidad: 1,
+                descripcion: "",
+                compraTecnologica: false,
+                ergonomico: false,
+                valorEstimado: "",
+                centroCosto: "",
+                cuentaContable: "",
+                aprobaciones: [],
+            },
+        ];
+        setFormData({ ...formData, productos });
+        setProductoActivo(productos.length - 1);
+        setCategoriaSeleccionada(null); // <-- Reinicia la categoría al agregar producto
+    };
+
+    // En el render del paso 2, reemplaza el onClick del botón de agregar producto:
+    // ...
+    {
+        step === 2 && (
+            <div className="papitoGugutata">
+                {/* ...existing code... */}
+                <div className="containerProductosSerios" style={{ width: "100%" }}>
+                    <div className="productoItem" style={{ width: "100%" }}>
+                        {/* ...existing code... */}
+                    </div>
+                </div>
+                {/* ...existing code... */}
+                <div className="campoListaProductos">
+                    {/* ...existing code... */}
+                    <div className="containerButtonsProductos">
+                        <button
+                            className="wizardModal-btn-add fullWidth"
+                            onClick={handleAddProducto}
+                        >
+                            <FontAwesomeIcon icon={faPlus} />
+                        </button>
+                        {/* ...existing code... */}
+                    </div>
+                </div>
+            </div>
+        )
+    }
+    // ...existing code...
+
+    // Al cambiar de producto activo, si el producto no tiene nombre o no está en la categoría actual, vuelve a categorías
+    useEffect(() => {
+        if (step === 2) {
+            // Si el producto activo no tiene nombre o no está en la categoría seleccionada, mostrar categorías
+            const prod = formData.productos[productoActivo];
+            if (!prod) return;
+            // Si el nombre no está en el catálogo de la categoría seleccionada, volver a categorías
+            if (
+                categoriaSeleccionada &&
+                !((catalogoAgrupado[categoriaSeleccionada] || []).some(p => p.nombre === prod.nombre))
+            ) {
+                setCategoriaSeleccionada(null);
+            }
+        }
+        // eslint-disable-next-line
+    }, [productoActivo]);
+
+    // En el select de productos, asegúrate de mostrar el nombre actual aunque no esté en el catálogo
+    // ...existing code...
+    {
+        categoriaSeleccionada && (
+            <div className="seleccionProductoContainer">
+                <button className="volverCats" onClick={() => setCategoriaSeleccionada(null)}>
+                    ← Volver a categorías
+                </button>
+                <select
+                    value={formData.productos[productoActivo].nombre || ""}
+                    onChange={(e) => {
+                        const productos = [...formData.productos];
+                        const sel = catalogoProductos.find(p => p.nombre === e.target.value);
+
+                        if (sel) {
+                            productos[productoActivo].nombre = sel.nombre;
+                            productos[productoActivo].centroCosto = sel.centro_costo || "";
+                            productos[productoActivo].cuentaContable = sel.cuenta_contable || "";
+                            productos[productoActivo].compraTecnologica = sel.grupo === "tec";
+                            productos[productoActivo].ergonomico = sel.grupo === "erg";
+                            productos[productoActivo].papeleria = sel.grupo === "pap";
+                            productos[productoActivo].cafeteria = sel.grupo === "caf";
+                        } else {
+                            productos[productoActivo].nombre = e.target.value;
+                        }
+                        setFormData({ ...formData, productos });
+                    }}
+                >
+                    <option value="">Seleccione un producto</option>
+                    {/* Mostrar el nombre actual si no está en el catálogo */}
+                    {formData.productos[productoActivo].nombre &&
+                        !(catalogoAgrupado[categoriaSeleccionada] || []).some(
+                            p => p.nombre === formData.productos[productoActivo].nombre
+                        ) && (
+                            <option value={formData.productos[productoActivo].nombre}>
+                                {formData.productos[productoActivo].nombre}
+                            </option>
+                        )}
+                    {(catalogoAgrupado[categoriaSeleccionada] || []).map((p, idx) => (
+                        <option key={`${p.id ?? 'idx' + idx}-${p.nombre}`} value={p.nombre}>{p.nombre}</option>
+                    ))}
+                </select>
+            </div>
+        )
+    }
+    // ...existing code...
+
+    if (!open) return null;
+
+    const getAreaNombre = (area) => {
+        switch (area) {
+            case "TyP":
+                return "Tecnología y Proyectos";
+            case "SST":
+                return "Seguridad y Salud en el Trabajo";
+            case "GerenciaAdmin":
+                return "Gerencia Administrativa";
+            case "GerenciaGeneral":
+                return "Gerencia General";
+        }
+    };
+
+    const getSedeNombre = (sede) => {
+        switch (sede) {
+            case "cota":
+                return "Cota";
+        }
+    };
+
     const handleNext = async () => {
         const next = Math.min(maxStep, step + 1);
         if (next === step) return;
@@ -659,30 +796,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         return true;
     };
 
-
-
-    if (!open) return null;
-
-    const getAreaNombre = (area) => {
-        switch (area) {
-            case "TyP":
-                return "Tecnología y Proyectos";
-            case "SST":
-                return "Seguridad y Salud en el Trabajo";
-            case "GerenciaAdmin":
-                return "Gerencia Administrativa";
-            case "GerenciaGeneral":
-                return "Gerencia General";
-        }
-    };
-
-    const getSedeNombre = (sede) => {
-        switch (sede) {
-            case "cota":
-                return "Cota";
-        }
-    };
-
     const handleCloseModal = () => {
         // evitar cerrar durante una transición/animación
         if (stepLoadingVisible) return;
@@ -728,14 +841,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     <div
                         className={`loading-container ${stepLoadingExiting ? "fade-out" : "fade-in"}`} style={{ position: "absolute", inset: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.92)" }}
                     >
-                        <div className="loading-cambios" style={{ textAlign: "center" }}>
-                            <img
-                                src="/coopidrogas_logo_mini.png"
-                                className="LogoCambios"
-                                alt="Cargando..."
-                            />
-                            <p className="textLoading" style={{ marginTop: 10 }}>Cargando...</p>
-                        </div>
+                        <LoadingView />
                     </div>
                 )}
 
@@ -830,24 +936,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                     <div className="containerButtonsProductos">
                                         <button
                                             className="wizardModal-btn-add fullWidth"
-                                            onClick={() => {
-                                                const productos = [
-                                                    ...formData.productos,
-                                                    {
-                                                        nombre: "",
-                                                        cantidad: 1,
-                                                        descripcion: "",
-                                                        compraTecnologica: false,
-                                                        ergonomico: false,
-                                                        valorEstimado: "",
-                                                        centroCosto: "",
-                                                        cuentaContable: "",
-                                                        aprobaciones: [],
-                                                    },
-                                                ];
-                                                setFormData({ ...formData, productos });
-                                                setProductoActivo(productos.length - 1); // seleccionar el nuevo producto
-                                            }}
+                                            onClick={handleAddProducto}
                                         >
                                             <FontAwesomeIcon icon={faPlus} />
                                         </button>
@@ -1151,12 +1240,22 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                                                 productos[productoActivo].ergonomico = sel.grupo === "erg";
                                                                                 productos[productoActivo].papeleria = sel.grupo === "pap";
                                                                                 productos[productoActivo].cafeteria = sel.grupo === "caf";
+                                                                            } else {
+                                                                                productos[productoActivo].nombre = e.target.value;
                                                                             }
                                                                             setFormData({ ...formData, productos });
                                                                         }}
                                                                     >
                                                                         <option value="">Seleccione un producto</option>
-
+                                                                        {/* Mostrar el nombre actual si no está en el catálogo */}
+                                                                        {formData.productos[productoActivo].nombre &&
+                                                                            !(catalogoAgrupado[categoriaSeleccionada] || []).some(
+                                                                                p => p.nombre === formData.productos[productoActivo].nombre
+                                                                            ) && (
+                                                                                <option value={formData.productos[productoActivo].nombre}>
+                                                                                    {formData.productos[productoActivo].nombre}
+                                                                                </option>
+                                                                            )}
                                                                         {(catalogoAgrupado[categoriaSeleccionada] || []).map((p, idx) => (
                                                                             <option key={`${p.id ?? 'idx' + idx}-${p.nombre}`} value={p.nombre}>{p.nombre}</option>
                                                                         ))}
@@ -1316,7 +1415,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 </label>
                                                 <input
                                                     type="checkbox"
-                                                    checked={formData.productos[productoActivo].compraTecnologica}
+                                                    checked={!!formData.productos[productoActivo].compraTecnologica}
                                                     onChange={(e) => {
                                                         const productos = [...formData.productos];
                                                         productos[productoActivo].compraTecnologica = e.target.checked;
@@ -1333,7 +1432,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 </label>
                                                 <input
                                                     type="checkbox"
-                                                    checked={formData.productos[productoActivo].ergonomico}
+                                                    checked={!!formData.productos[productoActivo].ergonomico}
                                                     onChange={(e) => {
                                                         const productos = [...formData.productos];
                                                         productos[productoActivo].ergonomico = e.target.checked;
@@ -1350,7 +1449,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 </label>
                                                 <input
                                                     type="checkbox"
-                                                    checked={formData.productos[productoActivo].papeleria}
+                                                    checked={!!formData.productos[productoActivo].papeleria}
                                                     onChange={(e) => {
                                                         const productos = [...formData.productos];
                                                         productos[productoActivo].papeleria = e.target.checked;
@@ -1367,7 +1466,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 </label>
                                                 <input
                                                     type="checkbox"
-                                                    checked={formData.productos[productoActivo].cafeteria}
+                                                    checked={!!formData.productos[productoActivo].cafeteria}
                                                     onChange={(e) => {
                                                         const productos = [...formData.productos];
                                                         productos[productoActivo].cafeteria = e.target.checked;
@@ -1413,10 +1512,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 <br />
                                 <div className="campoTotales">
                                     <div className="totalesCards">
-                                        <p className="totalP">{formData.productos.length}</p>
-                                        <p className="textTotal">Productos</p>
-                                    </div>
-                                    <div className="totalesCards">
                                         <p className="totalP">{formData.productos.filter((p) => p.ergonomico).length}</p>
                                         <p className="textTotal">Ergonómicos</p>
                                     </div>
@@ -1432,21 +1527,29 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                         <p className="totalP">{formData.productos.filter((p) => p.compraTecnologica).length}</p>
                                         <p className="textTotal">Tecnológicos</p>
                                     </div>
+                                </div>
+                                <br />
+                                <div className="totalProdAndPrice">
+                                    <div className="totalesCards">
+                                        <p className="totalP">{formData.productos.length}</p>
+                                        <p className="textTotal">Productos</p>
+                                    </div>
                                     <div className="totalesCards">
                                         <p className="totalP">{formatCurrency(getTotalEstimado(false))}</p>
                                         <p className="textTotal">Valor estimado</p>
                                     </div>
                                 </div>
+                                <br />
                                 <div className="superaOno">
                                     {getTotalEstimado(true) > UMBRAL_10_SM ? (
                                         <div className="noSupera">
-                                            <p style={{ color: "red", fontWeight: "bold" }}>
+                                            <p style={{ color: "#862633", fontWeight: "bold" }}>
                                                 La solicitud supera el valor de 10 salarios mínimos legales vigentes.
                                             </p>
                                         </div>
                                     ) : (
                                         <div className="siSupera">
-                                            <p style={{ color: "green", fontWeight: "bold" }}>
+                                            <p style={{ color: "#3DC13C", fontWeight: "bold" }}>
                                                 La solicitud no supera el valor de 10 salarios mínimos legales vigentes.
                                             </p>
                                         </div>
@@ -1455,26 +1558,35 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 <br />
                                 <h3 className="tittleOneUserNew">productos asociados</h3>
                                 <div className="resumenSection" style={{ textAlign: "center" }}>
-                                    {formData.productos.map((prod, index) => (
-                                        <div key={index} className="productos">
-                                            <div className="leftInfoProduct">
-                                                <div className="nameIconProduct">
-                                                    <FontAwesomeIcon icon={faBoxOpen} className="iconProduct" />
-                                                    <div>
-                                                        <h1 className="nameProduct">{prod.nombre}</h1>
+                                    {formData.productos.map((prod, index) => {
+                                        return (
+                                            <div key={index} className="productos">
+                                                <div className="leftInfoProduct">
+                                                    <div className="nameIconProduct">
+                                                        <FontAwesomeIcon icon={faBoxOpen} className="iconProduct" />
+                                                        <div className="nameAndTags">
+                                                            <h1 className="nameProduct">{prod.nombre}</h1>
+                                                            <div className="tagsProducto">
+                                                                <div className={`tagOption ${prod.compraTecnologica ? "active" : ""}`}>
+                                                                    Tecnológico
+                                                                </div>
+                                                                <div className={`tagOption ${prod.ergonomico ? "active" : ""}`}>
+                                                                    Ergonómico
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="subtitlesProductos">
 
                                                     </div>
                                                 </div>
-                                                <div className="subtitlesProductos">
-
+                                                <div className="rightInfoProduct">
+                                                    <h1>{prod.valorEstimado}</h1>
+                                                    <p className="subtitlesProductos">Cantidad: {prod.cantidad}</p>
                                                 </div>
                                             </div>
-                                            <div className="rightInfoProduct">
-                                                <h1>{prod.valorEstimado}</h1>
-                                                <p className="subtitlesProductos">Cantidad: {prod.cantidad}</p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        )
+                                    })}
                                 </div>
                                 {showProductosModal && (
                                     <div className="modalOverlay">

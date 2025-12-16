@@ -31,6 +31,7 @@ import UserModal from "../components/userModal";
 import api from "../services/axios";
 import { useAuth } from "../context/AuthContext";
 import { useRouter } from "next/navigation";
+import LoadingView from "../components/loadingView";
 
 function UsuariosInner() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -69,6 +70,11 @@ function UsuariosInner() {
     { value: "gerGeneral", label: "Gerente General" },
     { value: "analistaQA", label: "Analista Requerimientos y QA" },
     { value: "CoordiDevWeb", label: "Coordinador Desarrollo Web" },
+    // NUEVAS CATEGORÍAS
+    { value: "dicCAF", label: "Director Cafetería" },
+    { value: "gerCAF", label: "Gerente Cafetería" },
+    { value: "dicPAP", label: "Director Papelería" },
+    { value: "gerPAP", label: "Gerente Papelería" },
   ];
 
   const optionsArea = [
@@ -76,6 +82,9 @@ function UsuariosInner() {
     { value: "SST", label: "Seguridad y Salud en el Trabajo" },
     { value: "GerenciaAdmin", label: "Gerencia Adminsitrativa" },
     { value: "GerenciaGeneral", label: "Gerencia General" },
+    // NUEVAS ÁREAS
+    { value: "CAF", label: "Cafetería" },
+    { value: "PAP", label: "Papelería" },
   ];
 
   const optionsSede = [
@@ -140,6 +149,15 @@ function UsuariosInner() {
         return "Director Tecnologia y Proyectos";
       case "gerTyC":
         return "Gerente Tecnologia y Proyectos";
+      // NUEVAS CATEGORÍAS
+      case "dicCAF":
+        return "Director Cafetería";
+      case "gerCAF":
+        return "Gerente Cafetería";
+      case "dicPAP":
+        return "Director Papelería";
+      case "gerPAP":
+        return "Gerente Papelería";
       default:
         return cargo || "Usuario";
     }
@@ -162,6 +180,11 @@ function UsuariosInner() {
         return "Gerencia Adminsitrativa";
       case "GerenciaGeneral":
         return "Gerencia General";
+      // NUEVAS ÁREAS
+      case "CAF":
+        return "Cafetería";
+      case "PAP":
+        return "Papelería";
     }
   };
 
@@ -271,14 +294,14 @@ function UsuariosInner() {
           formData,
           { headers: { Authorization: token ? `Bearer ${token}` : "" } }
         );
-        toast.success("✅ Usuario actualizado correctamente");
+        toast.success("Usuario actualizado correctamente");
       } else {
         await api.post(
           `/api/user/create`,
           formData,
           { headers: { Authorization: token ? `Bearer ${token}` : "" } }
         );
-        toast.success("✅ Usuario creado correctamente");
+        toast.success("Usuario creado correctamente");
       }
       await fetchUsuarios();
       setOpenModal(false);
@@ -287,27 +310,80 @@ function UsuariosInner() {
       console.error(err);
       const msg = err?.response?.data?.message || err?.message || "Error en la petición";
       setError(msg);
-      toast.error(`❌ ${msg}`);
+      toast.error(`${msg}`);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteUser = async (id) => {
-    if (!window.confirm("⚠️ ¿Seguro que deseas eliminar este usuario?")) return;
-
-    try {
-      const token = localStorage.getItem("token");
-      await api.delete(`/api/user/delete/${id}`, {
-        headers: { Authorization: token ? `Bearer ${token}` : "" },
-      });
-      toast.success("🗑️ Usuario eliminado correctamente");
-      await fetchUsuarios();
-    } catch (err) {
-      console.error(err);
-      const msg = err?.response?.data?.message || err?.message || "Error al eliminar usuario";
-      toast.error(`❌ ${msg}`);
-    }
+    // Toast confirm dialog en vez de window.confirm
+    const toastId = toast.info(
+      <div style={{ padding: "10px", textAlign: "center", color: "white" }}>
+        <strong style={{ display: "block", marginBottom: "8px" }}>
+          ¿Seguro que deseas eliminar este usuario?
+        </strong>
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+          <button
+            style={{
+              backgroundColor: "#dc2626",
+              color: "white",
+              border: "none",
+              padding: "5px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+            onClick={async () => {
+              toast.dismiss(toastId);
+              setLoading(true); // Mostrar LoadingView al eliminar
+              try {
+                const token = localStorage.getItem("token");
+                await api.delete(`/api/user/delete/${id}`, {
+                  headers: { Authorization: token ? `Bearer ${token}` : "" },
+                });
+                toast.success("Usuario eliminado correctamente");
+                await fetchUsuarios();
+              } catch (err) {
+                console.error(err);
+                const msg = err?.response?.data?.message || err?.message || "Error al eliminar usuario";
+                toast.error(`❌ ${msg}`);
+              } finally {
+                setLoading(false); // Ocultar LoadingView al terminar
+              }
+            }}
+          >
+            Eliminar
+          </button>
+          <button
+            style={{
+              backgroundColor: "#e5e7eb",
+              color: "#111827",
+              border: "none",
+              padding: "5px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "500",
+            }}
+            onClick={() => toast.dismiss(toastId)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>,
+      {
+        position: "top-right",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          background: "#3b82f6",
+          borderRadius: "10px",
+        },
+        icon: "ℹ️",
+      }
+    );
   };
 
   const getUserRoles = (user) => {
@@ -485,12 +561,7 @@ function UsuariosInner() {
                 {loading ? (
                   <div className="tableRow placeholder">
                     <div colSpan="6">
-                      <div className="loading-container-users">
-                        <div className="loading-cambios">
-                          <img src="/coopidrogas_logo_mini.png" className="LogoCambios" alt="Logo de carga" />
-                          <p className="textLoading">Cargando usuarios...</p>
-                        </div>
-                      </div>
+                      <LoadingView/>
                     </div>
                   </div>
                 ) : error ? (

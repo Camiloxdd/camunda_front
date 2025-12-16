@@ -4,7 +4,7 @@ import { Sidebar } from "../components/Slidebar";
 import Navbar from "../components/navbar";
 import SearchBar from "../components/searchBar";
 import ApprovalModal from "../components/ApprovalModal";
-import { faTrash, faPencil, faUser, faFilePdf, faTimeline, faX, faPlus, faRefresh, faFile, faFileCircleCheck, faFileCircleQuestion, faFileCircleXmark, faFileEdit, faFileExcel, faUserPen, faDownload, faBoxArchive, faEye, faCalendarAlt, faCalendar, faAngleDown, faGear, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faPencil, faUser, faFilePdf, faTimeline, faX, faPlus, faRefresh, faFile, faFileCircleCheck, faFileCircleQuestion, faFileCircleXmark, faFileEdit, faFileExcel, faUserPen, faDownload, faBoxArchive, faEye, faCalendarAlt, faCalendar, faAngleDown, faGear, faRightFromBracket, faUserGear, faUserShield } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Suspense } from "react";
 import { AuthProvider, useAuth } from "../context/AuthContext";
@@ -20,6 +20,7 @@ import "primereact/resources/themes/lara-light-cyan/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import { useLayoutEffect } from "react";
+import LoadingView from "../components/loadingView";
 
 
 function DashboardInner() {
@@ -793,24 +794,6 @@ function DashboardInner() {
     }
   }, [loading, requisiciones, permissions]);
 
-  useEffect(() => {
-    // Mostrar toast de "sesión iniciada" solo una vez usando PrimeReact
-    if (toastRef.current && !window.__prime_sesion_toast_shown) {
-      setTimeout(() => {
-        toastRef.current.show({
-          severity: 'success',
-          summary: 'Sesión iniciada',
-          detail: 'Sesión iniciada correctamente!',
-          life: 3000,
-          // Puedes personalizar el icono así:
-          icon: 'pi pi-user', // ejemplo: icono de usuario
-          // icon: 'pi pi-check-circle', // ejemplo: icono de check redondo
-        });
-        window.__prime_sesion_toast_shown = true;
-      }); // pequeño delay para asegurar que el Toast esté montado
-    }
-  }, []);
-
   function getStatusLabel(estado) {
     const normalized = String(estado).toLowerCase().trim();
 
@@ -946,19 +929,6 @@ function DashboardInner() {
     return "Pendiente";
   };
 
-  const getAreaNombre = (areaId) => {
-    switch (areaId) {
-      case "TyP":
-        return "Tecnologia y Proyectos";
-      case "SST":
-        return "Seguridad y Salud en el Trabajo";
-      case "GerenciaAdmin":
-        return "Gerencia Adminsitrativa";
-      case "GerenciaGeneral":
-        return "Gerencia General";
-    }
-  };
-
   const getCargoNombre = (cargoId) => {
     switch (cargoId) {
       case "managerGeneral":
@@ -985,8 +955,33 @@ function DashboardInner() {
         return "Director Tecnologia y Proyectos";
       case "gerTyC":
         return "Gerente Tecnologia y Proyectos";
+      case "dicCAF":
+        return "Director Cafetería";
+      case "gerCAF":
+        return "Gerente Cafetería";
+      case "dicPAP":
+        return "Director Papelería";
+      case "gerPAP":
+        return "Gerente Papelería";
       default:
         return cargoId || "Usuario";
+    }
+  };
+
+  const getAreaNombre = (areaId) => {
+    switch (areaId) {
+      case "TyP":
+        return "Tecnologia y Proyectos";
+      case "SST":
+        return "Seguridad y Salud en el Trabajo";
+      case "GerenciaAdmin":
+        return "Gerencia Adminsitrativa";
+      case "GerenciaGeneral":
+        return "Gerencia General";
+      case "CAF":
+        return "Cafetería";
+      case "PAP":
+        return "Papelería";
     }
   };
 
@@ -1325,16 +1320,7 @@ function DashboardInner() {
               </div>
               <div className="listaReq">
                 {loading ? (
-                  <div className="loading-container">
-                    <div className="loading-cambios">
-                      <img
-                        src="/coopidrogas_logo_mini.png"
-                        className="LogoCambios"
-                        alt="Logo de carga"
-                      />
-                      <p className="textLoading">Cargando requisiciones...</p>
-                    </div>
-                  </div>
+                  <LoadingView />
                 ) : requisicionesFiltradas.length === 0 ? (
                   <div className="loading-container">
                     <div className="loading-cambios">
@@ -1366,16 +1352,21 @@ function DashboardInner() {
 
                         const onRowClick = async () => {
                           if (permissions?.isComprador) {
-                            await handleVerifyOpen(req);
+                            setVerifyLoading(true); // Mostrar loading inmediatamente
+                            setVerifyModalReq({});  // Abre la modal con loading
+                            await handleVerifyOpen(req); // Luego carga los datos
                             return;
                           }
                           if (permissions?.isAprobador) {
                             setSelectedReq(req);
                             return;
                           }
-                          await handleOpenSolicitanteModal(req);
+                          // Para solicitante: mostrar loading primero
+                          setLoadingSolicitante(true);
+                          setOpenReqModal(true); // Abre la modal con loading
+                          await handleOpenSolicitanteModal(req); // Luego carga los datos
                           setSolicitanteReq(req);
-                          setOpenReqModal(true);
+                          // setOpenReqModal(true); // Ya se abre antes
                         };
 
                         return (
@@ -1479,12 +1470,12 @@ function DashboardInner() {
             <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: "18px" }}>
 
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }} className="nose">
-                <FontAwesomeIcon icon={faUser} className="iconNormal" />
+                <FontAwesomeIcon icon={faUserGear} className="iconNormal" />
                 <p>{getAreaNombre(user.area)}</p>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }} className="nose">
-                <FontAwesomeIcon icon={faGear} className="iconNormal" />
+                <FontAwesomeIcon icon={faUserShield} className="iconNormal" />
                 <p>{getUserRoles(user)}</p>
               </div>
 
@@ -1588,10 +1579,7 @@ function DashboardInner() {
                 <div className="tabla-productos">
                   {verifyModalReq.productos?.map((p, i) => (
                     <div key={i} className="containerProductoAprove">
-                      <div className="leftInfoAprove">
-                        <div className="checkProducto" style={{ background: "#e7edf3", color: "#4b5563", border: "2px solid #ddd" }}>
-                          {p.aprobado === "aprobado" ? "✔" : p.aprobado === "rechazado" ? "✕" : "—"}
-                        </div>
+                      <div className="leftInfoAprove">  
                         <div className="nameAndDescriptionProducto">
                           <p className="nameProducto">{p.nombre || p.productoOServicio || "—"}</p>
                           <p className="descriptionProducto">{p.descripcion || ""}</p>
@@ -1624,14 +1612,11 @@ function DashboardInner() {
                 </div>
               </div>
 
-              <div className="modal-actions" style={{ padding: "20px", borderTop: "2px solid #ddd", display: "flex", gap: "10px", justifyContent: "center" }}>
-                <button onClick={() => setVerifyModalReq(null)} style={{ padding: "10px 20px", background: "#e5e7eb", color: "#111827", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
-                  Cerrar
-                </button>
-                <button onClick={() => handleDevolver(verifyModalReq.requisicion_id)} disabled={verifyLoading} style={{ padding: "10px 20px", background: "#f97316", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+              <div className="modal-actions-verifyModal" style={{ padding: "11px", borderTop: "2px solid #ddd", display: "flex", gap: "10px", justifyContent: "center" }}>
+                <button onClick={() => handleDevolver(verifyModalReq.requisicion_id)} disabled={verifyLoading} >
                   {verifyLoading ? "Procesando..." : "Devolver"}
                 </button>
-                <button onClick={() => handleAprobar(verifyModalReq.requisicion_id)} disabled={verifyLoading} style={{ padding: "10px 20px", background: "#16a34a", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}>
+                <button onClick={() => handleAprobar(verifyModalReq.requisicion_id)} disabled={verifyLoading} >
                   {verifyLoading ? "Procesando..." : "Aprobar Total"}
                 </button>
               </div>
@@ -1827,7 +1812,7 @@ function DashboardInner() {
                                 </div>
 
                                 {/* Cuenta Contable */}
-                                <div style={{ textAlign: "center",fontSize: "13px", color: "var(--textColorP)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                <div style={{ textAlign: "center", fontSize: "13px", color: "var(--textColorP)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                   {producto.cuenta_contable || "—"}
                                 </div>
 
@@ -1847,8 +1832,9 @@ function DashboardInner() {
                                 </div>
 
                                 {/* Estado */}
-                                <div style={{ textAlign: "center" }}>
+                                <div style={{ textAlign: "center", position: "relative" }}>
                                   <span
+                                    className="estado-tag-tooltip"
                                     style={{
                                       display: "inline-block",
                                       padding: "4px 8px",
@@ -1857,11 +1843,83 @@ function DashboardInner() {
                                       fontWeight: "600",
                                       backgroundColor: producto.aprobado === "aprobado" ? "#dcfce7" : producto.aprobado === "rechazado" ? "#fee2e2" : "#fef3c7",
                                       color: producto.aprobado === "aprobado" ? "#166534" : producto.aprobado === "rechazado" ? "#991b1b" : "#92400e",
-                                      whiteSpace: "nowrap"
+                                      whiteSpace: "nowrap",
+                                      position: "relative",
+                                      cursor: (producto.usuario_accion || producto.comentarios) ? "pointer" : "default"
                                     }}
                                   >
                                     {producto.aprobado || "Pendiente"}
+                                    {/* Bolita naranja animada si hay comentario o usuario_accion */}
+                                    {(producto.usuario_accion || producto.comentarios) && (
+                                      <span
+                                        className="estado-bolita-animada"
+                                        style={{
+                                          position: "absolute",
+                                          top: -3,
+                                          right: -2,
+                                          width: 9,
+                                          height: 9,
+                                          borderRadius: "50%",
+                                          background: "#f59e42",
+                                          boxShadow: "0 0 0 0 #f59e42",
+                                          animation: "estado-bolita-pulse 1.2s infinite",
+                                          zIndex: 2,
+                                          border: "1.5px solid #fff"
+                                        }}
+                                      />
+                                    )}
+                                    {/* Tooltip/modal pequeño al hacer hover */}
+                                    {(producto.usuario_accion || producto.comentarios) && (
+                                      <span className="estado-tooltip-content">
+                                        <div style={{ padding: 8, minWidth: 180 }}>
+                                          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
+                                            <h3 className="tittleOneUserNew">{producto.aprobado === "aprobado" ? "Aprobado" : "Rechazado"}</h3>
+                                          </div>
+                                          {producto.usuario_accion && (
+                                            <div style={{ fontSize: 12, marginBottom: 2, color: "#6b7280", marginTop: -10 }}>
+                                              <span style={{ color: "var(--textColor)", fontWeight: "bold" }}>Por:</span> {producto.usuario_accion}
+                                            </div>
+                                          )}
+                                                                                   {producto.comentarios && (
+                                            <div style={{ fontSize: 12, color: "#6b7280" }}>
+                                              <span style={{ color: "var(--textColor)", fontWeight: "bold" }}>Comentario:</span> {producto.comentarios}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </span>
+                                    )}
                                   </span>
+                                  {/* CSS para tooltip y animación */}
+                                  <style>{`
+                                    .estado-tag-tooltip {
+                                      position: relative;
+                                    }
+                                    .estado-tooltip-content {
+                                      display: none;
+                                      position: absolute;
+                                      top: 110%;
+                                      left: 50%;
+                                      transform: translateX(-50%);
+                                      background: #fff;
+                                      color: #222;
+                                      border-radius: 8px;
+                                      box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+                                      z-index: 100;
+                                      min-width: 180px;
+                                      font-size: 13px;
+                                      border: 1px solid #f3f4f6;
+                                      pointer-events: none;
+                                    }
+                                    .estado-tag-tooltip:hover .estado-tooltip-content {
+                                      display: block;
+                                      pointer-events: auto;
+                                    }
+                                    @keyframes estado-bolita-pulse {
+                                      0% { box-shadow: 0 0 0 0 #f59e4280; }
+                                      70% { box-shadow: 0 0 0 8px #f59e4200; }
+                                      100% { box-shadow: 0 0 0 0 #f59e4200; }
+                                    }
+                                  `}</style>
                                 </div>
 
                                 {/* Tecnológico */}

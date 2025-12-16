@@ -11,6 +11,8 @@ import { faMicrosoft } from "@fortawesome/free-brands-svg-icons";
 import Link from "next/link";
 import { useRouter } from "next/navigation"
 import api from "./services/axios";
+import { toast } from "react-toastify";
+import LoadingLogin from "./components/loadingLogin";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -20,10 +22,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const iniciarSesion = () => {
-    router.push('/dashboard/')
-  }
-
   async function handleLogIn(e) {
     e.preventDefault();
     setLoading(true);
@@ -31,7 +29,7 @@ export default function Dashboard() {
 
     try {
       const res = await api.post(`/api/auth/login`, {
-        email: correo,       // asegúrate de usar los mismos nombres que espera el backend
+        email: correo,
         password: contraseña
       }, {
         headers: {
@@ -41,12 +39,22 @@ export default function Dashboard() {
       });
 
       const data = res.data;
-
-      // Guarda el token en localStorage
       localStorage.setItem('token', data.token);
 
-      // Redirige al dashboard
-      router.push('/dashboard');
+      toast.success("Sesión iniciada correctamente", {
+        position: "top-right",
+        autoClose: 1800,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: false,
+        progress: undefined,
+        theme: "colored",
+      });
+
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1800);
     } catch (err) {
       console.error(err);
       if (err.response) {
@@ -58,7 +66,6 @@ export default function Dashboard() {
       setLoading(false);
     }
   }
-
 
   return (
     <div className=" background-img">
@@ -77,7 +84,7 @@ export default function Dashboard() {
               className="logoCoopiLogin"
             />
           </div>
-          <div className="papaInputs">
+          <form className="papaInputs" onSubmit={handleLogIn}>
             <div className="inputAndIcon">
               <FontAwesomeIcon
                 icon={faMailBulk}
@@ -94,6 +101,7 @@ export default function Dashboard() {
                   required
                   value={correo}
                   onChange={e => setCorreo(e.target.value)}
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -111,6 +119,7 @@ export default function Dashboard() {
                     required
                     value={contraseña}
                     onChange={e => setContraseña(e.target.value)}
+                    disabled={loading}
                   />
                   <div className="spaceIcons">
                     <FontAwesomeIcon
@@ -120,28 +129,38 @@ export default function Dashboard() {
                     />
                   </div>
                 </div>
-
               </div>
             </div>
-          </div>
-          <div className="rememberAccount">
-            <div className="checkboxCustom">
-              <label className="cyberpunk-checkbox-label">
-                <input type="checkbox" className="cyberpunk-checkbox" />
-                Recordarme
-              </label>
+            {error && (
+              <div style={{ color: "#dc2626", margin: "8px 0", fontWeight: "bold", textAlign: "center" }}>
+                {error}
+              </div>
+            )}
+            <div className="rememberAccount">
+              <div className="checkboxCustom">
+                <label className="cyberpunk-checkbox-label">
+                  <input type="checkbox" className="cyberpunk-checkbox" />
+                  Recordarme
+                </label>
+              </div>
+              <div className="forgoutUser">
+                <p>
+                  <Link href={"/dashboard"} className="LinkForgot">¿No puedes ingresar?</Link>
+                </p>
+              </div>
             </div>
-            <div className="forgoutUser">
-              <p>
-                <Link href={"/dashboard"} className="LinkForgot">¿No puedes ingresar?</Link>
-              </p>
+            <div className="buttonsLogin">
+              <button type="submit" disabled={loading} style={{ position: "relative", minHeight: 22 }}>
+                {loading ? (
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "50%" }}>
+                    <LoadingLogin />
+                  </span>
+                ) : (
+                  <p>Iniciar Sesion</p>
+                )}
+              </button>
             </div>
-          </div>
-          <div className="buttonsLogin">
-            <button onClick={handleLogIn}>
-              <p>Iniciar Sesion</p>
-            </button>
-          </div>
+          </form>
           <div className="divider">
             <span>O</span>
           </div>

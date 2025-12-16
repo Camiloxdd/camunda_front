@@ -393,13 +393,13 @@
 }
 
 .priceProducto {
-  font-size: 25px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--textColor);
 }
 
 .cantidadProducto {
-  font-size: 20px;
+  font-size: 15px;
   color: var(--textColorP);
 }
 
@@ -422,6 +422,17 @@
   border: 2px solid red;
   color: white;
   transform: translateY(-2px);
+}
+
+.iconProducto{
+  display: flex;
+  gap: 10px;
+}
+
+.iconBoxProd{
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 @keyframes spinVaried {

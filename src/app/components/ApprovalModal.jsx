@@ -5,8 +5,10 @@ import "../styles/views/ApprovalModal.css";
 import api from "../services/axios";
 import { approvePendingSingle, startThreeStep } from "../services/camunda";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleCheck, faFile, faWarning } from "@fortawesome/free-solid-svg-icons";
+import { faBoxOpen, faCircleCheck, faFile, faWarning } from "@fortawesome/free-solid-svg-icons";
+import RechazoComentarioModal from "./RechazoComentarioModal"
 import TimeLap from "./timeLap";
+import LoadingView from "./loadingView";
 
 export default function ApprovalModal({ requisicion, onClose, onApproved, user, token: tokenProp }) {
     const [detalles, setDetalles] = useState({
@@ -23,6 +25,8 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
     const [actionLoadingVisible, setActionLoadingVisible] = useState(false);
     const [actionLoadingExiting, setActionLoadingExiting] = useState(false);
     const [rejectedIds, setRejectedIds] = useState(new Set());
+    const [showComentarioModal, setShowComentarioModal] = useState(false);
+    const [productoRechazoId, setProductoRechazoId] = useState(null);
 
     useEffect(() => {
         if (tokenProp) {
@@ -72,18 +76,37 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     (aprobadorSesion.visible === 1 || aprobadorSesion.visible === true);
                 setPuedeAprobar(puedeAprobarAhora);
 
-                // Filtrar productos relevantes según el rol
-                const technoRoles = ["dicTYP", "gerTyC"];
-                const sstRoles = ["dicSST", "gerSST"];
+                // --- CAMBIO PRINCIPAL: Filtrar productos SOLO si es director/gerente del área del solicitante ---
+                const areaSolicitante = data.requisicion?.area;
                 const cargo = user?.cargo || "";
 
-                let productosRelevantes = productosBD;
-                if (technoRoles.includes(cargo)) {
-                    productosRelevantes = productosBD.filter(p => p.compra_tecnologica == 1);
-                } else if (sstRoles.includes(cargo)) {
-                    productosRelevantes = productosBD.filter(p => p.ergonomico == 1);
+                // Mapear áreas a cargos válidos
+                const areaToCargos = {
+                    TyP: ["dicTYP", "gerTyC"],
+                    SST: ["dicSST", "gerSST"],
+                    CAF: ["dicCAF", "gerCAF"],
+                    PAP: ["dicPAP", "gerPAP"],
+                    GerenciaAdmin: ["gerAdmin"],
+                    GerenciaGeneral: ["gerGeneral"],
+                };
+
+                let productosRelevantes = [];
+                let puedeAprobarPorArea = false;
+                if (areaSolicitante && areaToCargos[areaSolicitante]) {
+                    puedeAprobarPorArea = areaToCargos[areaSolicitante].includes(cargo);
+                    if (puedeAprobarPorArea) {
+                        productosRelevantes = productosBD;
+                    } else {
+                        productosRelevantes = []; // No puede aprobar nada
+                    }
+                } else {
+                    productosRelevantes = []; // Área no reconocida, no puede aprobar nada
                 }
 
+                // 🔥 FILTRAR productos rechazados para que no aparezcan a siguientes aprobadores
+                productosRelevantes = productosRelevantes.filter(
+                    p => String(p.aprobado).toLowerCase() !== "rechazado"
+                );
 
                 setDetalles(prev => ({
                     currentUser: user,
@@ -123,13 +146,22 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
         fetchDetalles();
     }, [requisicion, token, user]);
 
+    // Cambia la función para reflejar la nueva lógica de aprobación por área
     const isEditableForUser = (product) => {
+        const areaSolicitante = detalles?.requisicion?.area;
         const cargo = user?.cargo || "";
-        const technoRoles = ["dicTYP", "gerTyC"];
-        const sstRoles = ["dicSST", "gerSST"];
-        if (technoRoles.includes(cargo)) return !!product.compra_tecnologica;
-        if (sstRoles.includes(cargo)) return !!product.ergonomico;
-        return true;
+        const areaToCargos = {
+            TyP: ["dicTYP", "gerTyC"],
+            SST: ["dicSST", "gerSST"],
+            CAF: ["dicCAF", "gerCAF"],
+            PAP: ["dicPAP", "gerPAP"],
+            GerenciaAdmin: ["gerAdmin"],
+            GerenciaGeneral: ["gerGeneral"],
+        };
+        if (areaSolicitante && areaToCargos[areaSolicitante]) {
+            return areaToCargos[areaSolicitante].includes(cargo);
+        }
+        return false;
     };
 
     const toggleDecision = (productoId, product) => {
@@ -246,10 +278,6 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
             const seleccionados = (detalles.productos || []).filter(
                 (p) => isEditableForUser(p) && decisiones[p.id] === true
             );
-            if (seleccionados.length === 0) {
-                toast.warn("Selecciona al menos un producto de tu área para rechazar.");
-                return;
-            }
 
             const confirmed = await confirmToast("¿Confirmas que deseas rechazar los items seleccionados?", { confirmLabel: "Rechazar", cancelLabel: "Cancelar", confirmColor: "#dc2626", background: "#ef4444" });
             if (!confirmed) return;
@@ -348,6 +376,8 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     id: productoId,
                     aprobado: true,
                     fecha_aprobado: nowIso,
+                    comentarios: null,
+                    usuario_accion: detalles.currentUser?.nombre || "",
                 }],
             };
 
@@ -371,7 +401,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                 ...prev,
                 productos: prev.productos.map(p =>
                     p.id === productoId
-                        ? { ...p, aprobado: "aprobado", fecha_aprobado: nowIso }
+                        ? { ...p, aprobado: "aprobado", fecha_aprobado: nowIso, comentarios: null, usuario_accion: detalles.currentUser?.nombre || "" }
                         : p
                 ),
             }));
@@ -391,30 +421,30 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
         }
     };
 
-    const handleRechazarSingle = async (productoId) => {
+    const handleRechazarSingle = (productoId) => {
+        setProductoRechazoId(productoId);
+        setShowComentarioModal(true);
+    };
+
+    const rechazarConComentario = async (comentario) => {
+        const productoId = productoRechazoId;
+        setShowComentarioModal(false);
+        setProductoRechazoId(null);
         try {
             const producto = detalles.productos.find(p => p.id === productoId);
             if (!producto) return;
-
-            const confirmed = await confirmToast(
-                `¿Deseas rechazar "${producto.nombre}"?`,
-                { confirmLabel: "Rechazar", cancelLabel: "Cancelar", confirmColor: "#dc2626", background: "#ef4444" }
-            );
-            if (!confirmed) return;
-
             setSaving(true);
             setActionLoadingVisible(true);
-
             const nowIso = new Date().toISOString();
             const body = {
                 decisiones: [{
                     id: productoId,
                     aprobado: false,
                     fecha_aprobado: nowIso,
+                    comentarios: comentario,
+                    usuario_accion: detalles.currentUser?.nombre || "",
                 }],
             };
-
-            // Cambia endpoint: solo actualiza producto individual
             await api.put(
                 `/api/requisiciones/${requisicion.requisicion_id}/productos/estado`,
                 body,
@@ -426,41 +456,21 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     },
                 }
             );
-
             toast.success("Producto rechazado");
-
-            // Recargar productos para reflejar el estado actualizado
-            const resReload = await api.get(
-                `http://localhost:8000/api/requisiciones/${requisicion.requisicion_id}`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            const dataReload = await resReload.data;
-
-            // Filtrar y actualizar productos relevantes
-            const cargo = user?.cargo || "";
-            let productosRelevantes = (dataReload.productos || []);
-            if (technoRoles.includes(cargo)) {
-                productosRelevantes = productosRelevantes.filter(p => p.compra_tecnologica === 1 || p.compra_tecnologica === true);
-            } else if (sstRoles.includes(cargo)) {
-                productosRelevantes = productosRelevantes.filter(p => p.ergonomico === 1 || p.ergonomico === true);
-            }
             setDetalles(prev => ({
                 ...prev,
-                requisicion: dataReload.requisicion,
-                productos: productosRelevantes,
+                productos: prev.productos.map(p =>
+                    p.id === productoId
+                        ? { ...p, aprobado: "rechazado", fecha_aprobado: nowIso, comentarios: comentario, usuario_accion: detalles.currentUser?.nombre || "" }
+                        : p
+                ),
             }));
-
-            // Actualizar decisiones solo para productos pendientes
-            const newDecisiones = {};
-            productosRelevantes.forEach((p) => {
-                if (!p.aprobado) newDecisiones[p.id] = false;
-            });
-            setDecisiones(newDecisiones);
-
+            setDecisiones(prev => ({
+                ...prev,
+                [productoId]: false
+            }));
         } catch (err) {
-            if (err?.response?.status >= 400) {
-                toast.error("No se pudo rechazar el producto");
-            }
+            toast.error("No se pudo rechazar el producto");
         } finally {
             setSaving(false);
             setActionLoadingVisible(false);
@@ -538,14 +548,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
         return (
             <div className="modal-overlay">
                 <div className="modal-content-loading">
-                    <div className="content-loading">
-                        <img
-                            src="/coopidrogas_logo_mini.png"
-                            className="LogoCambios"
-                            alt="Logo de carga"
-                        />
-                        <p>Thinking...</p>
-                    </div>
+                    <LoadingView />
                 </div>
             </div>
         );
@@ -585,10 +588,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                         className={`approval-loading-overlay ${actionLoadingExiting ? "fade-out" : "fade-in"}`}
                         style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.92)", height: "100%" }}
                     >
-                        <div className="loading-cambios" style={{ textAlign: "center" }}>
-                            <img src="/coopidrogas_logo_mini.png" className="LogoCambios" alt="Cargando..." />
-                            <p className="textLoading">Procesando...</p>
-                        </div>
+                        <LoadingView/>
                     </div>
                 )}
                 <div className="modal-header">
@@ -659,14 +659,14 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                             let showRechazadoTag = false;
 
                             if (productoRechazado) {
-                                borderColor = "#dc2626";
-                                backgroundColor = "#fee2e2";
+                                borderColor = "#B67D85";
+                                backgroundColor = "#e0b6bbff";
                                 showRechazadoTag = true;
                             }
 
                             if (productoAprobado) {
-                                borderColor = "#16a34a";
-                                backgroundColor = "#dcfce7";
+                                borderColor = "#9DE09D";
+                                backgroundColor = "#CEEFCE";
                                 showAprobadoTag = true;
                             }
 
@@ -681,31 +681,57 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                                         backgroundColor: backgroundColor,
                                         borderRadius: "8px",
                                         padding: "12px",
+                                        height: "119px",
                                         transition: "all 0.3s ease",
                                         opacity: editable || showAprobadoTag || showRechazadoTag ? 1 : 0.5
                                     }}
                                 >
                                     <div className="leftInfoAprove">
                                         <div className="nameAndDescriptionProducto">
-                                            <p className="nameProducto">{p.nombre}</p>
-                                            <p className="descriptionProducto">{p.descripcion}</p>
-                                            <div className="tagsProducto">
-                                                <div className={`tagOption ${p.compra_tecnologica ? "active" : ""}`}>
-                                                    Tecnológico
+                                            <div className="iconProducto">
+                                                <div className="iconBoxProd">
+                                                    <FontAwesomeIcon icon={faBoxOpen} className="iconProduct" />
                                                 </div>
-                                                <div className={`tagOption ${p.ergonomico ? "active" : ""}`}>
-                                                    Ergonómico
+                                                <div className="textNameProd">
+                                                    <p className="nameProducto">{p.nombre}</p>
+                                                    <p className="descriptionProducto">{p.descripcion}</p>
+                                                    <div className="tagsProducto">
+                                                        <div className={`tagOption ${p.compra_tecnologica ? "active" : ""}`}>
+                                                            Tecnológico
+                                                        </div>
+                                                        <div className={`tagOption ${p.ergonomico ? "active" : ""}`}>
+                                                            Ergonómico
+                                                        </div>
+                                                        {showAprobadoTag && (
+                                                            <div className="tagOption active" style={{ background: "#56cf56ff", color: "white" }}>
+                                                                ✓ Aprobado
+                                                            </div>
+                                                        )}
+                                                        {showRechazadoTag && (
+                                                            <div className="tagOption" style={{ background: "#b45a66ff", color: "white" }}>
+                                                                ✕ Rechazado
+                                                            </div>
+                                                        )}
+
+                                                        {showRechazadoTag && p.usuario_accion && (
+                                                            <div className="tagOption" style={{ background: "#b45a66ff", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
+                                                                Rechazado por {p.usuario_accion}
+                                                            </div>
+                                                        )}
+
+                                                        {showRechazadoTag && p.comentarios && (
+                                                            <div className="tagOption" style={{ background: "#b45a66ff", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
+                                                                Comentario: {p.comentarios}
+                                                            </div>
+                                                        )}
+
+                                                        {showAprobadoTag && p.usuario_accion && (
+                                                            <div className="tagOption" style={{ background: "#56cf56ff", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
+                                                                Aprobado por {p.usuario_accion}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                {showAprobadoTag && (
-                                                    <div className="tagOption active" style={{ background: "#16a34a", color: "white" }}>
-                                                        ✓ Aprobado
-                                                    </div>
-                                                )}
-                                                {showRechazadoTag && (
-                                                    <div className="tagOption" style={{ background: "#dc2626", color: "white" }}>
-                                                        ✕ Rechazado
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -721,7 +747,8 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                                                 gridTemplateColumns: "1fr",
                                                 gap: "6px",
                                                 marginLeft: "12px",
-                                                minWidth: "50px"
+                                                minWidth: "30px",
+
                                             }}>
                                                 <button
                                                     onClick={() => handleAprobaSingle(p.id)}
@@ -855,6 +882,11 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                         </div>
                     </div>
                 )}
+                <RechazoComentarioModal
+                    open={showComentarioModal}
+                    onClose={() => { setShowComentarioModal(false); setProductoRechazoId(null); }}
+                    onSubmit={rechazarConComentario}
+                />
             </div>
         </div>
     );
