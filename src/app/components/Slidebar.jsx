@@ -102,9 +102,6 @@ export const Sidebar = ({ onToggle }) => {
             className={`sidebar ${isCollapsed ? "sidebarCollapsed" : "sidebarExpanded"}`}
             aria-expanded={!isCollapsed}
         >
-            <button onClick={handleToggle} className="toggleButton toggleButtonTop" aria-label="Toggle sidebar">
-                <FontAwesomeIcon icon={isCollapsed ? faBars : faTimes} size="lg" />
-            </button>
             <div className={`logoSection ${isCollapsed ? "logoSectionCollapsed" : "logoSectionExpanded"}`}>
                 <div className={`logoContainer ${isCollapsed ? "logoContainerCollapsed" : ""}`}>
                     {/* Imagen mini cuando está colapsado */}
@@ -123,7 +120,9 @@ export const Sidebar = ({ onToggle }) => {
                     )}
                 </div>
             </div>
-
+            <button onClick={handleToggle} className="toggleButton toggleButtonTop" aria-label="Toggle sidebar">
+                <FontAwesomeIcon icon={isCollapsed ? faBars : faTimes} size="lg" />
+            </button>
             {/* Navigation */}
             <nav className="nav">
                 {navItems.map((item, index) => (

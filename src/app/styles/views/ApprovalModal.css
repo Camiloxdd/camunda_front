@@ -191,6 +191,7 @@
   gap: 16px;
   padding: 16px 20px;
   display: flex;
+  margin-top: -38px;
 }
 
 .containerIconApprove {
@@ -266,6 +267,7 @@
 /* Contenedor de la tabla de productos con scroll limitado */
 .tabla-productos {
   max-height: 350px;
+  height: 200px;
   overflow-y: auto;
   padding-right: 8px;
   margin-bottom: 20px;

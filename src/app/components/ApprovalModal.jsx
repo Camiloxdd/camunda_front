@@ -76,31 +76,16 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     (aprobadorSesion.visible === 1 || aprobadorSesion.visible === true);
                 setPuedeAprobar(puedeAprobarAhora);
 
-                // --- CAMBIO PRINCIPAL: Filtrar productos SOLO si es director/gerente del área del solicitante ---
-                const areaSolicitante = data.requisicion?.area;
-                const cargo = user?.cargo || "";
-
-                // Mapear áreas a cargos válidos
-                const areaToCargos = {
-                    TyP: ["dicTYP", "gerTyC"],
-                    SST: ["dicSST", "gerSST"],
-                    CAF: ["dicCAF", "gerCAF"],
-                    PAP: ["dicPAP", "gerPAP"],
-                    GerenciaAdmin: ["gerAdmin"],
-                    GerenciaGeneral: ["gerGeneral"],
-                };
-
+                // --- CAMBIO: Filtrar productos según el cargo del aprobador, NO el área del solicitante ---
+                const cargo = (user?.cargo || "").trim();
                 let productosRelevantes = [];
-                let puedeAprobarPorArea = false;
-                if (areaSolicitante && areaToCargos[areaSolicitante]) {
-                    puedeAprobarPorArea = areaToCargos[areaSolicitante].includes(cargo);
-                    if (puedeAprobarPorArea) {
-                        productosRelevantes = productosBD;
-                    } else {
-                        productosRelevantes = []; // No puede aprobar nada
-                    }
+
+                if (["dicTYP", "gerTyC"].includes(cargo)) {
+                    productosRelevantes = productosBD.filter(p => !!p.compra_tecnologica);
+                } else if (["dicSST", "gerSST"].includes(cargo)) {
+                    productosRelevantes = productosBD.filter(p => !!p.ergonomico);
                 } else {
-                    productosRelevantes = []; // Área no reconocida, no puede aprobar nada
+                    productosRelevantes = productosBD;
                 }
 
                 // 🔥 FILTRAR productos rechazados para que no aparezcan a siguientes aprobadores
@@ -146,22 +131,17 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
         fetchDetalles();
     }, [requisicion, token, user]);
 
-    // Cambia la función para reflejar la nueva lógica de aprobación por área
+    // Cambia la función para reflejar la lógica de decisión por tipo de producto y cargo
     const isEditableForUser = (product) => {
-        const areaSolicitante = detalles?.requisicion?.area;
-        const cargo = user?.cargo || "";
-        const areaToCargos = {
-            TyP: ["dicTYP", "gerTyC"],
-            SST: ["dicSST", "gerSST"],
-            CAF: ["dicCAF", "gerCAF"],
-            PAP: ["dicPAP", "gerPAP"],
-            GerenciaAdmin: ["gerAdmin"],
-            GerenciaGeneral: ["gerGeneral"],
-        };
-        if (areaSolicitante && areaToCargos[areaSolicitante]) {
-            return areaToCargos[areaSolicitante].includes(cargo);
+        const cargo = (user?.cargo || "").trim();
+        if (["dicTYP", "gerTyC"].includes(cargo)) {
+            return !!product.compra_tecnologica;
         }
-        return false;
+        if (["dicSST", "gerSST"].includes(cargo)) {
+            return !!product.ergonomico;
+        }
+        // Otros cargos: solo pueden decidir si el producto NO es tecnológico NI ergonómico
+        return !product.compra_tecnologica && !product.ergonomico;
     };
 
     const toggleDecision = (productoId, product) => {
@@ -176,7 +156,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
     // Determinar si todos los productos relevantes han sido decididos (aprobado o rechazado)
     const todosDecididos = (() => {
         const productosEditables = (detalles.productos || []).filter(isEditableForUser);
-        if (productosEditables.length === 0) return false;
+        if (productosEditables.length === 0) return true; // <-- CAMBIO: Si no hay productos, no bloquear
         return productosEditables.every(p =>
             typeof decisiones[p.id] === "boolean"
         );
@@ -380,7 +360,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     usuario_accion: detalles.currentUser?.nombre || "",
                 }],
             };
-
+            console.log(body, detalles.currentUser);
             // Cambia endpoint: solo actualiza producto individual
             await api.put(
                 `/api/requisiciones/${requisicion.requisicion_id}/productos/estado`,
@@ -445,6 +425,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     usuario_accion: detalles.currentUser?.nombre || "",
                 }],
             };
+            console.log(detalles.currentUser);
             await api.put(
                 `/api/requisiciones/${requisicion.requisicion_id}/productos/estado`,
                 body,
@@ -456,6 +437,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     },
                 }
             );
+              
             toast.success("Producto rechazado");
             setDetalles(prev => ({
                 ...prev,
@@ -643,161 +625,167 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     <div className="lineaSeparadora"></div>
                     <h3 className="tittleOneUserNew">productos asociados</h3>
                     <div className="tabla-productos">
-                        {productos.map((p) => {
-                            // Estado del producto
-                            const productoAprobado = ["aprobado", "1", "true"].includes(String(p.aprobado).toLowerCase());
-                            const productoRechazado = ["rechazado", "0", "false"].includes(String(p.aprobado).toLowerCase());
-                            const pendiente = !productoAprobado && !productoRechazado;
+                        {productos.length === 0 ? (
+                            <div style={{ color: "#888", padding: "16px", textAlign: "center" }}>
+                                No hay productos para aprobar en esta etapa.
+                            </div>
+                        ) : (
+                            productos.map((p) => {
+                                // Estado del producto
+                                const productoAprobado = ["aprobado", "1", "true"].includes(String(p.aprobado).toLowerCase());
+                                const productoRechazado = ["rechazado", "0", "false"].includes(String(p.aprobado).toLowerCase());
+                                const pendiente = !productoAprobado && !productoRechazado;
 
-                            // Permitir editar si el aprobador no ha terminado
-                            const editable = isEditableForUser(p) && puedeAprobar && (!yaAprobaste);
+                                // Permitir editar si el aprobador no ha terminado
+                                const editable = isEditableForUser(p) && puedeAprobar && (!yaAprobaste);
 
-                            // Apariencia para aprobado/rechazado
-                            let borderColor = "#ddd";
-                            let backgroundColor = "#fff";
-                            let showAprobadoTag = false;
-                            let showRechazadoTag = false;
+                                // Apariencia para aprobado/rechazado
+                                let borderColor = "#ddd";
+                                let backgroundColor = "#fff";
+                                let showAprobadoTag = false;
+                                let showRechazadoTag = false;
 
-                            if (productoRechazado) {
-                                borderColor = "#B67D85";
-                                backgroundColor = "#e0b6bbff";
-                                showRechazadoTag = true;
-                            }
+                                if (productoRechazado) {
+                                    borderColor = "#B67D85";
+                                    backgroundColor = "#e0b6bbff";
+                                    showRechazadoTag = true;
+                                }
 
-                            if (productoAprobado) {
-                                borderColor = "#9DE09D";
-                                backgroundColor = "#CEEFCE";
-                                showAprobadoTag = true;
-                            }
+                                if (productoAprobado) {
+                                    borderColor = "#10b98133";
+                                    backgroundColor = "#10b98114";
+                                    showAprobadoTag = true;
+                                }
 
-                            console.log('Producto:', p.nombre, 'Aprobado:', p.aprobado, 'Tipo:', typeof p.aprobado);
+                                console.log('Producto:', p.nombre, 'Aprobado:', p.aprobado, 'Tipo:', typeof p.aprobado);
 
-                            return (
-                                <div
-                                    key={p.id}
-                                    className="containerProductoAprove"
-                                    style={{
-                                        border: `2px solid ${borderColor}`,
-                                        backgroundColor: backgroundColor,
-                                        borderRadius: "8px",
-                                        padding: "12px",
-                                        height: "119px",
-                                        transition: "all 0.3s ease",
-                                        opacity: editable || showAprobadoTag || showRechazadoTag ? 1 : 0.5
-                                    }}
-                                >
-                                    <div className="leftInfoAprove">
-                                        <div className="nameAndDescriptionProducto">
-                                            <div className="iconProducto">
-                                                <div className="iconBoxProd">
-                                                    <FontAwesomeIcon icon={faBoxOpen} className="iconProduct" />
-                                                </div>
-                                                <div className="textNameProd">
-                                                    <p className="nameProducto">{p.nombre}</p>
-                                                    <p className="descriptionProducto">{p.descripcion}</p>
-                                                    <div className="tagsProducto">
-                                                        <div className={`tagOption ${p.compra_tecnologica ? "active" : ""}`}>
-                                                            Tecnológico
+                                return (
+                                    <div
+                                        key={p.id}
+                                        className="containerProductoAprove"
+                                        style={{
+                                            border: `1px solid ${borderColor}`,
+                                            backgroundColor: backgroundColor,
+                                            borderRadius: "8px",
+                                            padding: "12px",
+                                            height: "119px",
+                                            transition: "all 0.3s ease",
+                                            opacity: editable || showAprobadoTag || showRechazadoTag ? 1 : 0.5
+                                        }}
+                                    >
+                                        <div className="leftInfoAprove">
+                                            <div className="nameAndDescriptionProducto">
+                                                <div className="iconProducto">
+                                                    <div className="iconBoxProd">
+                                                        <FontAwesomeIcon icon={faBoxOpen} className="iconProduct" />
+                                                    </div>
+                                                    <div className="textNameProd">
+                                                        <p className="nameProducto">{p.nombre}</p>
+                                                        <p className="descriptionProducto">{p.descripcion}</p>
+                                                        <div className="tagsProducto">
+                                                            <div className={`tagOption ${p.compra_tecnologica ? "active" : ""}`}>
+                                                                Tecnológico
+                                                            </div>
+                                                            <div className={`tagOption ${p.ergonomico ? "active" : ""}`}>
+                                                                Ergonómico
+                                                            </div>
+                                                            {showAprobadoTag && (
+                                                                <div className="tagOption active" style={{ background: "#10b981", color: "white" }}>
+                                                                    ✓ Aprobado
+                                                                </div>
+                                                            )}
+                                                            {showRechazadoTag && (
+                                                                <div className="tagOption" style={{ background: "#b45a66ff", color: "white" }}>
+                                                                    ✕ Rechazado
+                                                                </div>
+                                                            )}
+
+                                                            {showRechazadoTag && p.usuario_accion && (
+                                                                <div className="tagOption" style={{ background: "#b45a66ff", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
+                                                                    Rechazado por {p.usuario_accion}
+                                                                </div>
+                                                            )}
+
+                                                            {showRechazadoTag && p.comentarios && (
+                                                                <div className="tagOption" style={{ background: "#b45a66ff", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
+                                                                    Comentario: {p.comentarios}
+                                                                </div>
+                                                            )}
+
+                                                            {showAprobadoTag && p.usuario_accion && (
+                                                                <div className="tagOption" style={{ background: "#10b981", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
+                                                                    Aprobado por {p.usuario_accion}
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <div className={`tagOption ${p.ergonomico ? "active" : ""}`}>
-                                                            Ergonómico
-                                                        </div>
-                                                        {showAprobadoTag && (
-                                                            <div className="tagOption active" style={{ background: "#56cf56ff", color: "white" }}>
-                                                                ✓ Aprobado
-                                                            </div>
-                                                        )}
-                                                        {showRechazadoTag && (
-                                                            <div className="tagOption" style={{ background: "#b45a66ff", color: "white" }}>
-                                                                ✕ Rechazado
-                                                            </div>
-                                                        )}
-
-                                                        {showRechazadoTag && p.usuario_accion && (
-                                                            <div className="tagOption" style={{ background: "#b45a66ff", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
-                                                                Rechazado por {p.usuario_accion}
-                                                            </div>
-                                                        )}
-
-                                                        {showRechazadoTag && p.comentarios && (
-                                                            <div className="tagOption" style={{ background: "#b45a66ff", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
-                                                                Comentario: {p.comentarios}
-                                                            </div>
-                                                        )}
-
-                                                        {showAprobadoTag && p.usuario_accion && (
-                                                            <div className="tagOption" style={{ background: "#56cf56ff", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
-                                                                Aprobado por {p.usuario_accion}
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="rightInfoAprove">
-                                        <div className="totalAndCantidad">
-                                            <p className="priceProducto">{formatCOP(p.valor_estimado)}</p>
-                                            <p className="cantidadProducto">Cantidad {p.cantidad}</p>
-                                        </div>
-                                        {/* Botones solo si editable */}
-                                        {editable && (
-                                            <div style={{
-                                                display: "grid",
-                                                gridTemplateColumns: "1fr",
-                                                gap: "6px",
-                                                marginLeft: "12px",
-                                                minWidth: "30px",
-
-                                            }}>
-                                                <button
-                                                    onClick={() => handleAprobaSingle(p.id)}
-                                                    disabled={saving || actionLoadingVisible}
-                                                    title="Aprobar este producto"
-                                                    className="buttonApproveSingle"
-                                                    style={{
-                                                        padding: "8px 10px",
-                                                        color: "white",
-                                                        border: "none",
-                                                        borderRadius: "5px",
-                                                        cursor: saving || actionLoadingVisible ? "not-allowed" : "pointer",
-                                                        fontWeight: "bold",
-                                                        fontSize: "14px",
-                                                        opacity: saving || actionLoadingVisible ? 0.6 : 1,
-                                                        transition: "all 0.2s ease",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center"
-                                                    }}
-                                                >
-                                                    ✓
-                                                </button>
-                                                <button
-                                                    onClick={() => handleRechazarSingle(p.id)}
-                                                    disabled={saving || actionLoadingVisible}
-                                                    title="Rechazar este producto"
-                                                    className="buttonRechazarSingle"
-                                                    style={{
-                                                        padding: "8px 10px",
-                                                        borderRadius: "5px",
-                                                        cursor: saving || actionLoadingVisible ? "not-allowed" : "pointer",
-                                                        fontWeight: "bold",
-                                                        fontSize: "14px",
-                                                        opacity: saving || actionLoadingVisible ? 0.6 : 1,
-                                                        transition: "all 0.2s ease",
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center"
-                                                    }}
-                                                >
-                                                    ✕
-                                                </button>
+                                        <div className="rightInfoAprove">
+                                            <div className="totalAndCantidad">
+                                                <p className="priceProducto">{formatCOP(p.valor_estimado)}</p>
+                                                <p className="cantidadProducto">Cantidad {p.cantidad}</p>
                                             </div>
-                                        )}
+                                            {/* Botones solo si editable */}
+                                            {editable && (
+                                                <div style={{
+                                                    display: "grid",
+                                                    gridTemplateColumns: "1fr",
+                                                    gap: "6px",
+                                                    marginLeft: "12px",
+                                                    minWidth: "30px",
+
+                                                }}>
+                                                    <button
+                                                        onClick={() => handleAprobaSingle(p.id)}
+                                                        disabled={saving || actionLoadingVisible}
+                                                        title="Aprobar este producto"
+                                                        className="buttonApproveSingle"
+                                                        style={{
+                                                            padding: "8px 10px",
+                                                            color: "white",
+                                                            border: "none",
+                                                            borderRadius: "5px",
+                                                            cursor: saving || actionLoadingVisible ? "not-allowed" : "pointer",
+                                                            fontWeight: "bold",
+                                                            fontSize: "14px",
+                                                            opacity: saving || actionLoadingVisible ? 0.6 : 1,
+                                                            transition: "all 0.2s ease",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "center"
+                                                        }}
+                                                    >
+                                                        ✓
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleRechazarSingle(p.id)}
+                                                        disabled={saving || actionLoadingVisible}
+                                                        title="Rechazar este producto"
+                                                        className="buttonRechazarSingle"
+                                                        style={{
+                                                            padding: "8px 10px",
+                                                            borderRadius: "5px",
+                                                            cursor: saving || actionLoadingVisible ? "not-allowed" : "pointer",
+                                                            fontWeight: "bold",
+                                                            fontSize: "14px",
+                                                            opacity: saving || actionLoadingVisible ? 0.6 : 1,
+                                                            transition: "all 0.2s ease",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "center"
+                                                        }}
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })
+                        )}
                     </div>
                 </div>
                 {/* 🔥 VERIFICAR ESTADO DEL APROBADOR ACTUAL, NO DE LA REQUISICIÓN */}
@@ -851,7 +839,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                         >
                             {saving ? "Procesando..." : "Rechazar"}
                         </button>
-                        {!todosDecididos && (
+                        {!todosDecididos && productos.length > 0 && (
                             <div style={{ color: "#dc2626", marginTop: "8px", fontWeight: "bold" }}>
                                 Debes decidir todos los productos antes de aprobar.
                             </div>

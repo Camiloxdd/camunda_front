@@ -248,14 +248,9 @@
   color: white;
   font-size: 15px;
   font-weight: bold;
-  background: linear-gradient(135deg, #1d5da8, #002855);
+  background: var(--textColor);
   border-radius: 4px;
   transition: 0.5s all;
-}
-
-.buttonsLogin button:hover {
-  transition: 0.3s all ease;
-  background: linear-gradient(135deg, #002855, #1d5da8);
 }
 
 .buttonsMicrosoft {

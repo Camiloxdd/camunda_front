@@ -23,31 +23,28 @@
 }
 
 .toggleButtonTop {
-  position: absolute;
   z-index: 2000;
   background-color: var(--textColor);
   width: 100%;
-  padding: 15px;
   color: white;
   font-size: 25px;
+  padding: 8px;
   border: none;
   cursor: pointer;
 }
 
 .logoSection {
-  margin-top: 48px;
-  padding: 5px;
+  padding: 8px;
+  margin-top: 15px;
 }
 
 .logoContainer {
   display: flex;
   align-items: center;
-  margin: 10px;
 }
 
 .logoContainerCollapsed {
   justify-content: center;
-    margin: 20px;
 }
 
 .logoIcon {

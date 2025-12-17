@@ -1339,6 +1339,7 @@ function DashboardInner() {
                         <th>ID</th>
                         <th>Fecha de Solicitud</th>
                         <th>Solicitante</th>
+                        <th>Area</th>
                         <th>Valor</th>
                         <th>Estado</th>
                         <th>Acciones</th>
@@ -1386,6 +1387,11 @@ function DashboardInner() {
                                   <span className="requesterName">{req.nombre_solicitante || "—"}</span>
                                   <span className="requesterLabel">Solicitante</span>
                                 </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="areaCell" style={{color: "var(--textColor)", fontWeight: "bold"}}>
+                                {getAreaNombre(req.area) || "—"}
                               </div>
                             </td>
                             <td className="colSpan2 amountCell">
@@ -1519,18 +1525,11 @@ function DashboardInner() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background: "rgba(255,255,255,0.92)",
+                    background: "white",
                     borderRadius: "10px"
                   }}
                 >
-                  <div className="loading-cambios" style={{ textAlign: "center" }}>
-                    <img
-                      src="/coopidrogas_logo_mini.png"
-                      className="LogoCambios"
-                      alt="Cargando..."
-                    />
-                    <p className="textLoading">Procesando...</p>
-                  </div>
+                  <LoadingView />
                 </div>
               )}
 
@@ -1550,6 +1549,12 @@ function DashboardInner() {
               </div>
 
               <div className="modal-body">
+                <TimeLap
+                  requisicionId={verifyModalReq.requisicion_id}
+                  token={token}
+                  open={true}
+                />
+                <br />
                 <div className="containerInfoReq">
                   <div className="cardsReq">
                     <h3 className="tittleOneUserNew">Datos del solicitante</h3>
@@ -1579,7 +1584,7 @@ function DashboardInner() {
                 <div className="tabla-productos">
                   {verifyModalReq.productos?.map((p, i) => (
                     <div key={i} className="containerProductoAprove">
-                      <div className="leftInfoAprove">  
+                      <div className="leftInfoAprove">
                         <div className="nameAndDescriptionProducto">
                           <p className="nameProducto">{p.nombre || p.productoOServicio || "—"}</p>
                           <p className="descriptionProducto">{p.descripcion || ""}</p>
@@ -1623,32 +1628,11 @@ function DashboardInner() {
             </div>
           </div>
         )}
-        {openReqModal && solicitanteReq && (
+        {openReqModal && (
           <div className="modalOverlay">
             <div className="modalBox">
               {loadingSolicitante ? (
-                // 🔥 PANTALLA DE CARGA
-                <div style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  height: "100%",
-                  width: "100%",
-                  gap: "20px"
-                }}>
-                  <img
-                    src="/coopidrogas_logo_mini.png"
-                    className="LogoCambios"
-                    alt="Cargando..."
-                    style={{ width: "80px", height: "80px" }}
-                  />
-                  <p style={{
-                    color: "#1d5da8",
-                    fontSize: "18px",
-                    fontWeight: "bold"
-                  }}>Thinking...</p>
-                </div>
+                <LoadingView />
               ) : solicitanteReq ? (
                 // 🔥 CONTENIDO CARGADO
                 <>
@@ -1880,7 +1864,7 @@ function DashboardInner() {
                                               <span style={{ color: "var(--textColor)", fontWeight: "bold" }}>Por:</span> {producto.usuario_accion}
                                             </div>
                                           )}
-                                                                                   {producto.comentarios && (
+                                          {producto.comentarios && (
                                             <div style={{ fontSize: 12, color: "#6b7280" }}>
                                               <span style={{ color: "var(--textColor)", fontWeight: "bold" }}>Comentario:</span> {producto.comentarios}
                                             </div>

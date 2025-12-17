@@ -1404,6 +1404,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             </div>
                                         </div>
                                         <br />
+                                        {/*
                                         <h3 className="tittleOneUserNew">tipo de producto o servicio</h3>
                                         <div className="firsInfoTwo">
                                             <div className="tecnologicoButton">
@@ -1475,6 +1476,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 />
                                             </div>
                                         </div>
+                                        */}
                                     </div>
                                 </div>
                                 {mostrarModalProductos && (
