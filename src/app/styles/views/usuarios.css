@@ -60,7 +60,7 @@
 
 /* Main table wrapper (grid-based rows) */
 .tablaGestionUsuarios {
-  width: 75%;
+  width: 100%;
   border-radius: 12px;
   background: #fff;
   padding: 12px;
@@ -76,6 +76,7 @@
   flex-direction: column;
   gap: 0;
   width: 99%;
+  max-height: 490px ;
 }
 
 .campoTablaFondo {
@@ -175,7 +176,7 @@
 
 .userName {
   font-weight: 700;
-  color: #0f172a;
+  color: var(--textColorV);
 }
 
 .userEmail {
@@ -340,13 +341,14 @@
 
 .searchInput {
   width: 100%;
-  background: #fff;
-  border: 2px solid var(--textColor);
+  background: #f9fafb;
+  border: transparent;
   border-radius: 12px;
   padding: 12px 16px 12px 40px;
   font-size: 14px;
   color: #0f172a;
   transition: 0.3s ease all;
+  box-shadow: 0 1px 2px #0000001a;
 }
 
 .searchInput:focus {
@@ -368,14 +370,14 @@
   border: 1px solid #e6eef8;
   background: transparent;
   cursor: pointer;
-  color: #374151;
+  color: var(--textColor);
   font-weight: 600;
 }
 
 .filterTabActive {
-  background: #00335a;
+  background: var(--textColor);
   color: #fff;
-  border-color: #00335a;
+  border-color: var(--textColor);
 }
 
 /* responsive: shrink columns on small screens */
@@ -447,3 +449,18 @@
   color: #ef4444;
 }
 
+.contentUsersView {
+  padding: 20px;
+  width: 100%;
+  gap: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.porcentsUsuarios {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  width: 95%;
+  margin-top: -120px;
+  display: grid;
+}

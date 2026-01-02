@@ -78,6 +78,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
 
                 // --- CAMBIO: Filtrar productos según el cargo del aprobador, NO el área del solicitante ---
                 const cargo = (user?.cargo || "").trim();
+                const areaAprobador = (user?.area || "").trim(); // 🔥 NUEVO: Obtener área del aprobador
                 let productosRelevantes = [];
 
                 if (["dicTYP", "gerTyC"].includes(cargo)) {
@@ -85,7 +86,13 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                 } else if (["dicSST", "gerSST"].includes(cargo)) {
                     productosRelevantes = productosBD.filter(p => !!p.ergonomico);
                 } else {
-                    productosRelevantes = productosBD;
+                    // 🔥 NUEVO: Para otros cargos, mostrar papelería y cafetería, pero SOLO si el área coincide
+                    productosRelevantes = productosBD.filter(p => {
+                        const esPapeleria = !!p.papeleria;
+                        const esCafeteria = !!p.cafeteria;
+                        const esDelAreaDelAprobador = (p.user_area || p.area || "") === areaAprobador;
+                        return (esPapeleria || esCafeteria) && esDelAreaDelAprobador;
+                    });
                 }
 
                 // 🔥 FILTRAR productos rechazados para que no aparezcan a siguientes aprobadores
@@ -134,14 +141,19 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
     // Cambia la función para reflejar la lógica de decisión por tipo de producto y cargo
     const isEditableForUser = (product) => {
         const cargo = (user?.cargo || "").trim();
+        const areaAprobador = (user?.area || "").trim();
+        
         if (["dicTYP", "gerTyC"].includes(cargo)) {
             return !!product.compra_tecnologica;
         }
         if (["dicSST", "gerSST"].includes(cargo)) {
             return !!product.ergonomico;
         }
-        // Otros cargos: solo pueden decidir si el producto NO es tecnológico NI ergonómico
-        return !product.compra_tecnologica && !product.ergonomico;
+        // Otros cargos: solo pueden decidir papelería/cafetería de su área
+        const esPapeleria = !!product.papeleria;
+        const esCafeteria = !!product.cafeteria;
+        const esDelAreaDelAprobador = (product.user_area || product.area || "") === areaAprobador;
+        return (esPapeleria || esCafeteria) && esDelAreaDelAprobador;
     };
 
     const toggleDecision = (productoId, product) => {
@@ -713,9 +725,12 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                                                             )}
 
                                                             {showAprobadoTag && p.usuario_accion && (
-                                                                <div className="tagOption" style={{ background: "#10b981", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
-                                                                    Aprobado por {p.usuario_accion}
-                                                                </div>
+                                                                // 🔥 CAMBIO: Solo mostrar "Aprobado por" si NO fue aprobado por el usuario actual
+                                                                p.usuario_accion !== detalles.currentUser?.nombre && (
+                                                                    <div className="tagOption" style={{ background: "#10b981", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
+                                                                        Aprobado por {p.usuario_accion}
+                                                                    </div>
+                                                                )
                                                             )}
                                                         </div>
                                                     </div>

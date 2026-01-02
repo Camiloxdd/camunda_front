@@ -176,7 +176,7 @@ background: linear-gradient(135deg, red, #1D5DA8);
 }
 
 .timeline-nombre.text-green {
-    color: var(--textColor);
+    color: var(--textColorV);
 }
 
 .timeline-fecha {

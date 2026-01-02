@@ -1,8 +1,7 @@
 .sidebar {
-  background-color: var(--textColor);
-  border-right: 1px solid var(--sidebar-border);
+  background-color: white;
   display: flex;
-  height: 100vh;
+  height: 100%;
   flex-direction: column;
   transition: width 0.3s ease;
   position: fixed;
@@ -11,31 +10,29 @@
   bottom: 0;
   z-index: 200;
   flex-shrink: 0;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+  border-right: 1px solid #ddd;
 }
 
+
 .sidebarExpanded {
-  width: 288px;
+  width: 285px;
+  transition: width 0.3s cubic-bezier(0.4,0,0.2,1);
+  border-right: 1px solid #ddd;
 }
 
 .sidebarCollapsed {
   width: 80px;
+  transition: width 0.3s cubic-bezier(0.4,0,0.2,1);
 }
 
-.toggleButtonTop {
-  z-index: 2000;
-  background-color: var(--textColor);
-  width: 100%;
-  color: white;
-  font-size: 25px;
-  padding: 8px;
-  border: none;
-  cursor: pointer;
-}
+
+/* .toggleButtonTop eliminado porque ya no se usa con hover */
 
 .logoSection {
-  padding: 8px;
-  margin-top: 15px;
+  height: 90px;
+  justify-content: center;
+  display: flex;
+  border-bottom: 1px solid #ddd;
 }
 
 .logoContainer {
@@ -70,11 +67,11 @@
 }
 
 .logoImgMini {
-  background-color: white;
   display: block;
-  height: 50px;
+  background-color: rgba(255, 255, 255, 0.356);
+  height: 60px;
   margin: 0 auto;
-  border-radius: 8px;
+  border-radius: 4px;
   object-fit: contain;
 }
 
@@ -104,19 +101,19 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 5px;
+  padding: 15px;
   color: white;
   align-items: center;
 }
 
 .navButton {
-  color: white;
-  width: 65%;
+  color: var(--textColor);
+  width: 90%;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
   border: none;
@@ -137,15 +134,15 @@
 }
 
 .navButtonActive {
-  background-color: var(--textColorP);
+  background-color: var(--textColor);
   color: var(--sidebar-primary);
   box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
   font-weight: 600;
 }
 
 .navButtonInactive:hover {
-  color: var(--sidebar-foreground);
-  background-color: var(--textColorP);
+  color: white;
+  background-color: #1d5ea869;
 }
 
 .expandableHeader {

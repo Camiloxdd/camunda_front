@@ -4,7 +4,7 @@ import { Sidebar } from "../components/Slidebar";
 import Navbar from "../components/navbar";
 import SearchBar from "../components/searchBar";
 import ApprovalModal from "../components/ApprovalModal";
-import { faTrash, faPencil, faUser, faFilePdf, faTimeline, faX, faPlus, faRefresh, faFile, faFileCircleCheck, faFileCircleQuestion, faFileCircleXmark, faFileEdit, faFileExcel, faUserPen, faDownload, faBoxArchive, faEye, faCalendarAlt, faCalendar, faAngleDown, faGear, faRightFromBracket, faUserGear, faUserShield, faClipboardList, faClipboardCheck, faClipboardQuestion, faCrosshairs, faStar, faMagicWandSparkles, faArrowUp, faArrowLeft, faArrowRight } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faPencil, faUser, faFilePdf, faTimeline, faX, faPlus, faRefresh, faFile, faFileCircleCheck, faFileCircleQuestion, faFileCircleXmark, faFileEdit, faFileExcel, faUserPen, faDownload, faBoxArchive, faEye, faCalendarAlt, faCalendar, faAngleDown, faGear, faRightFromBracket, faUserGear, faUserShield, faClipboardList, faClipboardCheck, faClipboardQuestion } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Suspense } from "react";
 import { AuthProvider, useAuth } from "../context/AuthContext";
@@ -21,7 +21,6 @@ import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import { useLayoutEffect } from "react";
 import LoadingView from "../components/loadingView";
-import WelcomeTime from "../components/welcomeTime";
 
 
 function DashboardInner() {
@@ -90,6 +89,7 @@ function DashboardInner() {
   const [searchQuery, setSearchQuery] = useState("");
   const { permissions, user } = useAuth();
   const [statusFilter, setStatusFilter] = useState("todas");
+  // IDs para prevenir toasts duplicados
   const sessionToastIdRef = useRef("session-started");
   const pendingToastIdRef = useRef("pending-reqs");
   const router = useRouter();
@@ -112,6 +112,7 @@ function DashboardInner() {
   const [openUserModal, setOpenUserModal] = useState(false)
   const toastRef = useRef(null);
 
+  // Leer token desde localStorage al montar y actualizar si cambia en otra pestaña (event storage).
   useEffect(() => {
     if (typeof window === "undefined") return;
     const readToken = () => setToken(localStorage.getItem("token"));
@@ -128,6 +129,7 @@ function DashboardInner() {
     return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
   };
 
+  // Normaliza un estado para comparaciones (minúsculas, trim)
   const normalizeEstado = (s) => String(s || "").toLowerCase().trim();
   const isApprovedState = (s) => {
     const n = normalizeEstado(s);
@@ -508,6 +510,7 @@ function DashboardInner() {
     }
   };
 
+
   const handleDevolver = async (id) => {
     const toastId = toast.info(
       <div
@@ -689,6 +692,7 @@ function DashboardInner() {
     );
   };
 
+  // Nueva función para aprobar un producto individualmente
   const handleAprobarProducto = async (requisicionId, productoId) => {
     const toastId = toast.info(
       <div
@@ -768,6 +772,7 @@ function DashboardInner() {
   };
 
   useEffect(() => {
+    // Mostrar notificación una sola vez (usar toastId para evitar duplicados)
     if (!loading && permissions?.isAprobador) {
       const tieneRequisicionesPendientes = requisiciones.some(
         r => normalizeEstado(r.status || r.estado_aprobacion || "") === "pendiente"
@@ -910,6 +915,7 @@ function DashboardInner() {
     }
   };
 
+  // Calcular estado normalizado de la requisición seleccionada (para usar en el modal del solicitante)
   const estadoSolicitante = solicitanteReq
     ? String(
       solicitanteReq?.status ||
@@ -919,6 +925,7 @@ function DashboardInner() {
     ).toLowerCase()
     : "";
 
+  // Helper para mostrar estado legible de cada aprobador
   const getApproverLabel = (a) => {
     // posibles campos: aprobado, approved, estado_aprobador, visible, orden
     if (!a) return "Desconocido";
@@ -1162,6 +1169,7 @@ function DashboardInner() {
     }
   }
 
+  // Ajuste de tamaño del Toast PrimeReact por CSS-in-JS (opcional, para forzar tamaño)
   useLayoutEffect(() => {
     const styleId = "custom-prime-toast-size";
     if (!document.getElementById(styleId)) {
@@ -1205,69 +1213,257 @@ function DashboardInner() {
           marginLeft: isSidebarOpen ? "284px" : "80px",
         }}
       >
-        <div className="sectionPrincipal">
-          <div className="contentPrinci">
-            <div className="imgCoopidrogas">
-              <img src="./LOGO_COOPI_HD_4K_1080P.jpg" className="logoInicio" />
-            </div>
-            <div className="infoLateral">
-              <div className="firstInfo">
-                <div className="sparklesD">
-                  <FontAwesomeIcon icon={faMagicWandSparkles} className="iconSparkles"/>
-                </div>
-                Bienvenido de vuelta
-              </div>
-              <div className="secondInfo">
+        <div className="navbarDashboard"
+          style={{
+            left: isSidebarOpen ? "285px" : "80px",
+            width: `calc(100% - ${isSidebarOpen ? 285 : 80}px)`,
+            zIndex: 900,
+            transition: "left 0.28s ease, width 0.28s ease",
+          }}>
+          <div className="textoNavBar">
+            <h1>Requisiciones</h1>
+            <p>Gestiona todas las solicitudes de compra</p>
+          </div>
+          <div className="campoButtonsAndInfoUser">
+            <div className="infoUser">
+              <div className="nameAndRol">
                 {user ? (
                   <>
-                    <p className="saludoText"><WelcomeTime /></p><p className="nameText">{user.nombre}</p>
+                    <h3>Hola, {user.nombre}</h3>
+                    <p>{getCargoNombre(user.cargo)}</p>
                   </>
                 ) : (
                   <>
+                    <h3>Cargando usuario...</h3>
+                    <p></p>
                   </>
                 )}
               </div>
-              <div className="threeInfo">
-                <p>Gestiona tus requisiciones de manera eficiente. Crea, revisa y aprueba solicitudes en un solo lugar.</p>
+              <div className="imgUser" onClick={() => setOpenUserModal(!openUserModal)} style={{ cursor: "pointer", position: "relative" }}>
+                <FontAwesomeIcon icon={faUser} />
               </div>
-              <div className="fourInfo">
-                {permissions?.isSolicitante && (
-                  <>
-                    <div className="newRequisicionSend">
-                      <h3>¿Necesitas crear una requisición?</h3>
-                      <p>Inicia el proceso en minutos con nuestro sistema simplificado</p>
+
+            </div>
+          </div>
+        </div>
+        <div className="containerInfoRequisiciones">
+          <div className="secondContainerDash">
+            <div className="containerTwoDash">
+              <div className="firstSectionProcents">
+
+              </div>
+              <div className="containerPorcents">
+                <div className="porcentsRequisiciones">
+                  <div
+                    className="campoFiltroReq"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setStatusFilter("todas")}
+                  >
+                    <div className="iconoContainerFiltro">
+                      <FontAwesomeIcon icon={faClipboardList} className="iconoFiltroReq" />
                     </div>
-                    <div className="buttonNewReqSend">
-                      <button onClick={() => router.push('/requisicion')}><FontAwesomeIcon icon={faArrowRight} /></button>
+                    <div className="spaceCantidad">
+                      <p className="spaceCantidad">{requisiciones.length}</p>
                     </div>
-                  </>
-                )}
-                {permissions?.isAprobador && (
-                  <>
-                    <>
-                      <div className="newRequisicionSend">
-                        <h3>¿Necesitas aprobar una requisición?</h3>
-                        <p>Inicia el proceso en minutos con nuestro sistema simplificado</p>
+                    <div className="infoFiltroReq">
+                      <p>Requisiciones totales</p>
+                    </div>
+                  </div>
+                  <div
+                    className="campoFiltroReq"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setStatusFilter("aprobada", "Totalmente Aprobada")}
+                  >
+                    <div className="iconoContainerFiltro">
+                      <FontAwesomeIcon icon={faClipboardCheck} className="iconoFiltroReq" />
+                    </div>
+                    <div className="spaceCantida">
+                      <p className="spaceCantidad">
+                        {requisiciones.filter((r) => isApprovedState(r.estado_aprobacion || r.status)).length}
+                      </p>
+                    </div>
+                    <div className="infoFiltroReq">
+                      <p>Requisiciones aprobadas</p>
+                    </div>
+                  </div>
+                  <div
+                    className="campoFiltroReq"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setStatusFilter("pendiente")}
+                  >
+                    <div className="iconoContainerFiltro">
+                      <FontAwesomeIcon icon={faClipboardQuestion} className="iconoFiltroReq" />
+                    </div>
+                    <div className="spaceCantidad">
+                      <p>
+                        {requisiciones.filter((r) => isPendingState(r.estado_aprobacion || r.status)).length}
+                      </p>
+                    </div>
+                    <div className="infoFiltroReq">
+                      <p>Requisiciones pendientes</p>
+                    </div>
+                  </div>
+                  <div
+                    className="campoFiltroReq"
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setStatusFilter("rechazada")}
+                  >
+                    <div className="iconoContainerFiltro">
+                      <FontAwesomeIcon icon={faClipboardCheck} className="iconoFiltroReq" />
+                    </div>
+                    <div className="spaceCantidad">
+                      <p>
+                        {requisiciones.filter((r) => normalizeEstado(r.estado_aprobacion || r.status) === "rechazada").length}
+                      </p>
+                    </div>
+                    <div className="infoFiltroReq">
+                      <p>Requisiciones rechazadas</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="papaHeaderRequi">
+                <div className="barraDeNavegacion">
+                  <SearchBar
+                    placeholder="Buscar por ID de requisición..."
+                    onQueryChange={setSearchQuery}
+                  />
+                  <div className="buttonsReq">
+                    {permissions?.isSolicitante && (
+                      <button onClick={abrirModalNuevaReq} className="fab-btn primary">
+                        <FontAwesomeIcon icon={faPlus} /> Nueva requisición
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="tablaRequisicion">
+                <div className="listaReq">
+                  {loading ? (
+                    <LoadingView />
+                  ) : requisicionesFiltradas.length === 0 ? (
+                    <div className="containerLoading">
+                      <div className="loading-cambios">
+                        <p>
+                          {permissions?.isAprobador ? "No tienes requisiciones pendientes por aprobar." :
+                            permissions?.isComprador ? "No hay requisiciones aprobadas para verificar." :
+                              "No hay requisiciones para mostrar."}
+                        </p>
                       </div>
-                      <div className="buttonNewReqSend">
-                        <button onClick={() => router.push('/requisicion')}><FontAwesomeIcon icon={faArrowRight} /></button>
-                      </div>
-                    </>
-                  </>
-                )}
-                {permissions?.isComprador && (
-                  <>
-                    <>
-                      <div className="newRequisicionSend">
-                        <h3>¿Necesitas aprobar una requisición?</h3>
-                        <p>Inicia el proceso en minutos con nuestro sistema simplificado</p>
-                      </div>
-                      <div className="buttonNewReqSend">
-                        <button onClick={() => router.push('/requisicion')}><FontAwesomeIcon icon={faArrowRight} /></button>
-                      </div>
-                    </>
-                  </>
-                )}
+                    </div>
+                  ) : (
+                    /* Tabla de requisiciones (usando clases del ejemplo de row) */
+                    <div className="requisitionsTableContainer">
+                      <table className="requisitionsTable">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Fecha de Solicitud</th>
+                            <th>Solicitante</th>
+                            <th>Area</th>
+                            <th>Valor</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {requisicionesFiltradas.map((req) => {
+                            const estado = String(req.status || req.estado_aprobacion || "").toLowerCase();
+                            const fecha = req.fecha || req.created_at || "—";
+                            const valor = req.valor_total || req.valor || 0;
+
+                            const onRowClick = async () => {
+                              if (permissions?.isComprador) {
+                                setVerifyLoading(true); // Mostrar loading inmediatamente
+                                setVerifyModalReq({});  // Abre la modal con loading
+                                await handleVerifyOpen(req); // Luego carga los datos
+                                return;
+                              }
+                              if (permissions?.isAprobador) {
+                                setSelectedReq(req);
+                                return;
+                              }
+                              // Para solicitante: mostrar loading primero
+                              setLoadingSolicitante(true);
+                              setOpenReqModal(true); // Abre la modal con loading
+                              await handleOpenSolicitanteModal(req); // Luego carga los datos
+                              setSolicitanteReq(req);
+                              // setOpenReqModal(true); // Ya se abre antes
+                            };
+
+                            return (
+                              <tr key={req.requisicion_id} className="row">
+                                <td className="colSpan2 idCell">
+                                  <div className="idBadge"><span className="idText">REQ-{req.requisicion_id}</span></div>
+                                </td>
+                                <td className="colSpan2 dateCell">
+                                  <div className="fecha">
+                                    <FontAwesomeIcon icon={faCalendar} className="calendarIcon" />
+                                    {fecha}
+                                  </div>
+                                </td>
+                                <td className="requesterCell">
+                                  <div className="requesterDiv">
+                                    <div className="requesterInfo">
+                                      <span className="requesterName">{req.nombre_solicitante || "—"}</span>
+                                      <span className="requesterLabel">Solicitante</span>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="areaCell" style={{ color: "var(--textColorV)", fontWeight: "bold" }}>
+                                    {getAreaNombre(req.area) || "—"}
+                                  </div>
+                                </td>
+                                <td className="colSpan2 amountCell">
+                                  <div className="valor">
+                                    {formatCOP(valor)}
+                                  </div>
+                                </td>
+                                <td className="colSpan2 statusCell">
+                                  <div className="campoStatus">
+                                    <div className={`${styles.badge} ${getBadgeClass(estado)} statusBadge`}>
+                                      {getStatusLabel(estado)}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="colSpan1 actionsCell">
+                                  <div className="campoBotonesReq">
+                                    <button
+                                      className="actionButton actionButtonVisible"
+                                      onClick={(e) => { e.stopPropagation(); onRowClick(); }}
+                                      title="Ver detalle"
+                                    >
+                                      <FontAwesomeIcon icon={faEye} />
+                                    </button>
+                                    {permissions?.isSolicitante && (
+                                      <div className="campoBotonesReq">
+                                        <button
+                                          className="actionButton actionButtonVisible"
+                                          onClick={(e) => { e.stopPropagation(); handleEditOpen(req); }}
+                                          title="Editar"
+                                        >
+                                          <FontAwesomeIcon icon={faPencil} />
+                                        </button>
+                                        <button
+                                          className="actionButton actionButtonVisible"
+                                          onClick={(e) => { e.stopPropagation(); handleDelete(req.requisicion_id); }}
+                                          title="Eliminar"
+                                        >
+                                          <FontAwesomeIcon icon={faTrash} style={{ color: "red" }} />
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -1287,6 +1483,7 @@ function DashboardInner() {
               zIndex: 9999
             }}
           >
+            {/* HEADER AZUL */}
             <div style={{
               background: "linear-gradient(135deg, #1d5da8, #1d5da8)",
               padding: "14px 16px",
@@ -1297,15 +1494,20 @@ function DashboardInner() {
                 {user?.correo}
               </p>
             </div>
+
+            {/* CONTENIDO */}
             <div style={{ padding: "14px 18px", display: "flex", flexDirection: "column", gap: "18px" }}>
+
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }} className="nose">
                 <FontAwesomeIcon icon={faUserGear} className="iconNormal" />
                 <p>{getAreaNombre(user.area)}</p>
               </div>
+
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }} className="nose">
                 <FontAwesomeIcon icon={faUserShield} className="iconNormal" />
                 <p>{getUserRoles(user)}</p>
               </div>
+
               <div
                 onClick={handleLogout}
                 style={{
@@ -1323,7 +1525,474 @@ function DashboardInner() {
             </div>
           </div>
         )}
+        {selectedReq && (
+          <ApprovalModal
+            requisicion={selectedReq}
+            onClose={() => setSelectedReq(null)}
+            onApproved={fetchRequisiciones}
+            user={user}             // ← APORTA EL USUARIO LOGUEADO
+            token={token}
+          />
+        )}
+        {verifyModalReq && (
+          <div className="modalOverlay">
+            <div className="modal-content">
+              {/* 🔥 OVERLAY DE CARGA */}
+              {verifyLoading && (
+                <div
+                  className="approval-loading-overlay"
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    zIndex: 60,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "white",
+                    borderRadius: "10px"
+                  }}
+                >
+                  <LoadingView />
+                </div>
+              )}
+
+              <div className="modal-header">
+                <div className="textAndIcon">
+                  <div className="iconHeaderApr">
+                    <FontAwesomeIcon icon={faFile} />
+                  </div>
+                  <div className="textApr">
+                    <h2>Verificar requisición #{verifyModalReq.requisicion_id}</h2>
+                    <p>Aprobación final del comprador</p>
+                  </div>
+                </div>
+                <button onClick={() => setVerifyModalReq(null)} className="close-button">
+                  X
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <TimeLap
+                  requisicionId={verifyModalReq.requisicion_id}
+                  token={token}
+                  open={true}
+                />
+                <br />
+                <div className="containerInfoReq">
+                  <div className="cardsReq">
+                    <h3 className="tittleOneUserNew">Datos del solicitante</h3>
+                    <div className="areaYFecha">
+                      <p className="labelTittle">{verifyModalReq.nombre_solicitante}</p>
+                      <p className="textLabel">{verifyModalReq.area || "—"}</p>
+                    </div>
+                  </div>
+                  <div className="cardsReq">
+                    <h3 className="tittleOneUserNew">Fecha</h3>
+                    <div className="areaYFecha">
+                      <p className="labelTittle">{verifyModalReq.fecha || "—"}</p>
+                      <p className="textLabel">{verifyModalReq.justificacion || "No tiene."}</p>
+                    </div>
+                  </div>
+                  <div className="cardsReq">
+                    <h3 className="tittleOneUserNew">Valor total</h3>
+                    <div className="areaYFecha">
+                      <p className="labelTittle">{formatCOP(verifyModalReq.valor_total)}</p>
+                      <p className="textLabel">{verifyModalReq.productos?.length || 0} producto(s)</p>
+                    </div>
+                  </div>
+                </div>
+                <br />
+                <div className="lineaSeparadora"></div>
+                <h3 className="tittleOneUserNew">Productos asociados</h3>
+                <div className="tabla-productos">
+                  {verifyModalReq.productos?.map((p, i) => (
+                    <div key={i} className="containerProductoAprove">
+                      <div className="leftInfoAprove">
+                        <div className="nameAndDescriptionProducto">
+                          <p className="nameProducto">{p.nombre || p.productoOServicio || "—"}</p>
+                          <p className="descriptionProducto">{p.descripcion || ""}</p>
+                          <div className="tagsProducto">
+                            <div className={`tagOption ${p.compra_tecnologica ? "active" : ""}`}>
+                              Tecnológico
+                            </div>
+                            <div className={`tagOption ${p.ergonomico ? "active" : ""}`}>
+                              Ergonómico
+                            </div>
+                            <div className={`tagOption ${p.aprobado === "aprobado" ? "active" : p.aprobado === "rechazado" ? "" : ""}`}
+                              style={{
+                                background: p.aprobado === "aprobado" ? "#dcfce7" : p.aprobado === "rechazado" ? "#fee2e2" : "#fef3c7",
+                                color: p.aprobado === "aprobado" ? "#166534" : p.aprobado === "rechazado" ? "#991b1b" : "#92400e"
+                              }}
+                            >
+                              {p.aprobado === "aprobado" ? "Aprobado" : p.aprobado === "rechazado" ? "Rechazado" : "Pendiente"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="rightInfoAprove">
+                        <div className="totalAndCantidad">
+                          <p className="priceProducto">{formatCOP(p.valor_estimado ?? p.valorEstimado)}</p>
+                          <p className="cantidadProducto">Cant: {p.cantidad}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )) || null}
+                </div>
+              </div>
+
+              <div className="modal-actions-verifyModal" style={{ padding: "11px", borderTop: "2px solid #ddd", display: "flex", gap: "10px", justifyContent: "center" }}>
+                <button onClick={() => handleDevolver(verifyModalReq.requisicion_id)} disabled={verifyLoading} >
+                  {verifyLoading ? "Procesando..." : "Devolver"}
+                </button>
+                <button onClick={() => handleAprobar(verifyModalReq.requisicion_id)} disabled={verifyLoading} >
+                  {verifyLoading ? "Procesando..." : "Aprobar Total"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {openReqModal && (
+          <div className="modalOverlay">
+            <div className="modalBox">
+              {loadingSolicitante ? (
+                <LoadingView />
+              ) : solicitanteReq ? (
+                // 🔥 CONTENIDO CARGADO
+                <>
+                  <div className="headerInfo">
+                    <button
+                      className="modalCloseReq"
+                      onClick={() => {
+                        setOpenReqModal(false);
+                        setSolicitanteReq(null);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faX} />
+                    </button>
+                    <div className="tittleReq">
+                      <h1>REQUISICIÓN #{solicitanteReq.requisicion_id}</h1>
+                    </div>
+                    <div style={{ display: "flex", gap: "10px", alignItems: "center", width: "78%", justifyContent: "space-between" }}>
+                      <div className="tagEstado">
+                        <span className={`${styles.badge} ${getBadgeClass(estadoSolicitante)}`}>
+                          {getStatusLabel(estadoSolicitante)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleDescargarPDF(solicitanteReq.requisicion_id)}
+                        disabled={solicitanteReq.status === "pendiente" || progress !== null}
+                        className="downloadPdfButton"
+                        onMouseEnter={(e) => {
+                          if (progress === null) e.target.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.transform = "translateY(0)";
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faFilePdf} />
+                        {progress ? `${progress}` : "Descargar PDF"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="contentModalReq">
+                    <TimeLap
+                      requisicionId={solicitanteReq.requisicion_id}
+                      token={token}
+                      open={true}
+                    />
+                    <br />
+                    <div className="infoGeneralReq">
+                      <div className="detallesGeneralReq" style={{ display: "flex", gap: "24px" }}>
+                        <div className="detallesReq">
+                          <h3 className="tittleOneUserNew">datos del solicitante</h3>
+                          {loadingSolicitante ? (
+                            <div className="areaYFecha">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <div key={i} className="containerInfoReq" style={{ marginBottom: 10 }}>
+                                  <div className="skeleton-line" style={{ width: i % 2 ? "50%" : "80%", height: 14 }} />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="areaYFecha">
+                              <div className="containerInfoReq">
+                                <p className="labelTittle">Nombre</p>
+                                <p className="textLabel">{solicitanteReq.nombre_solicitante || "—"}</p>
+                              </div>
+                              <div className="containerInfoReq">
+                                <p className="labelTittle">Área</p>
+                                <p className="textLabel">{getAreaNombre(solicitanteReq.area)}</p>
+                              </div>
+                              <div className="containerInfoReq">
+                                <p className="labelTittle">Sede</p>
+                                <p className="textLabel">{getSedeNombre(solicitanteReq.sede)}</p>
+                              </div>
+                              <div className="containerInfoReq">
+                                <p className="labelTittle">Fecha</p>
+                                <p className="textLabel">{solicitanteReq.fecha || "—"}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="detallesGeneralReq">
+                        <div className="detallesReq">
+                          <div className="areaYFecha">
+                            <h3 className="tittleOneUserNew">resumen de productos</h3>
+                            <div className="containerInfoReq">
+                              <p className="labelTittle">Total productos</p>
+                              <p className="textLabel">{productosSolicitante.length}</p>
+                            </div>
+                            <div className="containerInfoReq">
+                              <p className="labelTittle">Ergonómicos</p>
+                              <p className="textLabel">
+                                {productosSolicitante.filter(p => p.ergonomico === 1 || p.ergonomico === true).length}
+                              </p>
+                            </div>
+                            <div className="containerInfoReq">
+                              <p className="labelTittle">Tecnológicos</p>
+                              <p className="textLabel">
+                                {productosSolicitante.filter(p => p.compra_tecnologica === 1 || p.compra_tecnologica === true).length}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="detallesGeneralReq">
+                        <div className="detallesReq">
+                          <div className="areaYFecha">
+                            <h3 className="tittleOneUserNew">informacion financiera</h3>
+                            <div className="containerInfoReq">
+                              <p className="labelTittle">Valor Total</p>
+                              <p className="textLabel">{formatCOP(solicitanteReq.valor_total)}</p>
+                            </div>
+                            <div className="containerInfoReq">
+                              <p className="labelTittle">En presupuesto</p>
+                              <p className="textLabel">
+                                {solicitanteReq.presupuestada ? "Sí" : "No"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <br />
+                    <div className="tablaContainerRequisicione">
+                      <h3 className="tittleOneUserNew">productos solicitados</h3>
+                      <div className="tablaProductosR">
+                        <div className="tabla-productos-header">
+                          <div>PRODUCTO / SERVICIO</div>
+                          <div>CUENTA CONTABLE</div>
+                          <div>CENTRO COSTO</div>
+                          <div style={{ textAlign: "center" }}>CANTIDAD</div>
+                          <div style={{ textAlign: "center" }}>VALOR UNITARIO</div>
+                          <div style={{ textAlign: "center" }}>ESTADO</div>
+                          <div style={{ textAlign: "center" }}>TECNOLÓGICO</div>
+                          <div style={{ textAlign: "center" }}>ERGONÓMICO</div>
+                        </div>
+
+                        <div className="tabla-productos-body">
+                          {productosSolicitante && productosSolicitante.length > 0 ? (
+                            productosSolicitante.map((producto, idx) => (
+                              <div
+                                key={producto.id ?? idx}
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns: "1.8fr 1fr 1fr 1fr 1fr 1fr 0.8fr 0.8fr",
+                                  gap: "12px",
+                                  padding: "12px 16px",
+                                  borderBottom: "1px solid #e5e7eb",
+                                  backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f9fafb",
+                                  alignItems: "center",
+                                  textAlign: "center"
+                                }}
+                              >
+                                {/* Producto */}
+                                <div>
+                                  <p className="textColor" style={{ fontWeight: "600", margin: "0 0 4px 0", fontSize: "13px" }}>
+                                    {producto.nombre || producto.productoOServicio || "—"}
+                                  </p>
+                                  <p style={{ textAlign: "center", fontSize: "11px", color: "var(--textColorP)", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                    {producto.descripcion || ""}
+                                  </p>
+                                </div>
+
+                                {/* Cuenta Contable */}
+                                <div style={{ textAlign: "center", fontSize: "13px", color: "var(--textColorP)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {producto.cuenta_contable || "—"}
+                                </div>
+
+                                {/* Centro Costo */}
+                                <div style={{ fontSize: "13px", color: "var(--textColorP)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {producto.centro_costo || "—"}
+                                </div>
+
+                                {/* Cantidad */}
+                                <div style={{ textAlign: "center", fontSize: "13px", color: "var(--textColorP)", fontWeight: "600" }}>
+                                  {producto.cantidad || "—"}
+                                </div>
+
+                                {/* Valor Unitario */}
+                                <div style={{ textAlign: "center", fontWeight: "600", fontSize: "13px", color: "var(--textColorV)" }}>
+                                  {formatCOP(producto.valor_estimado ?? producto.valorEstimado ?? 0)}
+                                </div>
+
+                                {/* Estado */}
+                                <div style={{ textAlign: "center", position: "relative" }}>
+                                  <span
+                                    className="estado-tag-tooltip"
+                                    style={{
+                                      display: "inline-block",
+                                      padding: "4px 8px",
+                                      borderRadius: "4px",
+                                      fontSize: "11px",
+                                      fontWeight: "600",
+                                      backgroundColor: producto.aprobado === "aprobado" ? "#dcfce7" : producto.aprobado === "rechazado" ? "#fee2e2" : "#fef3c7",
+                                      color: producto.aprobado === "aprobado" ? "#166534" : producto.aprobado === "rechazado" ? "#991b1b" : "#92400e",
+                                      whiteSpace: "nowrap",
+                                      position: "relative",
+                                      cursor: (producto.usuario_accion || producto.comentarios) ? "pointer" : "default"
+                                    }}
+                                  >
+                                    {producto.aprobado || "Pendiente"}
+                                    {/* Bolita naranja animada si hay comentario o usuario_accion */}
+                                    {(producto.usuario_accion || producto.comentarios) && (
+                                      <span
+                                        className="estado-bolita-animada"
+                                        style={{
+                                          position: "absolute",
+                                          top: -3,
+                                          right: -2,
+                                          width: 9,
+                                          height: 9,
+                                          borderRadius: "50%",
+                                          background: "#f59e42",
+                                          boxShadow: "0 0 0 0 #f59e42",
+                                          animation: "estado-bolita-pulse 1.2s infinite",
+                                          zIndex: 2,
+                                          border: "1.5px solid #fff"
+                                        }}
+                                      />
+                                    )}
+                                    {/* Tooltip/modal pequeño al hacer hover */}
+                                    {(producto.usuario_accion || producto.comentarios) && (
+                                      <span className="estado-tooltip-content">
+                                        <div style={{ padding: 8, minWidth: 180 }}>
+                                          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
+                                            <h3 className="tittleOneUserNew">{producto.aprobado === "aprobado" ? "Aprobado" : "Rechazado"}</h3>
+                                          </div>
+                                          {producto.usuario_accion && (
+                                            <div style={{ fontSize: 12, marginBottom: 2, color: "#6b7280", marginTop: -10 }}>
+                                              <span style={{ color: "var(--textColor)", fontWeight: "bold" }}>Por:</span> {producto.usuario_accion}
+                                            </div>
+                                          )}
+                                          {producto.comentarios && (
+                                            <div style={{ fontSize: 12, color: "#6b7280" }}>
+                                              <span style={{ color: "var(--textColor)", fontWeight: "bold" }}>Comentario:</span> {producto.comentarios}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </span>
+                                    )}
+                                  </span>
+                                  {/* CSS para tooltip y animación */}
+                                  <style>{`
+                                    .estado-tag-tooltip {
+                                      position: relative;
+                                    }
+                                    .estado-tooltip-content {
+                                      display: none;
+                                      position: absolute;
+                                      top: 110%;
+                                      left: 50%;
+                                      transform: translateX(-50%);
+                                      background: #fff;
+                                      color: #222;
+                                      border-radius: 8px;
+                                      box-shadow: 0 4px 16px rgba(0,0,0,0.13);
+                                      z-index: 100;
+                                      min-width: 180px;
+                                      font-size: 13px;
+                                      border: 1px solid #f3f4f6;
+                                      pointer-events: none;
+                                    }
+                                    .estado-tag-tooltip:hover .estado-tooltip-content {
+                                      display: block;
+                                      pointer-events: auto;
+                                    }
+                                    @keyframes estado-bolita-pulse {
+                                      0% { box-shadow: 0 0 0 0 #f59e4280; }
+                                      70% { box-shadow: 0 0 0 8px #f59e4200; }
+                                      100% { box-shadow: 0 0 0 0 #f59e4200; }
+                                    }
+                                  `}</style>
+                                </div>
+
+                                {/* Tecnológico */}
+                                <div style={{ textAlign: "center" }}>
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      padding: "4px 6px",
+                                      borderRadius: "4px",
+                                      fontSize: "11px",
+                                      fontWeight: "600",
+                                      backgroundColor: (producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "#dbeafe" : "#f3f4f6",
+                                      color: (producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "#0369a1" : "#6b7280"
+                                    }}
+                                  >
+                                    {(producto.compra_tecnologica === 1 || producto.compra_tecnologica === true) ? "✓" : "—"}
+                                  </span>
+                                </div>
+
+                                {/* Ergonómico */}
+                                <div style={{ textAlign: "center" }}>
+                                  <span
+                                    style={{
+                                      display: "inline-block",
+                                      padding: "4px 6px",
+                                      borderRadius: "4px",
+                                      fontSize: "11px",
+                                      fontWeight: "600",
+                                      backgroundColor: (producto.ergonomico === 1 || producto.ergonomico === true) ? "#dcfce7" : "#f3f4f6",
+                                      color: (producto.ergonomico === 1 || producto.ergonomico === true) ? "#166534" : "#6b7280"
+                                    }}
+                                  >
+                                    {(producto.ergonomico === 1 || producto.ergonomico === true) ? "✓" : "—"}
+                                  </span>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div
+                              style={{
+                                padding: "24px 16px",
+                                textAlign: "center",
+                                color: "#9ca3af",
+                                borderBottom: "1px solid #e5e7eb"
+                              }}
+                            >
+                              No hay productos asociados a esta requisición.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </div>
+        )}
       </div>
+      <WizardModal
+        open={open}
+        onClose={() => { setOpen(false); setModalInitialData(null); }}
+        onCreated={fetchRequisiciones}
+        initialData={modalInitialData}
+        startStep={modalInitialData ? 2 : undefined}
+      />
     </div>
   );
 }

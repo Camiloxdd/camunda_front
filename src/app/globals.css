@@ -3,7 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --textColor: #002855;
+  --textColor: #1D5DA8;
+  --textColorV: #002855;
   --textColorP: #4D6988;
   --azulContainers: #1d5da8;
   --bordeImagen: #ea7600;
@@ -69,7 +70,7 @@
   display: flex;
   text-align: left;
   align-items: center;
-  color: var(--textColor);
+  color: var(--textColorV);
   gap: 5px;
 }
 
@@ -105,7 +106,7 @@
   text-align: left;
   font-size: 15px;
   margin-left: 8px;
-  color: var(--textColor);
+  color: var(--textColorV);
 }
 
 .inputAndIcon {
@@ -148,7 +149,7 @@
 
 .eyeIcon {
   cursor: pointer;
-  color: var(--textColor);
+  color: var(--textColorV);
   transition: color 0.3s;
 }
 
@@ -186,14 +187,14 @@
 .forgoutUser .LinkForgot {
   text-decoration: none;
   font-size: 13px;
-  color: var(--textColor);
+  color: var(--textColorV);
 }
 
 .cyberpunk-checkbox {
   appearance: none;
   width: 16px;
   height: 16px;
-  border: 2px solid var(--textColor);
+  border: 2px solid var(--textColorV);
   border-radius: 5px;
   background-color: transparent;
   display: inline-block;
@@ -206,7 +207,7 @@
 
 .cyberpunk-checkbox:before {
   content: "";
-  background-color: var(--textColor);
+  background-color: var(--textColorV);
   display: block;
   position: absolute;
   top: 50%;
@@ -224,7 +225,7 @@
 
 .cyberpunk-checkbox-label {
   font-size: 13px;
-  color: #1d5da8;
+  color: var(--textColorV);
   cursor: pointer;
   user-select: none;
   display: flex;
@@ -326,12 +327,13 @@
   top: 0;
   width: 96%;
   z-index: 1000;
+  background-color: white;
   display: flex;
   align-items: center;
+  padding: 20px;
   justify-content: space-between;
-  padding: 14px;
-  border-bottom: 3px solid var(--textColor);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  height: 90px;
+  border-bottom: 1px solid #ddd;
 }
 
 .buttonsReq {
@@ -341,7 +343,7 @@
 .textoNavBar {
   margin-left: 10px;
   font-size: 15px;
-  color: var(--textColor);
+  color: var(--textColorV);
 }
 
 
@@ -421,7 +423,7 @@
 }
 
 .nameAndRol {
-  color: var(--textColor);
+  color: var(--textColorV);
   justify-content: center;
   align-items: left;
   text-align: left;
@@ -783,7 +785,7 @@
 }
 
 .iconLogin {
-  color: var(--textColor);
+  color: var(--textColorV);
   font-size: 25px;
   padding: 7px;
 }
@@ -885,7 +887,6 @@ input[type="time"] {
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s ease;
-  margin-top: 15px;
 }
 
 .btn-agregar .iconPlus {
@@ -1706,25 +1707,26 @@ input[type="time"] {
   padding: 8px 0;
   box-sizing: border-box;
   background-color: transparent;
-  /* quitar colores de depuración */
 }
 
-/* Ajustes: centrar loader dentro de .listaReq y eliminar saltos fuera del contenedor */
+.headerTab {
+  max-height: 20px;
+}
+
+.tablaRequisicion {
+  background-color: white;
+  border-radius: 8px;
+  height: 535px;
+  padding: 20px;
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 2px 8px;
+}
+
 .listaReq {
-  /* antes era display: grid; ahora flex para centrar children fácilmente */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  position: relative;
-  /* permite overlays si los necesitas después */
-  min-height: 220px;
-  /* espacio reservado para la lista */
-  padding: 12px;
-  box-sizing: border-box;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  height: 100%;
 }
 
-/* Selector específico para .listaReq > .loading-container: asegurar centrado */
 .listaReq>.loading-container {
   grid-column: 1 / -1;
   width: 100%;
@@ -1916,7 +1918,7 @@ input[type="time"] {
   font-weight: bold;
   font-size: 15px;
   padding: 15px;
-  color: var(--textColor);
+  color: var(--textColorV);
 }
 
 .headerFiltros p {
@@ -1931,21 +1933,25 @@ input[type="time"] {
   height: 90.1vh;
   margin-top: auto;
   width: 17%;
-  border-right: 3px solid var(--textColor);
+
+  /* Sombra hacia el lado derecho */
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+  background-color: #ffffff;
 }
 
+
 .campoFiltroReq {
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  width: 90%;
+  background-color: white;
+  width: 100%;
   padding: 15px;
-  display: flex;
+  height: 150px;
+  display: grid;
   border-radius: 8px;
   align-items: center;
-  justify-content: center;
-  text-align: center;
+  text-align: left;
   justify-content: space-between;
   transition: 0.3s all;
+  box-shadow: 0 2px 8px #00000014;
 }
 
 .campoFiltroReq:hover {
@@ -1954,24 +1960,27 @@ input[type="time"] {
   transition: 0.3s all;
 }
 
+.iconoFiltroReq {
+  padding: 10px;
+  font-size: 30px;
+  color: var(--textColor);
+  border-radius: 8px;
+  background-color: #ddd;
+}
+
 .spaceCantidad {
-  background-color: var(--textColor);
-  width: 25px;
-  height: 25px;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  display: flex;
-  color: white;
+  font-size: 30px;
   font-weight: bold;
-  font-size: 14px;
-  border-radius: 50%;
+  color: var(--textColorV);
+  width: 60px;
+  text-align: center;
 }
 
 .infoFiltroReq {
   display: flex;
   font-size: 15px;
   text-align: center;
+  color: var(--textColorP);
 }
 
 .firstContainerDash {
@@ -1996,7 +2005,20 @@ input[type="time"] {
   gap: 30px;
   place-items: center;
   justify-content: center;
-  background-color: red;
+}
+
+.porcentsRequisiciones {
+  display: grid;
+  gap: 16px;
+  margin-top: -120px;
+  width: 95%;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.containerPorcents {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .containerInfoRequisiciones {
@@ -2164,9 +2186,9 @@ input[type="time"] {
 
 .secondContainerDash {
   display: flex;
-  height: 90.1vh;
+  height: 90.2vh;
   margin-top: auto;
-  width: 85%;
+  width: 100%;
   display: flex;
   justify-content: center;
   background-color: #f5f5f5;
@@ -2174,14 +2196,16 @@ input[type="time"] {
 
 
 .containerTwoDash {
-  width: 95%;
+  width: 97%;
+  gap: 15px;
+  display: flex;
+  flex-direction: column;
   margin-top: 15px;
 }
 
 .papaHeaderRequi {
   align-items: center;
   gap: 20px;
-  padding: 5px;
   border-radius: 10px;
   color: #1d5da8;
   display: flex;
@@ -2193,23 +2217,15 @@ input[type="time"] {
   align-items: center;
   display: flex;
   text-align: center;
+  gap: 16px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 2px 8px;
 }
 
 .headerListReq {
   padding: 10px;
-}
-
-.listaReq {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  position: relative;
-  /* permite overlays si los necesitas después */
-  min-height: 220px;
-  /* espacio reservado para la lista */
-  padding: 12px;
-  box-sizing: border-box;
 }
 
 .requisicion {
@@ -2261,8 +2277,6 @@ input[type="time"] {
 }
 
 .dashboard-content {
-  justify-content: end;
-  align-items: end;
   display: flex;
   height: 100vh;
 }
@@ -2686,6 +2700,7 @@ input[type="time"] {
 .gridItemValue {
   font-size: 0.875rem;
   font-weight: 600;
+
   color: var(--foreground);
   margin: 0;
   display: -webkit-box;
@@ -3113,16 +3128,6 @@ input[type="time"] {
   z-index: 1;
 }
 
-.tabla-productos-container tbody tr:nth-child(even) {
-  background-color: #f8f9f9;
-  transition: 0.5s all;
-}
-
-.tabla-productos-container tbody tr:hover {
-  background-color: #e0f0ff;
-  transition: 0.5s all;
-}
-
 .prod-nombre {
   font-weight: bold;
 }
@@ -3193,39 +3198,40 @@ input[type="time"] {
    Requisitions table styles
    ========================= */
 
+/* Contenedor para la tabla de requisiciones con scroll y altura máxima */
+.requisitionsTableContainer {
+  max-height: 475px;
+  overflow-y: auto;
+  width: 100%;
+  scroll-behavior: smooth;
+  border-radius: 8px;
+}
+
 /* Table base */
 .requisitionsTable {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 8px;
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
 }
 
 /* Header */
 .requisitionsTable thead th {
-  background: var(--textColor);
-  color: #fff;
+  color: white;
   padding: 12px 14px;
   text-align: left;
   font-weight: 600;
   position: sticky;
   top: 0;
   z-index: 2;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.06);
   text-align: center;
+  background-color: var(--textColor);
 }
 
 /* Body rows */
 .requisitionsTable tbody tr {
   transition: background 0.18s ease, transform 0.12s ease;
-  background: transparent;
 }
 
-.requisitionsTable tbody tr:hover {
-  background: rgba(29, 93, 168, 0.04);
-  transform: translateY(-2px);
-}
+.requisitionsTable tbody tr:hover {}
 
 /* If some code uses .row on the <tr> keep compatibility */
 .row {
@@ -3246,9 +3252,8 @@ input[type="time"] {
 .requisitionsTable td {
   display: table-cell;
   padding: 12px 18px;
-  background-color: white;
   vertical-align: middle;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid #ddd;
 }
 
 /* Column widths (ajusta a tu gusto) */
@@ -3286,12 +3291,11 @@ input[type="time"] {
 /* Mejoras visuales para filas */
 .requisitionsTable tbody tr {
   transition: background 0.18s ease, transform 0.12s ease;
-  background: transparent;
 }
 
 .requisitionsTable tbody tr:hover {
-  background: rgba(29, 93, 168, 0.04);
   transform: translateY(-2px);
+  background-color: #ddd;
 }
 
 /* Ajustes para celdas específicas (ya existían: idCell, requesterCell, etc.) */
@@ -3306,7 +3310,7 @@ input[type="time"] {
 
 .requesterName {
   font-weight: 600;
-  color: var(--textColor);
+  color: var(--textColorV);
 }
 
 .requesterLabel {
@@ -3337,7 +3341,7 @@ input[type="time"] {
 }
 
 .fecha {
-  color: var(--textColor);
+  color: var(--textColorV);
   justify-content: center;
   text-align: center;
   place-items: center;
@@ -3347,7 +3351,7 @@ input[type="time"] {
 
 .valor {
   font-weight: bold;
-  color: var(--textColor);
+  color: var(--textColorV);
   justify-content: center;
   text-align: center;
 }
@@ -3446,7 +3450,7 @@ input[type="time"] {
 .tittleReq {
   margin-left: 10px;
   font-size: 15px;
-  color: var(--textColor);
+  color: var(--textColorV);
 }
 
 .contentModalReq {
@@ -3482,7 +3486,7 @@ input[type="time"] {
 }
 
 .labelTittle {
-  color: var(--textColor);
+  color: var(--textColorV);
   font-weight: bold;
   font-size: 16px;
 }
@@ -3514,16 +3518,16 @@ input[type="time"] {
   font-weight: 600;
   text-align: center;
   font-size: 14px;
-  color: var(--textColor);
+  color: var(--textColorV);
   border-bottom: 2px solid #e5e7eb;
 }
 
-.tabla-productos-body{
+.tabla-productos-body {
   align-items: center;
 }
 
 .textColor {
-  color: var(--textColor);
+  color: var(--textColorV);
 }
 
 .downloadPdfButton {
@@ -3564,34 +3568,34 @@ input[type="time"] {
   transform: translateY(0);
 }
 
-.iconNormal{
+.iconNormal {
   background: linear-gradient(135deg, #002855, #1d5da8);
   padding: 7px;
   color: white;
   border-radius: 8px;
 }
 
-.nose{
-  color: var(--textColor);
+.nose {
+  color: var(--textColorV);
   font-weight: bold;
   font-size: 15px;
 }
 
-.buttonLogout{
+.buttonLogout {
   background-color: red;
   padding: 7px;
   border-radius: 8px;
   color: white;
 }
 
-.textLogout{
+.textLogout {
   color: red;
   font-size: 15px;
   font-weight: bold;
   transition: 0.3s all;
 }
 
-.textLogout:hover{
+.textLogout:hover {
   transform: translateY(-2px);
 }
 
@@ -3602,7 +3606,7 @@ input[type="time"] {
   align-items: center;
 }
 
-.modal-actions-verifyModal button{
+.modal-actions-verifyModal button {
   background-color: var(--textColor);
   color: white;
   font-weight: bold;
@@ -3614,19 +3618,188 @@ input[type="time"] {
   transition: 0.3s all;
 }
 
-.modal-actions-verifyModal button:hover{
+.modal-actions-verifyModal button:hover {
   background-color: white;
   color: var(--textColor);
   border: 2px solid var(--textColor);
   transform: translateY(-2px);
 }
 
-@media (max-width: 900px) {
-
-  .requisitionsTable thead th:nth-child(5),
-  .requisitionsTable thead th:nth-child(6),
-  .requisitionsTable tbody td:nth-child(5),
-  .requisitionsTable tbody td:nth-child(6) {
-    display: none;
+/* Animación para filas de tabla al hacer scroll */
+@keyframes fadeInUpRow {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
   }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.table-row-animate {
+  animation: fadeInUpRow 0.5s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+/* Escalado para la primera fila visible (pequeño a grande) */
+@keyframes scaleFirstRow {
+  from {
+    transform: scale(0.92);
+    opacity: 0.7;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.table-row-scale-first {
+  animation: scaleFirstRow 0.35s cubic-bezier(0.23, 1, 0.32, 1) both;
+  z-index: 2;
+}
+
+/* Escalado para la última fila visible (grande a pequeño) */
+@keyframes scaleLastRow {
+  from {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+}
+
+.table-row-scale-last {
+  animation: scaleLastRow 0.35s cubic-bezier(0.23, 1, 0.32, 1) both;
+  z-index: 2;
+}
+
+/* Opcional: mejora visual para distinguir la fila animada */
+.table-row-scale-first,
+.table-row-scale-last {
+  background: #f6faff;
+}
+
+.firstSectionProcents {
+  background-color: #1d5da8;
+  height: 120px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sectionPrincipal {
+  background-color: #f5f5f5;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  margin-top: auto;
+  display: flex;
+}
+
+.contentPrinci {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.imgCoopidrogas {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 30%;
+}
+
+.logoInicio {
+  mix-blend-mode: multiply;
+  height: 500px;
+}
+
+.infoLateral {
+  width: 40%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  align-items: left;
+}
+
+.firstInfo {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--textColorV);
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.saludoText {
+  color: var(--textColorV);
+  font-weight: bold;
+  font-size: 35px;
+}
+
+.secondInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nameText {
+  color: var(--textColor);
+  font-weight: bold;
+  font-size: 35px;
+}
+
+.threeInfo {
+  color: var(--textColorP);
+}
+
+.fourInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #1d5ea81e;
+  border-radius: 8px;
+  border: 2px solid #1d5da8;
+  color: #1d5da8;
+  padding: 30px;
+  margin-top: 25px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.newRequisicionSend {
+  gap: 5px;
+  display: flex;
+  flex-direction: column;
+}
+
+
+.buttonNewReqSend button {
+  padding: 5px 30px;
+  border: 2px solid #1d5da8;
+  border-radius: 8px;
+  background-color: white;
+  color: #1d5da8;
+  cursor: pointer;
+  transition: 0.3s all;
+}
+
+.buttonNewReqSend button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(29, 93, 168, 0.3);
+}
+
+.iconSparkles {
+
+  color: #1d5da8;
+}
+
+.sparklesD {
+  padding: 8px;
+  background-color: #1d5ea81e;
+  border-radius: 20%;
 }

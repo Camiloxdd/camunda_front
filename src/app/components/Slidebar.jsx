@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "../styles/Slidebar.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -10,7 +10,8 @@ import {
     faRightFromBracket,
     faUserGear,
     faArrowLeft,
-    faArrowRight
+    faArrowRight,
+    faClipboard
 } from "@fortawesome/free-solid-svg-icons";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../context/AuthContext";
@@ -18,9 +19,9 @@ import api from "../services/axios";
 import { usePathname } from "next/navigation";
 
 export const Sidebar = ({ onToggle }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isHovered, setIsHovered] = useState(false);
     const router = useRouter();
-    const { permissions, logout, user } = useAuth(); // obtener user para mostrar nombre/rol
+    const { permissions, logout, user } = useAuth();
 
     const canSeeDashboard = Boolean(
         permissions?.isAprobador || permissions?.isComprador || permissions?.isSuperAdmin
@@ -31,16 +32,12 @@ export const Sidebar = ({ onToggle }) => {
     const canSeeUsuarios = Boolean(permissions?.isSuperAdmin || permissions?.isSolicitante);
 
     const navItems = [{ icon: faHome, label: "Inicio", path: "/dashboard" }];
-
     if (canSeeUsuarios) {
+        navItems.push({ icon: faClipboard, label: "Requisiciones", path: "/requisicion" });
         navItems.push({ icon: faUserGear, label: "Usuarios", path: "/usuarios" });
+    } else if (canSeeDashboard) {
+        navItems.push({ icon: faClipboard, label: "Requisiciones", path: "/requisicion" });
     }
-
-    const handleToggle = () => {
-        const newState = !isOpen;
-        setIsOpen(newState);
-        onToggle?.(newState); // Notifica al Dashboard
-    };
 
     const handleNavigate = (path) => {
         router.push(path)
@@ -62,7 +59,14 @@ export const Sidebar = ({ onToggle }) => {
         }
     }
 
-    const isCollapsed = !isOpen;
+    const isCollapsed = !isHovered;
+
+    // Sincroniza el estado expandido/collapsed con el padre
+    useEffect(() => {
+        if (typeof onToggle === "function") {
+            onToggle(!isCollapsed);
+        }
+    }, [isCollapsed, onToggle]);
 
     const getCargoNombre = (cargo) => {
         switch (cargo) {
@@ -101,6 +105,8 @@ export const Sidebar = ({ onToggle }) => {
         <aside
             className={`sidebar ${isCollapsed ? "sidebarCollapsed" : "sidebarExpanded"}`}
             aria-expanded={!isCollapsed}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
             <div className={`logoSection ${isCollapsed ? "logoSectionCollapsed" : "logoSectionExpanded"}`}>
                 <div className={`logoContainer ${isCollapsed ? "logoContainerCollapsed" : ""}`}>
@@ -109,8 +115,8 @@ export const Sidebar = ({ onToggle }) => {
                         <img src="/coopidrogas_logo_mini.png" alt="Coopidrogas" className="logoImgMini" />
                     ) : (
                         // Logo grande con fondo blanco cuando está expandido
-                        <div className="logoIconWhite">
-                            <img src="/Logo_COOPIDROGAS.png" alt="Logo COOPIDROGAS" className="logoImgLarge" />
+                        <div>
+                            <img src="/Logo_COOPIDROGAS.png" alt="Logo COOPIDROGAS" className="logoImgMini" />
                         </div>
                     )}
 
@@ -120,9 +126,6 @@ export const Sidebar = ({ onToggle }) => {
                     )}
                 </div>
             </div>
-            <button onClick={handleToggle} className="toggleButton toggleButtonTop" aria-label="Toggle sidebar">
-                <FontAwesomeIcon icon={isCollapsed ? faBars : faTimes} size="lg" />
-            </button>
             {/* Navigation */}
             <nav className="nav">
                 {navItems.map((item, index) => (

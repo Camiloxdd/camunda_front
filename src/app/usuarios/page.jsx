@@ -23,7 +23,9 @@ import {
   faStore,
   faTrash,
   faUser,
+  faUserAlt,
   faUserCheck,
+  faUserCog,
   faUserPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -429,10 +431,10 @@ function UsuariosInner() {
       <Sidebar onToggle={setIsSidebarOpen} />
       <div
         style={{
-          marginTop: "92px",
+          marginTop: "90px",
           flex: 1,
           transition: "margin-left 0.3s ease",
-          marginLeft: isSidebarOpen ? "210px" : "80px",
+          marginLeft: isSidebarOpen ? "280px" : "80px",
           backgroundColor: "#f5f5f5",
         }}
       >
@@ -475,153 +477,203 @@ function UsuariosInner() {
 
           </div>
         </div>
+        <div           >
+          <div className="contentUsersView">
+            <div className="firstSectionProcents">
 
-        {/* --- NUEVO BLOQUE: tarjetas estadísticas + barra búsqueda/pestañas --- */}
-        <div style={{ padding: "16px 8px 0 8px", maxWidth: "1200px", margin: "0 auto" }}>
-          <div className="stats" style={{ marginBottom: 18 }}>
-            <div className="statCard">
-              <div className="statLabel">Total Usuarios</div>
-              <div className="statValue">{userList.length}</div>
-              <div className="statTrend statTrendUp">↗ +{Math.max(0, userList.length - 21)} este mes</div>
             </div>
-            <div className="statCard">
-              <div className="statLabel">Administradores</div>
-              <div className="statValue">{userList.filter(u => u.super_admin).length}</div>
-            </div>
-            <div className="statCard">
-              <div className="statLabel">Aprobadores</div>
-              <div className="statValue">{userList.filter(u => u.aprobador).length}</div>
-            </div>
-            <div className="statCard">
-              <div className="statLabel">Usuarios Activos</div>
-              <div className="statValue">{userList.filter(u => (u.status || u.estado) !== "inactive").length}</div>
-            </div>
-          </div>
-
-          <div className="searchBar" style={{ marginBottom: 12 }}>
-            <div className="searchInputWrapper">
-              <FontAwesomeIcon icon={faUser} className="searchIcon" />
-              <input
-                className="searchInput"
-                placeholder="Buscar usuarios..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="filterTabs" style={{ marginLeft: 16 }}>
-              <button className={`filterTab ${activeFilter === "todos" ? "filterTabActive" : ""}`} onClick={() => setActiveFilter("todos")}>Todos</button>
-              <button className={`filterTab ${activeFilter === "admins" ? "filterTabActive" : ""}`} onClick={() => setActiveFilter("admins")}>Admins</button>
-              <button className={`filterTab ${activeFilter === "aprobadores" ? "filterTabActive" : ""}`} onClick={() => setActiveFilter("aprobadores")}>Aprobadores</button>
-              <button className={`filterTab ${activeFilter === "solicitantes" ? "filterTabActive" : ""}`} onClick={() => setActiveFilter("solicitantes")}>Solicitantes</button>
-            </div>
-            <div className="newUserButton">
-              <button
-                onClick={() => {
-                  setEditingUser(null);
-                  setFormData({
-                    nombre: "",
-                    correo: "",
-                    cargo: "",
-                    telefono: "",
-                    sede: "",
-                    area: "",
-                    contraseña: "",
-                    super_admin: false,
-                    aprobador: false,
-                    solicitante: false,
-                    comprador: false,
-                  });
-                  setSelectedCargo("");
-                  setSelectedArea("");
-                  setSelectedSede("");
-                  setOpenModal(true);
-                }}
-              >
-                <FontAwesomeIcon icon={faUserPlus} />
-                <p>
-                  Nuevo Usuario
-                </p>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className="campoTablaFondo">
-          <div className="tablaGestionUsuarios">
-            <div className="table">
-              <div className="tableHeader">
-                <div>Avatar</div>
-                <div style={{ textAlign: "left" }}>Usuario</div>
-                <div>Departamento</div>
-                <div>Rol</div>
-                <div>Estado</div>
-                <div>Acciones</div>
+            <div className="containerPorcents">
+              <div className="porcentsUsuarios">
+                <div
+                  className="campoFiltroReq"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setStatusFilter("todas")}
+                >
+                  <div className="iconoContainerFiltro">
+                    <FontAwesomeIcon icon={faUser} className="iconoFiltroReq" />
+                  </div>
+                  <div className="spaceCantidad">
+                    <div className="statValue">{userList.length}</div>
+                    {/*<div className="statTrend statTrendUp">↗ +{Math.max(0, userList.length - 21)} este mes</div>*/}
+                  </div>
+                  <div className="infoFiltroReq">
+                    <p>Requisiciones totales</p>
+                  </div>
+                </div>
+                <div
+                  className="campoFiltroReq"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setStatusFilter("aprobada", "Totalmente Aprobada")}
+                >
+                  <div className="iconoContainerFiltro">
+                    <FontAwesomeIcon icon={faUserPlus} className="iconoFiltroReq" />
+                  </div>
+                  <div className="spaceCantida">
+                    <div className="statValue">{userList.filter(u => u.super_admin).length}</div>
+                  </div>
+                  <div className="infoFiltroReq">
+                    <p>Requisiciones aprobadas</p>
+                  </div>
+                </div>
+                <div
+                  className="campoFiltroReq"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setStatusFilter("pendiente")}
+                >
+                  <div className="iconoContainerFiltro">
+                    <FontAwesomeIcon icon={faUserAlt} className="iconoFiltroReq" />
+                  </div>
+                  <div className="spaceCantidad">
+                    <div className="statValue">{userList.filter(u => u.aprobador).length}</div>
+                  </div>
+                  <div className="infoFiltroReq">
+                    <p>Requisiciones pendientes</p>
+                  </div>
+                </div>
+                <div
+                  className="campoFiltroReq"
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setStatusFilter("rechazada")}
+                >
+                  <div className="iconoContainerFiltro">
+                    <FontAwesomeIcon icon={faUserCog} className="iconoFiltroReq" />
+                  </div>
+                  <div className="spaceCantidad">
+                    <div className="statValue">{userList.filter(u => (u.status || u.estado) !== "inactive").length}</div>
+                  </div>
+                  <div className="infoFiltroReq">
+                    <p>Requisiciones rechazadas</p>
+                  </div>
+                </div>
               </div>
-
-              <div className="tableBody">
-                {loading ? (
-                  <div className="tableRow placeholder">
-                    <div colSpan="6">
-                      <LoadingView/>
-                    </div>
+            </div>
+            <div>
+              <div className="barraDeNavegacion" style={{ marginBottom: 12 }}>
+                <div className="searchInputWrapper">
+                  <FontAwesomeIcon icon={faUser} className="searchIcon" />
+                  <input
+                    className="searchInput"
+                    placeholder="Buscar usuarios..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="filterTabs" style={{ marginLeft: 16 }}>
+                  <button className={`filterTab ${activeFilter === "todos" ? "filterTabActive" : ""}`} onClick={() => setActiveFilter("todos")}>Todos</button>
+                  <button className={`filterTab ${activeFilter === "admins" ? "filterTabActive" : ""}`} onClick={() => setActiveFilter("admins")}>Admins</button>
+                  <button className={`filterTab ${activeFilter === "aprobadores" ? "filterTabActive" : ""}`} onClick={() => setActiveFilter("aprobadores")}>Aprobadores</button>
+                  <button className={`filterTab ${activeFilter === "solicitantes" ? "filterTabActive" : ""}`} onClick={() => setActiveFilter("solicitantes")}>Solicitantes</button>
+                </div>
+                <div className="newUserButton">
+                  <button
+                    onClick={() => {
+                      setEditingUser(null);
+                      setFormData({
+                        nombre: "",
+                        correo: "",
+                        cargo: "",
+                        telefono: "",
+                        sede: "",
+                        area: "",
+                        contraseña: "",
+                        super_admin: false,
+                        aprobador: false,
+                        solicitante: false,
+                        comprador: false,
+                      });
+                      setSelectedCargo("");
+                      setSelectedArea("");
+                      setSelectedSede("");
+                      setOpenModal(true);
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faUserPlus} />
+                    <p>
+                      Nuevo Usuario
+                    </p>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="campoTablaFondo">
+              <div className="tablaGestionUsuarios">
+                <div className="table">
+                  <div className="tableHeader">
+                    <div>Avatar</div>
+                    <div style={{ textAlign: "left" }}>Usuario</div>
+                    <div>Departamento</div>
+                    <div>Rol</div>
+                    <div>Estado</div>
+                    <div>Acciones</div>
                   </div>
-                ) : error ? (
-                  <div className="tableRow">
-                    <div style={{ gridColumn: "1 / -1", textAlign: "center", color: "red" }}>{error}</div>
-                  </div>
-                ) : userList.length > 0 ? (
-                  // Usar displayedUsers (aplica búsqueda y pestañas)
-                  displayedUsers.map((u) => {
-                    const roles = [
-                      u.super_admin && "Super Admin",
-                      u.aprobador && "Aprobador",
-                      u.solicitante && "Solicitante",
-                      u.comprador && "Comprador"
-                    ].filter(Boolean).join(" | ");
 
-                    const initials = (u.nombre || "").split(" ").map(n => n[0]).slice(0, 2).join("");
-                    return (
-                      <div key={u.id || u._id || u.correo} className="tableRow">
-                        <div className="avatarContainer">
-                          <div className="avatar avatarAdmin">{initials}</div>
-                        </div>
-                        <div className="userInfo">
-                          <div className="userName">{u.nombre || "—"}</div>
-                          <div className="userEmail">{u.correo || "—"}</div>
-                        </div>
-                        <div className="departmentText">{getAreaNombre(u.area || u.department)}</div>
-                        <div className="badgeEstado">
-                          <div className={`roleBadge ${u.super_admin
-                            ? "roleAdmin"
-                            : u.aprobador
-                              ? "roleApprover"
-                              : "roleRequester"
-                            }`}>
-                            {roles}
-                          </div>
-                        </div>
-                        <div className="badgeEstado">
-                          <div className={`statusBadge ${u.estado === "inactive" || u.status === "inactive" ? "statusInactive" : "statusActive"}`}>
-                            {(u.estado === "inactive" || u.status === "inactive") ? "Inactivo" : "Activo"}
-                          </div>
-                        </div>
-                        <div >
-                          <div className="actions">
-                            <button className="actionButton" onClick={() => handleEditUser(u)} title="Editar">
-                              <FontAwesomeIcon icon={faPencil} />
-                            </button>
-                            <button className="actionButton actionButtonDanger" onClick={() => handleDeleteUser(u.id)} title="Eliminar">
-                              <FontAwesomeIcon icon={faTrash} />
-                            </button>
-                          </div>
+                  <div className="tableBody">
+                    {loading ? (
+                      <div className="tableRow placeholder">
+                        <div colSpan="6">
+                          <LoadingView />
                         </div>
                       </div>
-                    );
-                  })
-                ) : (
-                  <div className="tableRow">
-                    <div style={{ gridColumn: "1 / -1", textAlign: "center" }}>No hay usuarios registrados.</div>
+                    ) : error ? (
+                      <div className="tableRow">
+                        <div style={{ gridColumn: "1 / -1", textAlign: "center", color: "red" }}>{error}</div>
+                      </div>
+                    ) : userList.length > 0 ? (
+                      // Usar displayedUsers (aplica búsqueda y pestañas)
+                      displayedUsers.map((u) => {
+                        const roles = [
+                          u.super_admin && "Super Admin",
+                          u.aprobador && "Aprobador",
+                          u.solicitante && "Solicitante",
+                          u.comprador && "Comprador"
+                        ].filter(Boolean).join(" | ");
+
+                        const initials = (u.nombre || "").split(" ").map(n => n[0]).slice(0, 2).join("");
+                        return (
+                          <div key={u.id || u._id || u.correo} className="tableRow">
+                            <div className="avatarContainer">
+                              <div className="avatar avatarAdmin">{initials}</div>
+                            </div>
+                            <div className="userInfo">
+                              <div className="userName">{u.nombre || "—"}</div>
+                              <div className="userEmail">{u.correo || "—"}</div>
+                            </div>
+                            <div className="departmentText">{getAreaNombre(u.area || u.department)}</div>
+                            <div className="badgeEstado">
+                              <div className={`roleBadge ${u.super_admin
+                                ? "roleAdmin"
+                                : u.aprobador
+                                  ? "roleApprover"
+                                  : "roleRequester"
+                                }`}>
+                                {roles}
+                              </div>
+                            </div>
+                            <div className="badgeEstado">
+                              <div className={`statusBadge ${u.estado === "inactive" || u.status === "inactive" ? "statusInactive" : "statusActive"}`}>
+                                {(u.estado === "inactive" || u.status === "inactive") ? "Inactivo" : "Activo"}
+                              </div>
+                            </div>
+                            <div >
+                              <div className="actions">
+                                <button className="actionButton" onClick={() => handleEditUser(u)} title="Editar">
+                                  <FontAwesomeIcon icon={faPencil} />
+                                </button>
+                                <button className="actionButton actionButtonDanger" onClick={() => handleDeleteUser(u.id)} title="Eliminar">
+                                  <FontAwesomeIcon icon={faTrash} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="tableRow">
+                        <div style={{ gridColumn: "1 / -1", textAlign: "center" }}>No hay usuarios registrados.</div>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
             </div>
           </div>

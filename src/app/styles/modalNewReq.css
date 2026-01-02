@@ -125,7 +125,7 @@
 .textHeaderNew h2 {
   margin: 0;
   font-size: 24px;
-  color: var(--textColor);
+  color: var(--textColorV);
 }
 
 .textHeaderNew p {
@@ -339,7 +339,7 @@
 }
 
 .stepTitleActive {
-  color: var(--textColor);
+  color: var(--textColorV);
 }
 
 .stepTitleInactive {
@@ -380,7 +380,7 @@
 .tittleOneUserNew {
   font-size: 15px;
   font-weight: 600;
-  color: var(--textColor);
+  color: var(--textColorV);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 16px;
@@ -424,6 +424,52 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  width: 100%;
+}
+
+.campoButtonsNewReq {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-add-producto {
+  align-items: center;
+  display: flex;
+  background-color: var(--textColor);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: white;
+  margin-left: auto;
+  cursor: pointer;
+  transition: 0.3s ease all;
+}
+
+.btn-add-producto:hover {
+  background-color: #155a9c;
+  transform: translateY(-2px);
+  transition: 0.3s ease all;
+}
+
+.btn-remove-producto {
+  align-items: center;
+  display: flex;
+  background-color: red;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  color: white;
+  margin-left: auto;
+  cursor: pointer;
+  transition: 0.3s ease all;
+}
+
+.btn-remove-producto:hover {
+  background-color: #b30000;
+  transform: translateY(-2px);
+  transition: 0.3s ease all;
 }
 
 .inputsDatos {
@@ -438,11 +484,11 @@
   align-items: center;
   gap: 6px;
   padding: 20px;
-  color: var(--textColor);
+  color: var(--textColorV);
 }
 
 .campoPrespuestado p {
-  color: var(--textColor);
+  color: var(--textColorV);
   font-weight: bold;
 }
 
@@ -525,7 +571,6 @@
   border: 2px solid #ddd;
   width: 100%;
   height: 80%;
-  max-width: 245px;
   border-radius: 8px;
   max-height: 370px;
 }
@@ -534,7 +579,7 @@
   overflow-y: auto;
   height: 100%;
   padding: 5px;
-  max-height: 290px;
+  max-height: 130px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -758,6 +803,7 @@
   border-radius: 8px;
   display: flex;
   padding: 10px;
+  width: 99.7%;
   justify-content: space-between;
 }
 
@@ -827,7 +873,9 @@
 }
 
 .inputsItems {
-  height: 90px;
+  height: 80px;
+  display: flex;
+  width: 100%;
 }
 
 .seleccionProductoContainer {
@@ -876,12 +924,86 @@
   font-weight: 600;
 }
 
-.totalProdAndPrice{
+.totalProdAndPrice {
   display: flex;
   width: 100%;
   gap: 16px;
 }
 
-.nameAndTags{
+.nameAndTags {
   text-align: left;
+}
+
+.customSelectContainer {
+  position: relative;
+  width: 100%;
+}
+
+.customSelectInput {
+border: 1px solid var(--border);
+    background-color: var(--background);
+    color: var(--foreground);
+    border-radius: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 14px;
+    transition: all .2s;
+}
+
+.customSelectInput:focus {
+  outline: none;
+  border-color: var(--textColor);
+  box-shadow: 0 0 0 3px rgba(29, 93, 168, 0.2);
+}
+
+.customSelectDropdown {
+  position: absolute;
+  top: 110%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: #fff;
+  border: 1.5px solid #1d5da8;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 16px rgba(30, 60, 120, 0.08);
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.customSelectOption {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 1rem;
+}
+
+.customSelectOption:hover,
+.customSelectOption:focus {
+  background: #eaf3ff;
+  color: #1d5da8;
+}
+
+.noResults.customSelectOption {
+  color: #888;
+  cursor: default;
+  background: #f9fafd;
+}
+
+.selectCustomAndButtons{
+  display: flex;
+  gap: 10px;
+}
+
+.tagCosto{
+  color: #4b5563;
+    cursor: pointer;
+    background: #e7edf3;
+    border: 1px solid #0000;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    transition: all .2s;
 }

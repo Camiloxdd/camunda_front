@@ -86,8 +86,12 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [catalogoError, setCatalogoError] = useState("");
     const [showProductosModal, setShowProductosModal] = useState(false);
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
+    const [search, setSearch] = useState("");
+    const [showResults, setShowResults] = useState(false);
 
-
+    const productosFiltrados = catalogoProductos.filter((p) =>
+        p.nombre.toLowerCase().includes(search.toLowerCase())
+    );
 
     const isEditMode = Boolean(
         initialData &&
@@ -399,8 +403,11 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 descripcion: p.descripcion,
                 compraTecnologica: p.compraTecnologica ? 1 : 0,
                 ergonomico: p.ergonomico ? 1 : 0,
+                papeleria: p.papeleria ? 1 : 0,      // <-- SIEMPRE INCLUIR
+                cafeteria: p.cafeteria ? 1 : 0,      // <-- SIEMPRE INCLUIR
                 centroCosto: p.centroCosto || "",
                 cuentaContable: p.cuentaContable || "",
+                userArea: formData.solicitante.area || "",
             }));
 
             const formularioenJSON = JSON.stringify(formData);
@@ -487,6 +494,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     valor_total: getTotalEstimado(),
                     filas: formularioenJSON,
                     processInstanceKey,
+                    aprobadores: finalPayload,
                 };
 
                 const res = await api.post("http://localhost:8000/api/requisicion/create",
@@ -512,6 +520,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 if (typeof onCreated === "function") onCreated();
 
                 console.log("📦 Datos de la requisición enviada:", creationPayload);
+                console.log("aprobadores", creationPayload.solicitante.aprobadores);
                 toast.success("Requisición creada correctamente");
                 setShowAnimation(true);
             }
@@ -558,6 +567,13 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         }
     };
 
+    const formatCOP = (val) => {
+        if (val == null || val === "") return "—";
+        const n = Number(val);
+        if (isNaN(n)) return String(val);
+        return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
+    };
+
     const catalogoAgrupado = catalogoProductos.reduce((acc, item) => {
         if (!acc[item.grupo]) acc[item.grupo] = [];
         acc[item.grupo].push(item);
@@ -570,6 +586,15 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             setProductoActivo(0);
         }
     }, [formData.productos.length]);
+
+    // Sincroniza el input de búsqueda con el producto activo cuando estás en paso 2
+    useEffect(() => {
+        if (step === 2 && formData.productos[productoActivo]) {
+            setSearch(formData.productos[productoActivo].nombre || "");
+            setShowResults(false);  // <-- Oculta los resultados al cambiar de producto
+        }
+        // eslint-disable-next-line
+    }, [productoActivo, step]);
 
     // Al agregar producto, reiniciar categoría seleccionada
     const handleAddProducto = () => {
@@ -590,6 +615,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         setFormData({ ...formData, productos });
         setProductoActivo(productos.length - 1);
         setCategoriaSeleccionada(null); // <-- Reinicia la categoría al agregar producto
+        setSearch("");                  // <-- Limpia el input de búsqueda
+        setShowResults(false);          // <-- Oculta los resultados del select custom
     };
 
     // En el render del paso 2, reemplaza el onClick del botón de agregar producto:
@@ -758,7 +785,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             }
             // Validación al avanzar de Paso 2 -> Paso 3 (ahora validaciones de productos y presupuesto)
             if (currentStep === 2 && nextStep === 3) {
-                // Validación: cada producto debe ser tecnológico, ergonómico, papelería o cafetería (al menos uno)
+                // Validación: cada producto debe ser tecnológico, ergonomico, papelería o cafetería (al menos uno)
                 const invalid = formData.productos
                     .map((p, i) => ({ p, i }))
                     .filter(({ p }) =>
@@ -851,7 +878,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                         <p>Crea una solicitud de compra</p>
                     </div>
                     <div className="buttonCloseReq">
-                        <button className="wizardModal-close" onClick={handleCloseModal}>
+                        <button className="wizardModal-close" onClick={onClose}>
                             ✕
                         </button>
                     </div>
@@ -916,48 +943,6 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                 );
                             })}
                         </div>
-                        {step === 2 && (
-                            <div className="campoListaProductos">
-                                <br />
-                                <h3 className="tittleOneUserNew">PRODUCTOS</h3>
-                                <div className="productoNavVertical">
-                                    <div className="productoListScroll">
-                                        {formData.productos.map((prod, index) => (
-                                            <button
-                                                key={index}
-                                                className={`productoTabVertical ${index === productoActivo ? "active" : ""}`}
-                                                onClick={() => setProductoActivo(index)}
-                                            >
-                                                <FontAwesomeIcon className="iconListFiles" icon={faFile} />
-                                                {prod.nombre || `Producto ${index + 1}`}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div className="containerButtonsProductos">
-                                        <button
-                                            className="wizardModal-btn-add fullWidth"
-                                            onClick={handleAddProducto}
-                                        >
-                                            <FontAwesomeIcon icon={faPlus} />
-                                        </button>
-
-                                        <button
-                                            className="wizardModal-btn-remove fullWidth"
-                                            disabled={formData.productos.length <= 1}
-                                            onClick={() => {
-                                                const productos = formData.productos.filter(
-                                                    (_, i) => i !== productoActivo
-                                                );
-                                                setFormData({ ...formData, productos });
-                                                setProductoActivo((prev) => (prev > 0 ? prev - 1 : 0));
-                                            }}
-                                        >
-                                            <FontAwesomeIcon icon={faTrash} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </aside>
 
                     <div className="wizardModal-body">
@@ -1182,89 +1167,76 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                     <FontAwesomeIcon icon={faCubes} className="iconUserCreate" />
                                                     <label>Producto / Servicio<label className="obligatorio">*</label></label>
                                                 </div>
-                                                <div className="inputAndIconUserGest">
-                                                    {catalogoLoading ? (
-                                                        <select disabled value="">
-                                                            <option value="">Cargando catálogo...</option>
-                                                        </select>
-                                                    ) : catalogoError ? (
+                                                {/* Custom select container for styling */}
+                                                <div className="selectCustomAndButtons">
+                                                    <div className="customSelectContainer">
                                                         <input
                                                             type="text"
-                                                            placeholder="Ej. Escritorio ergonómico"
-                                                            value={formData.productos[productoActivo].nombre}
+                                                            placeholder="Buscar producto..."
+                                                            value={search}
                                                             onChange={(e) => {
-                                                                const productos = [...formData.productos];
-                                                                productos[productoActivo].nombre = e.target.value;
-                                                                setFormData({ ...formData, productos });
+                                                                setSearch(e.target.value);
+                                                                setShowResults(true);
                                                             }}
+                                                            onFocus={() => setShowResults(true)}
+                                                            className="searchInput customSelectInput"
                                                         />
-                                                    ) : (
-                                                        <div>
-                                                            {/* --- CATEGORÍAS Y SELECT PERSONALIZADO --- */}
-                                                            {!categoriaSeleccionada && (
-                                                                <div className="categoriasLista">
-                                                                    {[
-                                                                        { id: "tec", label: "Tecnológicos" },
-                                                                        { id: "erg", label: "Ergonómicos" },
-                                                                        { id: "pap", label: "Papelería" },
-                                                                        { id: "caf", label: "Cafetería" }
-                                                                    ].map(cat => (
-                                                                        <button
-                                                                            key={cat.id}
-                                                                            onClick={() => setCategoriaSeleccionada(cat.id)}
-                                                                            className="categoriaButton"
+
+                                                        {showResults && search && (
+                                                            <ul className="searchResults customSelectDropdown">
+                                                                {productosFiltrados.length > 0 ? (
+                                                                    productosFiltrados.map((p, idx) => (
+                                                                        <li
+                                                                            key={`${p.id ?? idx}-${p.nombre}`}
+                                                                            className="searchItem customSelectOption"
+                                                                            onClick={() => {
+                                                                                const productos = [...formData.productos];
+
+                                                                                productos[productoActivo].nombre = p.nombre;
+                                                                                productos[productoActivo].centroCosto = p.centro_costo || "";
+                                                                                productos[productoActivo].cuentaContable = p.cuenta_contable || "";
+                                                                                productos[productoActivo].compraTecnologica = p.grupo === "tec";
+                                                                                productos[productoActivo].ergonomico = p.grupo === "erg";
+                                                                                productos[productoActivo].papeleria = p.grupo === "pap";
+                                                                                productos[productoActivo].cafeteria = p.grupo === "caf";
+
+                                                                                setFormData({ ...formData, productos });
+
+                                                                                setSearch(p.nombre);
+                                                                                setShowResults(false);
+                                                                            }}
                                                                         >
-                                                                            {cat.label}
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                            )}
+                                                                            {p.nombre}
+                                                                        </li>
+                                                                    ))
+                                                                ) : (
+                                                                    <li className="noResults customSelectOption">No se encontraron productos</li>
+                                                                )}
+                                                            </ul>
+                                                        )}
+                                                    </div>
+                                                    <div className="campoButtonsNewReq">
+                                                        <button
+                                                            className="btn-add-producto"
+                                                            onClick={handleAddProducto}
+                                                        >
+                                                            <FontAwesomeIcon icon={faPlus} />
+                                                        </button>
 
-                                                            {categoriaSeleccionada && (
-                                                                <div className="seleccionProductoContainer">
-                                                                    <button className="volverCats" onClick={() => setCategoriaSeleccionada(null)}>
-                                                                        ← Volver a categorías
-                                                                    </button>
-
-                                                                    <select
-                                                                        value={formData.productos[productoActivo].nombre || ""}
-                                                                        onChange={(e) => {
-                                                                            const productos = [...formData.productos];
-                                                                            const sel = catalogoProductos.find(p => p.nombre === e.target.value);
-
-                                                                            if (sel) {
-                                                                                productos[productoActivo].nombre = sel.nombre;
-                                                                                productos[productoActivo].centroCosto = sel.centro_costo || "";
-                                                                                productos[productoActivo].cuentaContable = sel.cuenta_contable || "";
-                                                                                productos[productoActivo].compraTecnologica = sel.grupo === "tec";
-                                                                                productos[productoActivo].ergonomico = sel.grupo === "erg";
-                                                                                productos[productoActivo].papeleria = sel.grupo === "pap";
-                                                                                productos[productoActivo].cafeteria = sel.grupo === "caf";
-                                                                            } else {
-                                                                                productos[productoActivo].nombre = e.target.value;
-                                                                            }
-                                                                            setFormData({ ...formData, productos });
-                                                                        }}
-                                                                    >
-                                                                        <option value="">Seleccione un producto</option>
-                                                                        {/* Mostrar el nombre actual si no está en el catálogo */}
-                                                                        {formData.productos[productoActivo].nombre &&
-                                                                            !(catalogoAgrupado[categoriaSeleccionada] || []).some(
-                                                                                p => p.nombre === formData.productos[productoActivo].nombre
-                                                                            ) && (
-                                                                                <option value={formData.productos[productoActivo].nombre}>
-                                                                                    {formData.productos[productoActivo].nombre}
-                                                                                </option>
-                                                                            )}
-                                                                        {(catalogoAgrupado[categoriaSeleccionada] || []).map((p, idx) => (
-                                                                            <option key={`${p.id ?? 'idx' + idx}-${p.nombre}`} value={p.nombre}>{p.nombre}</option>
-                                                                        ))}
-                                                                    </select>
-                                                                </div>
-                                                            )}
-
-                                                        </div>
-                                                    )}
+                                                        <button
+                                                            className="btn-remove-producto"
+                                                            disabled={formData.productos.length <= 1}
+                                                            onClick={() => {
+                                                                const productos = formData.productos.filter(
+                                                                    (_, i) => i !== productoActivo
+                                                                );
+                                                                setFormData({ ...formData, productos });
+                                                                setProductoActivo((prev) => (prev > 0 ? prev - 1 : 0));
+                                                            }}
+                                                        >
+                                                            <FontAwesomeIcon icon={faTrash} />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1404,6 +1376,45 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                             </div>
                                         </div>
                                         <br />
+                                        <div className="campoListaProductos">
+                                            <h3 className="tittleOneUserNew">LISTA DE PRODUCTOS</h3>
+                                            <div className="productoNavVertical">
+                                                <div className="productoListScroll">
+                                                    {formData.productos.map((prod, index) => (
+                                                        <button
+                                                            key={index}
+                                                            className={`productos${index === productoActivo ? " active" : ""}`}
+                                                            style={{ cursor: "pointer" }}
+                                                            onClick={() => setProductoActivo(index)}
+                                                        >
+                                                            <div className="leftInfoProduct">
+                                                                <div className="nameIconProduct">
+                                                                    <FontAwesomeIcon icon={faBoxOpen} className="iconProduct" />
+                                                                    <div className="nameAndTags">
+                                                                        <h1 className="nameProduct">{prod.nombre || "Producto"}</h1>
+                                                                        <div className="tagsProducto">
+                                                                            <div className={`tagOption ${prod.compraTecnologica ? "active" : ""}`}>
+                                                                                Tecnológico
+                                                                            </div>
+                                                                            <div className={`tagOption ${prod.ergonomico ? "active" : ""}`}>
+                                                                                Ergonómico
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="subtitlesProductos">
+
+                                                                </div>
+                                                            </div>
+                                                            <div className="rightInfoProduct">
+                                                                <h1>{prod.valorEstimado || "$"}</h1>
+                                                                <p className="subtitlesProductos">Cantidad: {prod.cantidad}</p>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
                                         {/*
                                         <h3 className="tittleOneUserNew">tipo de producto o servicio</h3>
                                         <div className="firsInfoTwo">
@@ -1512,33 +1523,34 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                             <div className="papitoGugutata">
                                 <h3 className="tittleOneUserNew">resumen de solicitud</h3>
                                 <br />
-                                <div className="campoTotales">
-                                    <div className="totalesCards">
-                                        <p className="totalP">{formData.productos.filter((p) => p.ergonomico).length}</p>
-                                        <p className="textTotal">Ergonómicos</p>
+                                <div className="containerInfoReq">
+                                    <div className="cardsReq" style={{ backgroundColor: "white" }}>
+                                        <h3 className="tittleOneUserNew">Solicitante</h3>
+                                        <div className="areYFecha">
+                                            <p className="labelTittle">{formData.solicitante.nombre}</p>
+                                            <p className="textLabel">{getAreaNombre(formData.solicitante.area)}</p>
+                                        </div>
                                     </div>
-                                    <div className="totalesCards">
-                                        <p className="totalP">{formData.productos.filter((p) => p.papeleria).length}</p>
-                                        <p className="textTotal">Papelería</p>
+                                    <div className="cardsReq" style={{ backgroundColor: "white" }}>
+                                        <h3 className="tittleOneUserNew">Fecha</h3>
+                                        <div className="areaYFecha">
+                                            <p className="labelTittle">Solicitud: {new Date(formData.solicitante.fecha).toLocaleDateString("es-ES")}</p>
+                                            <p className="textLabel">Entrega: {formData.solicitante.fechaRequeridoEntrega}</p>
+                                        </div>
                                     </div>
-                                    <div className="totalesCards">
-                                        <p className="totalP">{formData.productos.filter((p) => p.cafeteria).length}</p>
-                                        <p className="textTotal">Cafetería</p>
+                                    <div className="cardsReq" style={{ backgroundColor: "white" }}>
+                                        <h3 className="tittleOneUserNew">Urgencia de la compra</h3>
+                                        <div className="areaYFecha">
+                                            <p className="labelTittle">{formData.solicitante.urgencia}</p>
+                                            <p className="textLabel">{formData.solicitante.justificacion || "No tiene justificacion."}</p>
+                                        </div>
                                     </div>
-                                    <div className="totalesCards">
-                                        <p className="totalP">{formData.productos.filter((p) => p.compraTecnologica).length}</p>
-                                        <p className="textTotal">Tecnológicos</p>
-                                    </div>
-                                </div>
-                                <br />
-                                <div className="totalProdAndPrice">
-                                    <div className="totalesCards">
-                                        <p className="totalP">{formData.productos.length}</p>
-                                        <p className="textTotal">Productos</p>
-                                    </div>
-                                    <div className="totalesCards">
-                                        <p className="totalP">{formatCurrency(getTotalEstimado(false))}</p>
-                                        <p className="textTotal">Valor estimado</p>
+                                    <div className="cardsReq" style={{ backgroundColor: "white" }}>
+                                        <h3 className="tittleOneUserNew">valor total</h3>
+                                        <div className="areaYFecha">
+                                            <p className="labelTittle">{formatCurrency(getTotalEstimado(false))}</p>
+                                            <p className="textLabel">{formData.productos.length} producto(s)</p>
+                                        </div>
                                     </div>
                                 </div>
                                 <br />
@@ -1575,6 +1587,8 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                                 <div className={`tagOption ${prod.ergonomico ? "active" : ""}`}>
                                                                     Ergonómico
                                                                 </div>
+                                                                <p className="tagCosto">Centro de Costo: {prod.centroCosto}</p>
+                                                                <p className="tagCosto">Cuenta Contable: {prod.cuentaContable}</p>
                                                             </div>
                                                         </div>
                                                     </div>

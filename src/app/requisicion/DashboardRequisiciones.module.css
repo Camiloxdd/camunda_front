@@ -1,0 +1,511 @@
+/* All styles converted from Tailwind to CSS Modules */
+
+:root {
+  --primary: rgb(59, 130, 246);
+  --cyan: rgb(34, 211, 238);
+  --emerald: rgb(16, 185, 129);
+  --teal: rgb(20, 184, 166);
+  --amber: rgb(245, 158, 11);
+  --red: rgb(239, 68, 68);
+  --border: hsl(0, 0%, 90%);
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(0, 0%, 15%);
+  --muted: hsl(0, 0%, 60%);
+  --card: hsl(0, 0%, 98%);
+}
+
+/* Base card styles */
+.cardMinimal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.cardMinimal:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.minimalContent {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.minimalIndicator {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background-color: rgb(16, 185, 129);
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.minimalInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.minimalHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.minimalTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.minimalCreator {
+  font-size: 0.875rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.minimalRight {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.minimalValue {
+  text-align: right;
+}
+
+.minimalPrice {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
+}
+
+.minimalDate {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.minimalMobile {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  @media (min-width: 640px) {
+    display: none;
+  }
+}
+
+/* Accent Left Card */
+.cardAccent {
+  position: relative;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.cardAccent:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.accentBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0.375rem;
+  bottom: 0;
+  background: #1d5da8;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.accentContent {
+  padding: 1.25rem;
+  padding-left: 1.25rem;
+}
+
+.accentHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.accentLeft {
+  flex: 1;
+}
+
+.accentTitle {
+  font-size: 1.2rem;
+  color: #1d5da8;
+  font-weight: 700;
+  margin: 0;
+}
+
+.accentCreator {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin-top: 0.375rem;
+}
+
+.accentFooter {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.accentDate {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.accentIcon {
+  opacity: 0.6;
+}
+
+.accentPrice {
+  font-size: 1.09rem;
+  font-weight: 700;
+  background: #1d5da8;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+/* Grid Compact Card */
+.cardGrid {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.cardGrid:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.gridHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.gridTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.gridIndicator {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background-color: rgb(16, 185, 129);
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gridTitleText {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.gridBody {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.gridItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gridItemLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.gridIcon {
+  opacity: 0.6;
+}
+
+.gridItemValue {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gridItemPrice {
+  font-size: 0.875rem;
+  font-weight: 700;
+  background: linear-gradient(to right, rgb(5, 150, 105), rgb(20, 184, 166));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+/* Header Highlight Card */
+.cardHeader {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.cardHeader:hover {
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.headerBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.05), rgba(34, 211, 238, 0.05));
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.headerIcon {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.headerIconColor {
+  color: rgb(59, 130, 246);
+}
+
+.headerTitle {
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 0;
+  flex: 1;
+}
+
+.headerBody {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.headerLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.headerValue {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.headerRowFinal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.headerPrice {
+  font-size: 1.125rem;
+  font-weight: 700;
+  background: linear-gradient(to right, rgb(5, 150, 105), rgb(20, 184, 166));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Status Badge Styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.90rem;
+  font-weight: 600;
+  padding: 8px;
+  border-radius: 9999px;
+  border: 1px solid;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.statusApproved {
+  background-color: rgba(16, 185, 129, 0.05);
+  color: rgb(5, 126, 82);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.statusApproved:hover {
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.statusPending {
+  background-color: rgba(245, 158, 11, 0.05);
+  color: rgb(180, 83, 9);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.statusPending:hover {
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.statusRejected {
+  background-color: rgba(239, 68, 68, 0.05);
+  color: rgb(153, 27, 27);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.statusRejected:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+
+
+.statusApprovedBar {
+  background-color: #9DE09D;
+  color: rgb(5, 126, 82);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.statusApprovedBar:hover {
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.statusPendingBar {
+  background-color: #efdfba;
+  color: rgb(180, 83, 9);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.statusPendingBar:hover {
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.statusRejectedBar {
+  background-color: #B67D85;
+  color: rgb(153, 27, 27);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.statusRejectedBar:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --border: hsl(0, 0%, 20%);
+    --background: hsl(0, 0%, 10%);
+    --foreground: hsl(0, 0%, 95%);
+    --muted: hsl(0, 0%, 55%);
+    --card: hsl(0, 0%, 15%);
+  }
+
+  .cardMinimal:hover,
+  .cardAccent:hover,
+  .cardGrid:hover,
+  .cardHeader:hover {
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+  }
+
+  .accentBar {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+
+  .statusApproved {
+    color: rgb(167, 243, 208);
+    border-color: rgba(16, 185, 129, 0.3);
+  }
+
+  .statusPending {
+    color: rgb(252, 191, 73);
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+
+  .statusRejected {
+    color: rgb(248, 113, 113);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .minimalRight {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .gridBody {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .headerBanner {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .headerTitle {
+    order: -1;
+    flex-basis: 100%;
+  }
+}
