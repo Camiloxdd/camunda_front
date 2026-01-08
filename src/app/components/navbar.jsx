@@ -27,7 +27,7 @@ export default function Navbar() {
       case "gerGeneral":
         return "Gerente General"
       case "dicTYP":
-        return "Director Tecnología y Proyectos"
+        return "Director Desarrollo Sistemas de Informacion"
       case "gerTyC":
         return "Gerente Tecnología y Proyectos"
       case "dicSST":

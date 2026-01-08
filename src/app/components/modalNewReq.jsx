@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import "../styles/modalNewReq.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -35,6 +35,7 @@ import api from "../services/axios";
 import { endFirstStepStartTwoStep, endTwoStepStartThreeStep } from "../services/camunda";
 import { createPortal } from "react-dom";
 import LoadingView from "./loadingView";
+import { delay } from "framer-motion";
 
 // 1. Agrega los nuevos campos al initialForm para los tipos de producto
 const initialForm = {
@@ -88,10 +89,11 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
     const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
     const [search, setSearch] = useState("");
     const [showResults, setShowResults] = useState(false);
-
     const productosFiltrados = catalogoProductos.filter((p) =>
         p.nombre.toLowerCase().includes(search.toLowerCase())
     );
+    // 👇 AGREGAR ESTA REFERENCIA
+    const productoListRef = useRef(null);
 
     const isEditMode = Boolean(
         initialData &&
@@ -311,6 +313,9 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         return new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
     };
 
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+
     const getTotalEstimado = (onlyApproved = false) => {
         return formData.productos.reduce((sum, p) => {
             if (onlyApproved) {
@@ -369,6 +374,10 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             return;
         }
 
+        const id = initialData?.requisicion?.id;
+
+
+
         // Validación: cada producto debe ser tecnológico, ergonómico, papelería o cafetería (al menos uno)
         const invalidTipo = formData.productos
             .map((p, i) => ({ p, i }))
@@ -425,18 +434,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
             const tecnologicosFromForm = isTech;
             const ergonomicosFromForm = isErgo;
 
-            const finalPayload = {
-                siExiste: productosPayload.length > 0,
-                purchaseTecnology: Boolean(tecnologicosFromForm),
-                purchaseTecnologyNumeric: tecnologicosFromForm ? 1 : 0,
-                sstAprobacion: Boolean(ergonomicosFromForm),
-                purchaseAprobated: compraPresupuestada,
-                esMayor,
-                filas: formularioenJSON,
-                valor_total: totalEstimado,
-                requireGerAdmin: !compraPresupuestada,
-                requireGerGeneral: !compraPresupuestada,
-            };
+
 
             if (isEditMode) {
                 // 🔹 --- MODO EDICIÓN (sin cambios)
@@ -485,6 +483,7 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                 // Cerrar la modal al finalizar en modo edición
                 if (typeof onClose === "function") onClose();
             } else {
+
                 // 🔹 --- MODO CREACIÓN + COMPLETAR TAREA EN CAMUNDA ---
                 const processInstanceKey = localStorage.getItem("processInstanceKey");
 
@@ -494,20 +493,62 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     valor_total: getTotalEstimado(),
                     filas: formularioenJSON,
                     processInstanceKey,
-                    aprobadores: finalPayload,
                 };
 
-                const res = await api.post("http://localhost:8000/api/requisicion/create",
-                    creationPayload,
-                    {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
+                let correosAprobadores = [];
+                let res = null;
+                try {
+                    res = await api.post("http://localhost:8000/api/requisicion/create",
+                        creationPayload,
+                        {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
 
-                if (res.status !== 201) {
-                    throw new Error("Error al guardar");
+                    if (res.status !== 201) {
+                        throw new Error("Error al guardar");
+                    }
+
+                    const requisicionId = res.data?.requisicion?.id;
+                    
+                    // 🔥 OBTENER CORREOS DESDE SPRINGBOOT
+                    if (requisicionId) {
+                        try {
+                            await delay(2000); // Pequeña pausa para asegurar que se guardaron los aprobadores
+                            
+                            const correosRes = await api.post(
+                                "http://localhost:8086/obtener-correos-aprobadores",
+                                { requisicionId: requisicionId },
+                                { headers: { Authorization: `Bearer ${token}` } }
+                            );
+                            correosAprobadores = correosRes.data?.correos || [];
+                            console.log
+                        } catch (err) {
+                            console.error("No se pudieron obtener los correos de los aprobadores", err);
+                        }
+                    }
+
+                    res.data.correosAprobadores = correosAprobadores;
+                    console.log("LOS CORREOS:", correosAprobadores);
+                } catch (err) {
+                    console.error("Error en la creación de la requisición o al obtener aprobadores", err);
+                    toast.error("Hubo un error al guardar o al obtener los aprobadores");
+                    return;
                 }
 
-                // 🔸 Llamamos a Camunda para completar la tarea
+                const finalPayload = {
+                    siExiste: productosPayload.length > 0,
+                    purchaseTecnology: Boolean(tecnologicosFromForm),
+                    purchaseTecnologyNumeric: tecnologicosFromForm ? 1 : 0,
+                    sstAprobacion: Boolean(ergonomicosFromForm),
+                    purchaseAprobated: compraPresupuestada,
+                    esMayor,
+                    filas: formularioenJSON,
+                    valor_total: totalEstimado,
+                    requireGerAdmin: !compraPresupuestada,
+                    requireGerGeneral: !compraPresupuestada,
+                    correosAprobadores,  
+                };
+
                 try {
                     console.log("🔁 Completando tarea de Camunda (segundo paso)...");
                     await endTwoStepStartThreeStep(finalPayload);
@@ -517,10 +558,11 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                     toast.error("Error al avanzar en el flujo de aprobación");
                 }
 
-                if (typeof onCreated === "function") onCreated();
+                if (typeof onCreated === "function") onCreated(res.data);
 
                 console.log("📦 Datos de la requisición enviada:", creationPayload);
-                console.log("aprobadores", creationPayload.solicitante.aprobadores);
+                console.log("Final Payload", finalPayload)
+                console.log("correosAprobadores", correosAprobadores);
                 toast.success("Requisición creada correctamente");
                 setShowAnimation(true);
             }
@@ -614,9 +656,16 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
         ];
         setFormData({ ...formData, productos });
         setProductoActivo(productos.length - 1);
-        setCategoriaSeleccionada(null); // <-- Reinicia la categoría al agregar producto
-        setSearch("");                  // <-- Limpia el input de búsqueda
-        setShowResults(false);          // <-- Oculta los resultados del select custom
+        setCategoriaSeleccionada(null);
+        setSearch("");
+        setShowResults(false);
+
+        // 👇 AGREGAR SCROLL AUTOMÁTICO AL NUEVO PRODUCTO
+        setTimeout(() => {
+            if (productoListRef.current) {
+                productoListRef.current.scrollLeft = productoListRef.current.scrollWidth;
+            }
+        }, 0);
     };
 
     // En el render del paso 2, reemplaza el onClick del botón de agregar producto:
@@ -1375,16 +1424,21 @@ export default function WizardModal({ open, onClose, onCreated, initialData, sta
                                                 </div>
                                             </div>
                                         </div>
-                                        <br />
                                         <div className="campoListaProductos">
                                             <h3 className="tittleOneUserNew">LISTA DE PRODUCTOS</h3>
                                             <div className="productoNavVertical">
-                                                <div className="productoListScroll">
+                                                <div className="productoListScroll" ref={productoListRef}>
                                                     {formData.productos.map((prod, index) => (
                                                         <button
                                                             key={index}
                                                             className={`productos${index === productoActivo ? " active" : ""}`}
-                                                            style={{ cursor: "pointer" }}
+                                                            style={{
+                                                                cursor: "pointer",
+                                                                backgroundColor: index === productoActivo ? "#b4d7ff" : "transparent",
+                                                                color: index === productoActivo ? "white" : "inherit",
+                                                                borderLeft: index === productoActivo ? "3px solid #1d5da8" : "none",
+                                                                transition: "all 0.3s ease"
+                                                            }}
                                                             onClick={() => setProductoActivo(index)}
                                                         >
                                                             <div className="leftInfoProduct">

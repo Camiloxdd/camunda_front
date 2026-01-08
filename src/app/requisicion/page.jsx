@@ -4,7 +4,7 @@ import { Sidebar } from "../components/Slidebar";
 import Navbar from "../components/navbar";
 import SearchBar from "../components/searchBar";
 import ApprovalModal from "../components/ApprovalModal";
-import { faTrash, faPencil, faUser, faFilePdf, faTimeline, faX, faPlus, faRefresh, faFile, faFileCircleCheck, faFileCircleQuestion, faFileCircleXmark, faFileEdit, faFileExcel, faUserPen, faDownload, faBoxArchive, faEye, faCalendarAlt, faCalendar, faAngleDown, faGear, faRightFromBracket, faUserGear, faUserShield, faClipboardList, faClipboardCheck, faClipboardQuestion } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faPencil, faUser, faFilePdf, faTimeline, faX, faPlus, faRefresh, faFile, faFileCircleCheck, faFileCircleQuestion, faFileCircleXmark, faFileEdit, faFileExcel, faUserPen, faDownload, faBoxArchive, faEye, faCalendarAlt, faCalendar, faAngleDown, faGear, faRightFromBracket, faUserGear, faUserShield, faClipboardList, faClipboardCheck, faClipboardQuestion, faBoxOpen, faCircleCheck, faWarning } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Suspense } from "react";
 import { AuthProvider, useAuth } from "../context/AuthContext";
@@ -21,6 +21,7 @@ import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
 import { useLayoutEffect } from "react";
 import LoadingView from "../components/loadingView";
+import { verify } from "crypto";
 
 
 function DashboardInner() {
@@ -959,7 +960,7 @@ function DashboardInner() {
       case "gerGeneral":
         return "Gerente General";
       case "dicTYP":
-        return "Director Tecnologia y Proyectos";
+        return "Director Desarrollo Sistemas de Informacion";
       case "gerTyC":
         return "Gerente Tecnologia y Proyectos";
       case "dicCAF":
@@ -970,6 +971,8 @@ function DashboardInner() {
         return "Director Papelería";
       case "gerPAP":
         return "Gerente Papelería";
+      case "gerSST":
+        return "Gerente SST"
       default:
         return cargoId || "Usuario";
     }
@@ -1009,6 +1012,83 @@ function DashboardInner() {
       toast.error("No se pudo obtener detalles");
     }
   };
+
+  const handleDeleteAll = async () => {
+    const toastId = toast.info(
+      <div
+        style={{
+          padding: "10px",
+          textAlign: "center",
+          color: "white",
+        }}
+      >
+        <strong style={{ display: "block", marginBottom: "8px" }}>
+          ¿Seguro que deseas eliminar todas las requisiciones?
+        </strong>
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px" }}>
+          <button
+            style={{
+              backgroundColor: "#dc2626",
+              color: "white",
+              border: "none",
+              padding: "5px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+            onClick={async () => {
+              toast.dismiss(toastId);
+              try {
+                if (requisiciones.length === 0) {
+                  toast.warn("No hay requisiciones para eliminar.");
+                  return;
+                }
+                for (const req of requisiciones) {
+                  await api.delete(`/api/requisiciones/${req.requisicion_id}/eliminar-todas`, {
+                    headers: { Authorization: token ? `Bearer ${token}` : "" }
+                  });
+                }
+                toast.success("Requisiciones eliminadas correctamente.");
+                setOpenReqModal(false);
+                await fetchRequisiciones();
+              } catch (err) {
+                console.error(err);
+                toast.error("No se pudo eliminar");
+              }
+            }}
+          >
+            Eliminar
+          </button>
+          <button
+            style={{
+              backgroundColor: "#e5e7eb",
+              color: "#111827",
+              border: "none",
+              padding: "5px 12px",
+              borderRadius: "5px",
+              cursor: "pointer",
+              fontWeight: "500",
+            }}
+            onClick={() => toast.dismiss(toastId)}
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>,
+      {
+        position: "top-right",
+        autoClose: false,
+        closeOnClick: false,
+        draggable: false,
+        closeButton: false,
+        style: {
+          background: "#3b82f6",
+          borderRadius: "10px",
+        },
+        icon: "ℹ️",
+      }
+    );
+  }
 
   const handleDelete = async (id) => {
     const toastId = toast.info(
@@ -1068,13 +1148,13 @@ function DashboardInner() {
         </div>
       </div>,
       {
-        position: "top-right", // 👈 esquina inferior derecha
-        autoClose: false, // No se cierra hasta que el usuario elija
+        position: "top-right", 
+        autoClose: false, 
         closeOnClick: false,
         draggable: false,
         closeButton: false,
         style: {
-          background: "#3b82f6", // azul tipo “info”
+          background: "#3b82f6", 
           borderRadius: "10px",
         },
         icon: "ℹ️",
@@ -1332,6 +1412,11 @@ function DashboardInner() {
                     {permissions?.isSolicitante && (
                       <button onClick={abrirModalNuevaReq} className="fab-btn primary">
                         <FontAwesomeIcon icon={faPlus} /> Nueva requisición
+                      </button>
+                    )}
+                    {permissions?.isSuperAdmin && (
+                      <button className="deleteAllReq" onClick={handleDeleteAll}>
+                        <FontAwesomeIcon icon={faTrash}/>
                       </button>
                     )}
                   </div>
@@ -1608,6 +1693,9 @@ function DashboardInner() {
                   {verifyModalReq.productos?.map((p, i) => (
                     <div key={i} className="containerProductoAprove">
                       <div className="leftInfoAprove">
+                        <div className="iconBoxProd">
+                          <FontAwesomeIcon icon={faBoxOpen} className="iconProduct" />
+                        </div>
                         <div className="nameAndDescriptionProducto">
                           <p className="nameProducto">{p.nombre || p.productoOServicio || "—"}</p>
                           <p className="descriptionProducto">{p.descripcion || ""}</p>
@@ -1639,15 +1727,58 @@ function DashboardInner() {
                   )) || null}
                 </div>
               </div>
+              {verifyModalReq.status === "aprobada" && (
+                <div className="modal-actions-verifyModal" style={{ padding: "11px", borderTop: "2px solid #ddd", display: "flex", gap: "10px", justifyContent: "center" }}>
+                  <button onClick={() => handleDevolver(verifyModalReq.requisicion_id)} disabled={verifyLoading} >
+                    {verifyLoading ? "Procesando..." : "Devolver"}
+                  </button>
+                  <button onClick={() => handleAprobar(verifyModalReq.requisicion_id)} disabled={verifyLoading} >
+                    {verifyLoading ? "Procesando..." : "Aprobar Total"}
+                  </button>
+                </div>
+              )}
 
-              <div className="modal-actions-verifyModal" style={{ padding: "11px", borderTop: "2px solid #ddd", display: "flex", gap: "10px", justifyContent: "center" }}>
-                <button onClick={() => handleDevolver(verifyModalReq.requisicion_id)} disabled={verifyLoading} >
-                  {verifyLoading ? "Procesando..." : "Devolver"}
-                </button>
-                <button onClick={() => handleAprobar(verifyModalReq.requisicion_id)} disabled={verifyLoading} >
-                  {verifyLoading ? "Procesando..." : "Aprobar Total"}
-                </button>
-              </div>
+              {verifyModalReq.status === "pendiente" && (
+                <div className="modalFooter">
+                  <div className="modal-actions">
+                    <div className="containerIconApprove">
+                      <FontAwesomeIcon icon={faWarning} />
+                    </div>
+                    <div className="containerTextApprove">
+                      <p className="textOneTextApprove">Aún no es tu turno de aprobar esta requisición</p>
+                      <p className="textTwoTextApprove">Espera tu turno para aprobar</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {verifyModalReq.status === "Totalmente Aprobada" && (
+                <div className="modalFooter">
+                  <div className="modal-actions">
+                    <div className="containerIconApprove">
+                      <FontAwesomeIcon icon={faCircleCheck} />
+                    </div>
+                    <div className="containerTextApprove">
+                      <p className="textOneTextApprove">Esta requisicion ya fue totalmente aprobada</p>
+                      <p className="textTwoTextApprove">No necesita mas aprobaciones</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {verifyModalReq.status === "rechazada" && (
+                <div className="modalFooter">
+                  <div className="modal-actions">
+                    <div className="containerIconApprove">
+                      <FontAwesomeIcon icon={faWarning} />
+                    </div>
+                    <div className="containerTextApprove">
+                      <p className="textOneTextApprove">Esta requisicion fue rechazada</p>
+                      <p className="textTwoTextApprove">Solicita de nuevo esta requisicion</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1657,7 +1788,6 @@ function DashboardInner() {
               {loadingSolicitante ? (
                 <LoadingView />
               ) : solicitanteReq ? (
-                // 🔥 CONTENIDO CARGADO
                 <>
                   <div className="headerInfo">
                     <button

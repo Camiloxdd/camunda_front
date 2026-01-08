@@ -507,6 +507,9 @@ function DashboardInner() {
     }
   };
 
+  const estadoNormalized = String(
+    verifyModalReq?.status || verifyModalReq?.estado_aprobacion || ""
+  ).toLowerCase().trim();
 
   const handleDevolver = async (id) => {
     const toastId = toast.info(
@@ -956,7 +959,7 @@ function DashboardInner() {
       case "gerGeneral":
         return "Gerente General";
       case "dicTYP":
-        return "Director Tecnologia y Proyectos";
+        return "Director Desarrollo Sistemas de Informacion";
       case "gerTyC":
         return "Gerente Tecnologia y Proyectos";
       case "dicCAF":
@@ -1545,7 +1548,7 @@ function DashboardInner() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    background: "white",
+                    background: "transparent",
                     borderRadius: "10px"
                   }}
                 >
@@ -1631,19 +1634,69 @@ function DashboardInner() {
                           <p className="priceProducto">{formatCOP(p.valor_estimado ?? p.valorEstimado)}</p>
                           <p className="cantidadProducto">Cant: {p.cantidad}</p>
                         </div>
+                        {/* Botones de aprobar/rechazar producto individual */}
+                        {puedeAprobar && (!p.aprobado || p.aprobado === "pendiente") && (
+                          <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                            <button
+                              style={{
+                                backgroundColor: "#16a34a",
+                                color: "white",
+                                border: "none",
+                                padding: "4px 10px",
+                                borderRadius: "5px",
+                                cursor: "pointer",
+                                fontWeight: "bold",
+                                fontSize: "13px"
+                              }}
+                              onClick={() => handleAprobarProducto(verifyModalReq.requisicion_id, p.id || p.producto_id)}
+                              disabled={saving}
+                            >
+                              Aprobar
+                            </button>
+                            <button
+                              style={{
+                                backgroundColor: "#dc2626",
+                                color: "white",
+                                border: "none",
+                                padding: "4px 10px",
+                                borderRadius: "5px",
+                                cursor: "pointer",
+                                fontWeight: "bold",
+                                fontSize: "13px"
+                              }}
+                              onClick={async () => {
+                                setSaving(true);
+                                try {
+                                  await api.post(
+                                    `/api/requisiciones/${verifyModalReq.requisicion_id}/productos/${p.id || p.producto_id}/rechazar`,
+                                    {},
+                                    { headers: { Authorization: token ? `Bearer ${token}` : "" } }
+                                  );
+                                  toast.success("Producto rechazado correctamente");
+                                  await handleVerifyOpen({ requisicion_id: verifyModalReq.requisicion_id });
+                                  await fetchRequisiciones();
+                                } catch (err) {
+                                  toast.error("No se pudo rechazar el producto");
+                                } finally {
+                                  setSaving(false);
+                                }
+                              }}
+                              disabled={saving}
+                            >
+                              Rechazar
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )) || null}
                 </div>
               </div>
-
               <div className="modal-actions-verifyModal" style={{ padding: "11px", borderTop: "2px solid #ddd", display: "flex", gap: "10px", justifyContent: "center" }}>
-                <button onClick={() => handleDevolver(verifyModalReq.requisicion_id)} disabled={verifyLoading} >
-                  {verifyLoading ? "Procesando..." : "Devolver"}
-                </button>
-                <button onClick={() => handleAprobar(verifyModalReq.requisicion_id)} disabled={verifyLoading} >
-                  {verifyLoading ? "Procesando..." : "Aprobar Total"}
-                </button>
+                
+                  {verifyModalReq.status !== "Totalmente Aprobada" && (
+                    <div className="">hola</div>
+                  )}
               </div>
             </div>
           </div>

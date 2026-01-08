@@ -142,7 +142,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
     const isEditableForUser = (product) => {
         const cargo = (user?.cargo || "").trim();
         const areaAprobador = (user?.area || "").trim();
-        
+
         if (["dicTYP", "gerTyC"].includes(cargo)) {
             return !!product.compra_tecnologica;
         }
@@ -449,7 +449,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                     },
                 }
             );
-              
+
             toast.success("Producto rechazado");
             setDetalles(prev => ({
                 ...prev,
@@ -574,6 +574,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
     const estadoAprobadorActual = detalles?.aprobadorActual?.estado || "";
     const aprobadorEsRechazado = detalles?.aprobadorActual?.esRechazado || false;
 
+
     return (
         <div className="modal-overlay">
             <div className="modal-content">
@@ -582,7 +583,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                         className={`approval-loading-overlay ${actionLoadingExiting ? "fade-out" : "fade-in"}`}
                         style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.92)", height: "100%" }}
                     >
-                        <LoadingView/>
+                        <LoadingView />
                     </div>
                 )}
                 <div className="modal-header">
@@ -609,7 +610,36 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                         open={true}
                     />
                     <br />
-
+                    <div className="containerInfoReq">
+                        <div className="cardsReq" style={{ backgroundColor: "white" }}>
+                            <h3 className="tittleOneUserNew">Solicitante</h3>
+                            <div className="areYFecha">
+                                <p className="labelTittle">{info.nombre}</p>
+                                <p className="textLabel">{getAreaNombre(info.area)}</p>
+                            </div>
+                        </div>
+                        <div className="cardsReq" style={{ backgroundColor: "white" }}>
+                            <h3 className="tittleOneUserNew">Fecha</h3>
+                            <div className="areaYFecha">
+                                <p className="labelTittle">Solicitud: {new Date(info.fecha).toLocaleDateString("es-ES")}</p>
+                                <p className="textLabel">Entrega: {info.fecha}</p>
+                            </div>
+                        </div>
+                        <div className="cardsReq" style={{ backgroundColor: "white" }}>
+                            <h3 className="tittleOneUserNew">Urgencia de la compra</h3>
+                            <div className="areaYFecha">
+                                <p className="labelTittle">{info.urgencia}</p>
+                                <p className="textLabel">{info.justificacion || "No tiene justificacion."}</p>
+                            </div>
+                        </div>
+                        <div className="cardsReq" style={{ backgroundColor: "white" }}>
+                            <h3 className="tittleOneUserNew">valor total</h3>
+                            <div className="areaYFecha">
+                                <p className="labelTittle">{formatCOP(info.valor_total)}</p>
+                                <p className="textLabel">{productos.length} producto(s)</p>                            </div>
+                        </div>
+                    </div>
+                    {/*
                     <div className="containerInfoReq">
                         <div className="cardsReq">
                             <h3 className="tittleOneUserNew">Solicitante</h3>
@@ -633,6 +663,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                             </div>
                         </div>
                     </div>
+                    */}
                     <br />
                     <div className="lineaSeparadora"></div>
                     <h3 className="tittleOneUserNew">productos asociados</h3>
@@ -679,8 +710,7 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                                             border: `1px solid ${borderColor}`,
                                             backgroundColor: backgroundColor,
                                             borderRadius: "8px",
-                                            padding: "12px",
-                                            height: "119px",
+                                            height: "100px",
                                             transition: "all 0.3s ease",
                                             opacity: editable || showAprobadoTag || showRechazadoTag ? 1 : 0.5
                                         }}
@@ -700,6 +730,12 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                                                             </div>
                                                             <div className={`tagOption ${p.ergonomico ? "active" : ""}`}>
                                                                 Ergonómico
+                                                            </div>
+                                                            <div className="tagOption">
+                                                                {p.cuenta_contable}
+                                                            </div>
+                                                            <div className="tagOption">
+                                                                {p.centro_costo}
                                                             </div>
                                                             {showAprobadoTag && (
                                                                 <div className="tagOption active" style={{ background: "#10b981", color: "white" }}>
@@ -724,13 +760,11 @@ export default function ApprovalModal({ requisicion, onClose, onApproved, user, 
                                                                 </div>
                                                             )}
 
-                                                            {showAprobadoTag && p.usuario_accion && (
-                                                                // 🔥 CAMBIO: Solo mostrar "Aprobado por" si NO fue aprobado por el usuario actual
-                                                                p.usuario_accion !== detalles.currentUser?.nombre && (
-                                                                    <div className="tagOption" style={{ background: "#10b981", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
-                                                                        Aprobado por {p.usuario_accion}
-                                                                    </div>
-                                                                )
+                                                            {showAprobadoTag && p.usuario_accion && (p.usuario_accion !== detalles.currentUser?.nombre && (
+                                                                <div className="tagOption" style={{ background: "#10b981", color: "white", marginLeft: 8, fontWeight: 600, fontSize: 12 }}>
+                                                                    Aprobado por {p.usuario_accion}
+                                                                </div>
+                                                            )
                                                             )}
                                                         </div>
                                                     </div>

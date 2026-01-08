@@ -64,7 +64,7 @@ function UsuariosInner() {
   }, []);
 
   const options = [
-    { value: "dicTYP", label: "Director Tecnologia y Proyectos" },
+    { value: "dicTYP", label: "Director Sistemas de Informacion" },
     { value: "dicSST", label: "Director SST" },
     { value: "gerTyC", label: "Gerente Tecnologia y Proyectos" },
     { value: "gerSST", label: "Gerente SST" },
@@ -148,7 +148,7 @@ function UsuariosInner() {
       case "gerGeneral":
         return "Gerente General";
       case "dicTYP":
-        return "Director Tecnologia y Proyectos";
+        return "Director Sistemas de Informacion";
       case "gerTyC":
         return "Gerente Tecnologia y Proyectos";
       // NUEVAS CATEGORÍAS

@@ -91,7 +91,7 @@ export const Sidebar = ({ onToggle }) => {
             case "gerGeneral":
                 return "Gerente General";
             case "dicTYP":
-                return "Director Tecnología y Proyectos";
+                return "Director Desarrollo Sistemas de Informacion";
             case "gerTyC":
                 return "Gerente Tecnología y Proyectos";
             default:

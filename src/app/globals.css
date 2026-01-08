@@ -338,6 +338,8 @@
 
 .buttonsReq {
   display: flex;
+  gap: 5px;
+  display: flex;
 }
 
 .textoNavBar {
@@ -3604,6 +3606,7 @@ input[type="time"] {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin-top: auto;
 }
 
 .modal-actions-verifyModal button {
@@ -3802,4 +3805,20 @@ input[type="time"] {
   padding: 8px;
   background-color: #1d5ea81e;
   border-radius: 20%;
+}
+
+.deleteAllReq{
+  background-color: red;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-size: 15px;
+  transition: 0.2s all ease;
+  cursor: pointer;
+}
+
+.deleteAllReq:hover{
+  box-shadow: 0 2px 12px rgba(255, 0, 0, 0.3);
+  transform: translateY(-2px);
 }

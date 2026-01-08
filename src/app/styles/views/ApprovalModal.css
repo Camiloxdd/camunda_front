@@ -17,7 +17,7 @@
   width: 80%;
   font-size: 25px;
   height: 100%;
-  max-height: 85vh;
+  max-height: 800px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
@@ -160,6 +160,8 @@
 .modal-body {
   padding: 24px;
   width: 100%;
+  max-height: 640px ;
+  height: 100%;
 }
 
 .cardsReq {
@@ -266,8 +268,7 @@
 
 /* Contenedor de la tabla de productos con scroll limitado */
 .tabla-productos {
-  max-height: 350px;
-  height: 100%;
+  max-height: 150px;
   overflow-y: auto;
   margin-bottom: 20px;
 }
@@ -298,7 +299,7 @@
   border-radius: 12px;
   gap: 14px;
   align-items: center;
-  padding: 16px;
+  padding: 10px;
   transition: all .2s;
   display: flex;
 }
